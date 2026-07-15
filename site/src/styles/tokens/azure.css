@@ -1,0 +1,33 @@
+/* Azure flavor — "Fluent": soft 8px radius, acrylic blur, depth shadows */
+:root[data-cloud="azure"] {
+  --accent: #0078d4;
+  --accent-2: #50e6ff;
+  --accent-text: #005a9e;
+  --radius: 8px;
+  --bg: #f5f9ff;
+  --code-bg: #1b1a19;
+  --code-highlight: #0078d4;
+}
+
+:root[data-cloud="azure"][data-theme="dark"] {
+  --bg: #1b1a19;
+  --bg-card: #243a5e;
+  --border: #33507a;
+  --accent-text: #6cc2ff;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-cloud="azure"]:not([data-theme="light"]) {
+    --bg: #1b1a19;
+    --bg-card: #243a5e;
+    --border: #33507a;
+    --accent-text: #6cc2ff;
+  }
+}
+
+:root[data-cloud="azure"] .card,
+:root[data-cloud="azure"] .cloud-card {
+  border-radius: var(--radius);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 4px 20px rgba(0, 120, 212, 0.08);
+}

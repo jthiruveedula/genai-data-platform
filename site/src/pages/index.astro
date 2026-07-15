@@ -1,0 +1,49 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import CloudSelector from "../components/CloudSelector.astro";
+import { MODULES } from "../data/modules";
+const base = import.meta.env.BASE_URL;
+---
+
+<BaseLayout title="Home">
+  <CloudSelector />
+
+  <section aria-labelledby="curriculum-heading">
+    <h2 id="curriculum-heading">Beginner path</h2>
+    <p class="chip">Weeks 1–2 · single-source RAG with citations</p>
+    <ul class="module-list">
+      {
+        MODULES.filter((m) => m.path === "beginner").map((m) => (
+          <li>
+            <a href={`${base}modules/${m.id}/`}>{m.title}</a>
+            <p>{m.summary}</p>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+
+  <style>
+    .module-list {
+      list-style: none;
+      padding: 0;
+      display: grid;
+      gap: 1rem;
+    }
+    .module-list li {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+    }
+    .module-list a {
+      font-family: var(--font-heading);
+      font-weight: 700;
+      text-decoration: none;
+    }
+    .module-list p {
+      color: var(--text-secondary);
+      margin: 0.35rem 0 0;
+    }
+  </style>
+</BaseLayout>

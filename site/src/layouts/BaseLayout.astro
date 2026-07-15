@@ -1,0 +1,64 @@
+---
+import "../styles/tokens/base.css";
+import "../styles/tokens/aws.css";
+import "../styles/tokens/azure.css";
+import "../styles/tokens/gcp.css";
+import "../styles/tokens/oss.css";
+import Navbar from "../components/Navbar.astro";
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description = "A multi-cloud & OSS learning suite for building GenAI data platforms." } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <link rel="icon" type="image/svg+xml" href={`${import.meta.env.BASE_URL}favicon.svg`} />
+    <title>{title} · GenAI Data Platform</title>
+    <script is:inline>
+      // Runs before paint to avoid a flash of the wrong theme/cloud.
+      (function () {
+        var root = document.documentElement;
+        var params = new URLSearchParams(location.search);
+        var cloud = params.get("cloud") || localStorage.getItem("gdp.cloud");
+        var theme = localStorage.getItem("gdp.theme");
+        if (cloud) root.setAttribute("data-cloud", cloud);
+        if (theme) root.setAttribute("data-theme", theme);
+      })();
+    </script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <Navbar />
+    <main id="main">
+      <slot />
+    </main>
+    <footer class="site-footer">
+      <p>
+        Not affiliated with Amazon Web Services, Microsoft Azure, or Google Cloud. Logos used for identification
+        only — see <a href={`${import.meta.env.BASE_URL}logos/LICENSES.md`}>logo licenses</a>.
+      </p>
+    </footer>
+    <style>
+      .site-footer {
+        border-top: 1px solid var(--border);
+        margin-top: 4rem;
+        padding: 1.5rem 2rem;
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+      }
+      main {
+        max-width: 72rem;
+        margin: 0 auto;
+        padding: 0 1.5rem 3rem;
+      }
+    </style>
+  </body>
+</html>

@@ -1,0 +1,127 @@
+---
+import { CLOUDS } from "../data/modules";
+
+interface Props {
+  moduleId: string;
+  entries: Record<string, { services: string[]; snippet: string; labSteps: string[]; costNote: string; claimId: string }>;
+}
+
+const { moduleId, entries } = Astro.props;
+---
+
+<div class="flavor-tabs" data-flavor-tabs role="tablist" aria-label="Cloud flavor">
+  {
+    CLOUDS.map((c, i) => (
+      <button
+        type="button"
+        role="tab"
+        id={`tab-${moduleId}-${c.id}`}
+        aria-controls={`panel-${moduleId}-${c.id}`}
+        aria-selected="false"
+        data-tab-cloud={c.id}
+        tabindex={i === 0 ? 0 : -1}
+      >
+        {c.label}
+      </button>
+    ))
+  }
+</div>
+
+{
+  CLOUDS.map((c) => {
+    const entry = entries[c.id];
+    return (
+      <div role="tabpanel" id={`panel-${moduleId}-${c.id}`} aria-labelledby={`tab-${moduleId}-${c.id}`} data-panel-cloud={c.id} hidden>
+        <p class="services">
+          <span class="chip">{entry.services.join(" · ")}</span>{" "}
+          <span class="chip chip--accent" data-claim-id={entry.claimId}>
+            ✓ verified
+          </span>
+        </p>
+        <pre class="mono snippet"><code>{entry.snippet}</code></pre>
+        <ol class="lab-steps">
+          {entry.labSteps.map((s) => <li>{s}</li>)}
+        </ol>
+        <p class="cost-note chip">{entry.costNote}</p>
+      </div>
+    );
+  })
+}
+
+<script>
+  function activate(container: Element, cloud: string) {
+    container.querySelectorAll<HTMLButtonElement>("[data-tab-cloud]").forEach((tab) => {
+      const active = tab.dataset.tabCloud === cloud;
+      tab.setAttribute("aria-selected", String(active));
+      tab.tabIndex = active ? 0 : -1;
+    });
+    const root = container.parentElement;
+    root?.querySelectorAll<HTMLElement>("[data-panel-cloud]").forEach((panel) => {
+      panel.hidden = panel.dataset.panelCloud !== cloud;
+    });
+  }
+
+  document.querySelectorAll<HTMLElement>("[data-flavor-tabs]").forEach((container) => {
+    const initial = document.documentElement.getAttribute("data-cloud") || "gcp";
+    activate(container, initial);
+
+    container.querySelectorAll<HTMLButtonElement>("[data-tab-cloud]").forEach((tab, i, all) => {
+      tab.addEventListener("click", () => activate(container, tab.dataset.tabCloud!));
+      tab.addEventListener("keydown", (e) => {
+        if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+        const dir = e.key === "ArrowRight" ? 1 : -1;
+        const next = all[(i + dir + all.length) % all.length];
+        next.focus();
+        activate(container, next.dataset.tabCloud!);
+      });
+    });
+  });
+
+  document.addEventListener("click", (e) => {
+    const btn = (e.target as HTMLElement).closest<HTMLButtonElement>("[data-cloud-btn]");
+    if (!btn) return;
+    document.querySelectorAll<HTMLElement>("[data-flavor-tabs]").forEach((c) => activate(c, btn.dataset.cloudBtn!));
+  });
+</script>
+
+<style>
+  .flavor-tabs {
+    display: flex;
+    gap: 0.25rem;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 1rem;
+  }
+
+  .flavor-tabs button {
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: 0.5rem 0.9rem;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+  }
+
+  .flavor-tabs button[aria-selected="true"] {
+    color: var(--text);
+    border-bottom-color: var(--accent);
+  }
+
+  .snippet {
+    background: var(--code-bg);
+    color: #e8e8e8;
+    padding: 1rem;
+    border-radius: var(--radius);
+    overflow-x: auto;
+    font-size: 0.82rem;
+  }
+
+  .lab-steps {
+    padding-left: 1.25rem;
+  }
+
+  .cost-note {
+    display: inline-block;
+    margin-top: 0.5rem;
+  }
+</style>

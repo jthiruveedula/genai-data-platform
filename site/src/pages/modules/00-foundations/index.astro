@@ -1,0 +1,69 @@
+---
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import FlavorTabs from "../../../components/FlavorTabs.astro";
+import { flavor as gcp } from "../../../data/flavors/gcp";
+import { flavor as aws } from "../../../data/flavors/aws";
+import { flavor as azure } from "../../../data/flavors/azure";
+import { flavor as oss } from "../../../data/flavors/oss";
+
+const moduleId = "00-foundations";
+const entries = {
+  gcp: gcp[moduleId],
+  aws: aws[moduleId],
+  azure: azure[moduleId],
+  oss: oss[moduleId],
+};
+---
+
+<BaseLayout title="00 · Foundations">
+  <article>
+    <p class="chip">Module 00 · Beginner</p>
+    <h1>Foundations</h1>
+    <p>
+      Before touching any cloud service, get the vocabulary straight. Every later module assumes you know these five
+      ideas cold.
+    </p>
+
+    <h2>Tokens</h2>
+    <p>
+      LLMs don't read characters or words — they read <strong>tokens</strong>, sub-word chunks produced by a
+      tokenizer. Pricing, context limits, and latency are all measured in tokens, not characters. A rough rule of
+      thumb for English text: 1 token ≈ 4 characters ≈ ¾ of a word.
+    </p>
+
+    <h2>Embeddings &amp; vector similarity</h2>
+    <p>
+      An embedding model maps a chunk of text to a fixed-length vector such that semantically similar text lands
+      close together in that vector space. "Similar" is measured with a distance metric — usually cosine similarity
+      or dot product. This is the mechanism that lets retrieval find "the docs about X" without exact keyword
+      matches.
+    </p>
+
+    <h2>Context windows</h2>
+    <p>
+      The context window is the maximum number of tokens (input + output) a model call can hold. Everything a RAG
+      pipeline retrieves has to fit inside it, alongside the system prompt, the conversation history, and the
+      question itself — which is why chunking and retrieval quality (Module 35) matter more as context grows, not
+      less.
+    </p>
+
+    <h2>RAG vs. fine-tuning vs. long-context</h2>
+    <p>
+      Three ways to get a model to "know" your data: <strong>RAG</strong> (retrieve relevant chunks at query time and
+      put them in the prompt), <strong>fine-tuning</strong> (bake knowledge/behavior into model weights), and
+      <strong>long-context stuffing</strong> (paste everything into a huge context window). This curriculum is
+      RAG-first because it's the cheapest to keep fresh — swap the index, not the model — but the trade-offs are
+      revisited at every path level.
+    </p>
+
+    <h2>Try it in your flavor</h2>
+    <FlavorTabs moduleId={moduleId} entries={entries} />
+
+    <h2>Pitfalls</h2>
+    <ul>
+      <li>Confusing "similar embedding" with "relevant answer" — similarity is necessary, not sufficient.</li>
+      <li>Assuming a bigger context window removes the need for good retrieval — it just raises the cost of a bad one.</li>
+      <li>Picking a fine-tune when the real problem is stale or missing data (RAG fixes that; fine-tuning doesn't).</li>
+    </ul>
+  </article>
+</BaseLayout>

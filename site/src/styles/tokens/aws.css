@@ -1,0 +1,32 @@
+/* AWS flavor — "Console": dense, boxy, 2px radius, utilitarian */
+:root[data-cloud="aws"] {
+  --accent: #ff9900;
+  --accent-2: #ec7211;
+  --accent-text: #b25e00; /* darkened for 4.5:1 text/link contrast on white */
+  --radius: 2px;
+  --bg: #ffffff;
+  --code-bg: #161e2d;
+  --code-highlight: #ff9900;
+}
+
+:root[data-cloud="aws"][data-theme="dark"] {
+  --bg: #161e2d;
+  --bg-card: #1f2a3d;
+  --border: #2d3a52;
+  --accent-text: #ffb84d;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-cloud="aws"]:not([data-theme="light"]) {
+    --bg: #161e2d;
+    --bg-card: #1f2a3d;
+    --border: #2d3a52;
+    --accent-text: #ffb84d;
+  }
+}
+
+:root[data-cloud="aws"] .card,
+:root[data-cloud="aws"] .cloud-card {
+  border-radius: var(--radius);
+  box-shadow: none;
+}

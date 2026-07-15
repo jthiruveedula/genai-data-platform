@@ -1,0 +1,138 @@
+/* Primitive + semantic base tokens, shared across all cloud flavors.
+   Per-cloud files (aws.css/azure.css/gcp.css/oss.css) override the semantic
+   layer only — components must never reference a raw hex value. */
+
+:root {
+  /* primitive */
+  --p-white: #ffffff;
+  --p-near-white: #f9f9f9;
+  --p-card: #fdfdfd;
+  --p-border: #e8e8e8;
+  --p-gray-600: #727272;
+  --p-gray-900: #1a1a1a;
+  --p-radius: 6px;
+
+  /* semantic — neutral default (no cloud selected yet) */
+  --bg: var(--p-near-white);
+  --bg-card: var(--p-card);
+  --border: var(--p-border);
+  --text: var(--p-gray-900);
+  --text-secondary: var(--p-gray-600);
+  --accent: #6b6b6b;
+  --accent-2: #9a9a9a;
+  --accent-text: #4a4a4a;
+  --radius: var(--p-radius);
+  --code-bg: #1e1e1e;
+  --code-highlight: #444444;
+
+  /* typography */
+  --font-body: "IBM Plex Sans", system-ui, sans-serif;
+  --font-heading: "Inter", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  /* motion */
+  --duration-micro: 175ms;
+  --duration-theme: 250ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+:root[data-theme="dark"] {
+  --bg: #14161a;
+  --bg-card: #1b1e24;
+  --border: #2a2d34;
+  --text: #f1f1f1;
+  --text-secondary: #a3a3a3;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #14161a;
+    --bg-card: #1b1e24;
+    --border: #2a2d34;
+    --text: #f1f1f1;
+    --text-secondary: #a3a3a3;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  transition:
+    background-color var(--duration-theme) var(--ease-out),
+    color var(--duration-theme) var(--ease-out),
+    border-color var(--duration-theme) var(--ease-out);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition-duration: 0ms !important;
+    animation-duration: 0ms !important;
+  }
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-heading);
+  line-height: 1.15;
+}
+
+code,
+pre,
+.mono {
+  font-family: var(--font-mono);
+}
+
+a {
+  color: var(--accent-text, var(--accent));
+}
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  background: var(--bg-card);
+  color: var(--text);
+  padding: 0.5rem 1rem;
+  z-index: 100;
+}
+
+.skip-link:focus {
+  left: 0.5rem;
+  top: 0.5rem;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  padding: 0.15rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+}
+
+.chip--accent {
+  border-color: var(--accent);
+  color: var(--accent-text, var(--accent));
+}

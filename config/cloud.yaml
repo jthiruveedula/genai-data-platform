@@ -1,0 +1,19 @@
+# Select the target cloud flavor for repo-level tooling (IaC, pipelines,
+# default LLM/vector configs). The site itself lets learners switch flavors
+# independently in the browser — this file only affects `infra/` and the
+# per-cloud subfolders under ingestion/, parsing/, embeddings/, etc.
+cloud: oss # gcp | aws | azure | oss
+
+region: us-central1 # gcp region / aws region / azure region — ignored for oss
+project_id: "" # gcp project id
+account_id: "" # aws account id
+subscription_id: "" # azure subscription id
+
+feature_flags:
+  use_document_ai_ocr: false
+  use_managed_vector_db: false
+  use_managed_rag_engine: false
+  use_hybrid_search: true
+  use_reranker: false
+  enable_guardrails: true
+  enable_cost_dashboard: true

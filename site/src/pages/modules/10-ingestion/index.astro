@@ -1,0 +1,52 @@
+---
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import FlavorTabs from "../../../components/FlavorTabs.astro";
+import { flavor as gcp } from "../../../data/flavors/gcp";
+import { flavor as aws } from "../../../data/flavors/aws";
+import { flavor as azure } from "../../../data/flavors/azure";
+import { flavor as oss } from "../../../data/flavors/oss";
+
+const moduleId = "10-ingestion";
+const entries = {
+  gcp: gcp[moduleId],
+  aws: aws[moduleId],
+  azure: azure[moduleId],
+  oss: oss[moduleId],
+};
+---
+
+<BaseLayout title="10 · Ingestion">
+  <article>
+    <p class="chip">Module 10 · Beginner</p>
+    <h1>Ingestion</h1>
+    <p>
+      Every pipeline starts the same way regardless of cloud: get raw content — documents, tickets, chats, web pages
+      — into durable object storage, then register enough metadata (source, filename, ingested-at, checksum) in a
+      table so later stages can find it and avoid re-processing duplicates.
+    </p>
+
+    <h2>Why object storage first, not straight to a vector DB</h2>
+    <p>
+      Parsing, OCR, and chunking strategies all change over time — you will re-run them. Keeping the original raw
+      file in cheap object storage means every downstream stage is replayable from source, instead of being a
+      one-way trip into an index you can't reconstruct.
+    </p>
+
+    <h2>Idempotency</h2>
+    <p>
+      Re-running an ingestion job on the same source must not create duplicate rows. The minimal pattern: hash the
+      raw file, use the hash (or a stable source ID) as part of the storage key, and let a duplicate write short-circuit
+      with a "already ingested" outcome rather than silently doubling your document count.
+    </p>
+
+    <h2>Try it in your flavor</h2>
+    <FlavorTabs moduleId={moduleId} entries={entries} />
+
+    <h2>Pitfalls</h2>
+    <ul>
+      <li>Skipping metadata (source, timestamp, checksum) — you'll need it for dedup, ACLs, and debugging retrieval later.</li>
+      <li>Ingesting straight into a vector index with no raw-file copy — you lose the ability to re-chunk or re-embed later.</li>
+      <li>No idempotency check — re-running a job during development silently multiplies your document count.</li>
+    </ul>
+  </article>
+</BaseLayout>

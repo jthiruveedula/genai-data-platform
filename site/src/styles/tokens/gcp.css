@@ -1,0 +1,39 @@
+/* GCP flavor — "Material": 16px radius cards, elevation, pill buttons */
+:root[data-cloud="gcp"] {
+  --accent: #4285f4;
+  --accent-2: #ea4335;
+  --accent-3: #fbbc04;
+  --accent-4: #34a853;
+  --accent-text: #1a56c4;
+  --radius: 16px;
+  --bg: #ffffff;
+  --code-bg: #202124;
+  --code-highlight: #4285f4;
+}
+
+:root[data-cloud="gcp"][data-theme="dark"] {
+  --bg: #202124;
+  --bg-card: #292a2d;
+  --border: #3c4043;
+  --accent-text: #8ab4f8;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-cloud="gcp"]:not([data-theme="light"]) {
+    --bg: #202124;
+    --bg-card: #292a2d;
+    --border: #3c4043;
+    --accent-text: #8ab4f8;
+  }
+}
+
+:root[data-cloud="gcp"] .card,
+:root[data-cloud="gcp"] .cloud-card {
+  border-radius: var(--radius);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+:root[data-cloud="gcp"] button,
+:root[data-cloud="gcp"] .btn {
+  border-radius: 999px;
+}

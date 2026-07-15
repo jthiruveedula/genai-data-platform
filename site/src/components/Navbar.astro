@@ -1,0 +1,117 @@
+---
+import { CLOUDS } from "../data/modules";
+const base = import.meta.env.BASE_URL;
+---
+
+<header class="navbar">
+  <a class="brand" href={base}>GenAI Data Platform</a>
+
+  <div class="flavor-switch" role="group" aria-label="Choose cloud flavor">
+    {
+      CLOUDS.map((c) => (
+        <button type="button" class="flavor-btn" data-cloud-btn={c.id} aria-pressed="false" title={c.tagline}>
+          <img src={`${base}logos/${c.id}.svg`} alt="" width="20" height="20" />
+          <span>{c.label}</span>
+        </button>
+      ))
+    }
+  </div>
+
+  <button type="button" id="theme-toggle" class="theme-toggle" aria-label="Toggle dark mode">
+    <span aria-hidden="true">◐</span>
+  </button>
+</header>
+
+<script>
+  const root = document.documentElement;
+
+  function setCloud(id: string) {
+    root.setAttribute("data-cloud", id);
+    localStorage.setItem("gdp.cloud", id);
+    const url = new URL(location.href);
+    url.searchParams.set("cloud", id);
+    history.replaceState(null, "", url);
+    document.querySelectorAll<HTMLButtonElement>("[data-cloud-btn]").forEach((btn) => {
+      btn.setAttribute("aria-pressed", String(btn.dataset.cloudBtn === id));
+    });
+  }
+
+  document.querySelectorAll<HTMLButtonElement>("[data-cloud-btn]").forEach((btn) => {
+    btn.addEventListener("click", () => setCloud(btn.dataset.cloudBtn!));
+  });
+
+  const current = root.getAttribute("data-cloud");
+  if (current) setCloud(current);
+
+  document.getElementById("theme-toggle")?.addEventListener("click", () => {
+    const next = root.getAttribute("data-theme") === "dark" ? "light" : "dark";
+    root.setAttribute("data-theme", next);
+    localStorage.setItem("gdp.theme", next);
+  });
+</script>
+
+<style>
+  .navbar {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-card);
+  }
+
+  .brand {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    color: var(--text);
+    text-decoration: none;
+    margin-right: auto;
+  }
+
+  .flavor-switch {
+    display: flex;
+    gap: 0.25rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.2rem;
+  }
+
+  .flavor-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    background: transparent;
+    border: none;
+    border-radius: var(--radius);
+    padding: 0.35rem 0.6rem;
+    min-height: 32px;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: background-color var(--duration-micro) var(--ease-out);
+  }
+
+  .flavor-btn:hover {
+    background: var(--bg);
+  }
+
+  .flavor-btn[aria-pressed="true"] {
+    background: var(--bg);
+    color: var(--text);
+    box-shadow: inset 0 0 0 1.5px var(--accent);
+  }
+
+  .flavor-btn img {
+    border-radius: 4px;
+  }
+
+  .theme-toggle {
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    border-radius: var(--radius);
+    width: 36px;
+    height: 36px;
+    cursor: pointer;
+    color: var(--text);
+  }
+</style>
