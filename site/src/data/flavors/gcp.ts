@@ -36,4 +36,17 @@ export const flavor: Record<string, FlavorEntry> = {
     costNote: "~$0.05 for a handful of PDFs (Dataflow small batch + GCS/BigQuery storage).",
     claimId: "gcp-dataflow-ingestion",
   },
+  "15-chunking": {
+    services: ["Dataflow", "BigQuery"],
+    storage: "BigQuery (chunked rows with metadata)",
+    snippet: `# Recursive chunking with LangChain, run as a Dataflow ParDo\nfrom langchain_text_splitters import RecursiveCharacterTextSplitter\n\nsplitter = RecursiveCharacterTextSplitter(chunk_size=800, chunk_overlap=120)\nchunks = splitter.split_text(document_text)\n\n# Each chunk row: {doc_id, chunk_id, text, char_start, char_end}\n# written to \${PROJECT_ID}:gdp.chunks`,
+    labSteps: [
+      "Take the raw rows landed in Module 10's BigQuery table.",
+      "Run the recursive chunker at chunk_size=800, chunk_overlap=120.",
+      "Land chunk rows (doc_id, chunk_id, text, offsets) in a new BigQuery table.",
+      "Re-run with chunk_size=200 and compare: count chunks, spot orphaned mid-sentence splits.",
+    ],
+    costNote: "~$0.02 for a small Dataflow batch job over a handful of documents.",
+    claimId: "gcp-dataflow-chunking",
+  },
 };

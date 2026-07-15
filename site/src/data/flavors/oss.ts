@@ -28,4 +28,17 @@ export const flavor: Record<string, FlavorEntry> = {
     costNote: "$0 on a local kind cluster; ~compute cost only if run on cloud VMs.",
     claimId: "oss-airflow-ingestion",
   },
+  "15-chunking": {
+    services: ["Airflow", "Postgres"],
+    storage: "Postgres (chunked rows with metadata)",
+    snippet: `# Recursive chunking with LangChain, run as an Airflow task\nfrom langchain_text_splitters import RecursiveCharacterTextSplitter\n\nsplitter = RecursiveCharacterTextSplitter(chunk_size=800, chunk_overlap=120)\nchunks = splitter.split_text(document_text)\n\n# Each chunk row: (doc_id, chunk_id, text, char_start, char_end)\n# inserted into the chunks table via psycopg2`,
+    labSteps: [
+      "Take the raw rows landed in Module 10's Postgres table.",
+      "Run the recursive chunker at chunk_size=800, chunk_overlap=120 as an Airflow task.",
+      "Insert chunk rows (doc_id, chunk_id, text, offsets) into a new chunks table.",
+      "Re-run with chunk_size=200 and compare: count chunks, spot orphaned mid-sentence splits.",
+    ],
+    costNote: "$0 on a local kind cluster; negligible CPU for a handful of documents.",
+    claimId: "oss-airflow-chunking",
+  },
 };

@@ -33,4 +33,12 @@ export const MODULES: Module[] = [
     summary:
       "Pull data from docs, tickets, chats, DBs, and the web into object storage and tables — the first stage of the pipeline, and the one every later stage depends on.",
   },
+  {
+    id: "15-chunking",
+    order: 15,
+    title: "Chunking",
+    path: "beginner",
+    summary:
+      "Split ingested documents into retrievable pieces — fixed, recursive, semantic, or layout-aware — and see how chunk size and overlap choices show up later as retrieval quality.",
+  },
 ];
