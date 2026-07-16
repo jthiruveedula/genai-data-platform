@@ -7,6 +7,12 @@
   --bg: #ffffff;
   --code-bg: #161e2d;
   --code-highlight: #ff9900;
+
+  /* View-transition timing (redesign spec §3.3) — "Console": dense,
+     utilitarian, no-nonsense. A brisk, linear-ish cut reads as functional
+     rather than decorative. */
+  --vt-duration: 200ms;
+  --vt-ease: cubic-bezier(0.4, 0, 1, 1);
 }
 
 :root[data-cloud="aws"][data-theme="dark"] {

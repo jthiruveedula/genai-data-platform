@@ -1,0 +1,34 @@
+/* Per-cloud view-transition timing (redesign spec §3.3).
+   Astro's <ClientRouter /> drives a native browser
+   `document.startViewTransition()` on same-origin navigations, which exposes
+   the whole-page swap as the `::view-transition-old(root)` /
+   `::view-transition-new(root)` pseudo-elements. Rather than hardcode a single
+   duration/easing, we key the transition's `animation-duration` /
+   `animation-timing-function` off `--vt-duration` / `--vt-ease` — custom
+   properties defined once with sane defaults in base.css and overridden per
+   flavor in aws.css / azure.css / gcp.css / oss.css. Because these are plain
+   custom properties (not scoped to the pseudo-elements themselves), their
+   value is resolved from the *root* element's computed style — i.e. whatever
+   `data-cloud` is active on <html> at the moment the transition fires — so a
+   single rule below is enough; no per-cloud selector duplication needed here.
+
+   Cloud calibration (why these numbers):
+   - AWS "Console": 200ms, cubic-bezier(0.4,0,1,1) — dense/utilitarian, a
+     brisk near-linear cut so page swaps read as functional, not decorative.
+   - Azure "Fluent": 380ms, cubic-bezier(0.16,1,0.3,1) — acrylic/depth design
+     language, a longer gentle ease-out so the cross-fade feels like
+     translucent layers settling.
+   - GCP "Material": 320ms, cubic-bezier(0.4,0,0.2,1) — the Material Design
+     "standard" easing curve, slightly longer than the base default so
+     elevation/surface changes read as smooth material motion.
+   - OSS "Hacker": 150ms, linear — snappiest and sharpest of the four, no
+     easing curve at all, matching the terminal/scanline aesthetic.
+   - Default (no cloud selected yet): 240ms, cubic-bezier(0.4,0,0.2,1), see
+     base.css.
+*/
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: var(--vt-duration);
+  animation-timing-function: var(--vt-ease);
+}

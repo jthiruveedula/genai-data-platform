@@ -12,7 +12,9 @@ import "../styles/tokens/aws.css";
 import "../styles/tokens/azure.css";
 import "../styles/tokens/gcp.css";
 import "../styles/tokens/oss.css";
+import "../styles/tokens/transitions.css";
 import Navbar from "../components/Navbar.astro";
+import { ClientRouter } from "astro:transitions";
 
 interface Props {
   title: string;
@@ -29,6 +31,7 @@ const { title, description = "A multi-cloud & OSS learning suite for building Ge
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
     <link rel="icon" type="image/svg+xml" href={`${import.meta.env.BASE_URL}favicon.svg`} />
+    <ClientRouter />
     <title>{title} · GenAI Data Platform</title>
     <script is:inline>
       // Runs before paint to avoid a flash of the wrong theme/cloud.
@@ -44,6 +47,9 @@ const { title, description = "A multi-cloud & OSS learning suite for building Ge
   </head>
   <body>
     <a class="skip-link" href="#main">Skip to content</a>
+    <div class="reading-progress" role="progressbar" aria-hidden="true" aria-label="Reading progress">
+      <div class="reading-progress__bar" data-reading-progress-bar></div>
+    </div>
     <Navbar />
     <main id="main">
       <slot />
@@ -51,7 +57,22 @@ const { title, description = "A multi-cloud & OSS learning suite for building Ge
     <script>
       import { gsap } from "gsap";
       import { ScrollTrigger } from "gsap/ScrollTrigger";
+
       gsap.registerPlugin(ScrollTrigger);
+
+      // Astro's ClientRouter (astro:transitions) swaps the DOM in place on
+      // same-origin navigations rather than doing a full page reload, so this
+      // module script (unchanged between pages using the same layout) is not
+      // re-executed on navigation — only `astro:page-load` fires again. Any
+      // ScrollTriggers created against the *outgoing* page's DOM nodes must be
+      // killed before we re-run setup against the *incoming* page's DOM, or
+      // they leak (dead triggers pointing at detached elements, duplicate
+      // triggers on nodes reused at the same scroll position) — this is the
+      // GSAP context leak the redesign spec calls out in §8. We scope
+      // everything created here under one gsap.context() and revert() it on
+      // `astro:after-swap`, which fires after the new document has replaced
+      // the old one but before `astro:page-load` runs setup again.
+      let ctx: gsap.Context | undefined;
 
       // NOTE: gsap.matchMedia().add({name: query}, callback) only invokes the
       // callback when the named condition currently evaluates true — for
@@ -59,29 +80,78 @@ const { title, description = "A multi-cloud & OSS learning suite for building Ge
       // condition silently never fires its callback (verified against gsap
       // 3.15.0). That meant this entire scroll-reveal setup never ran for
       // typical visitors. Using a plain matchMedia boolean check instead.
-      if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-        gsap.utils.toArray<HTMLElement>("article > *").forEach((el) => {
-          gsap.from(el, {
-            autoAlpha: 0,
-            y: 16,
-            duration: 0.5,
-            ease: "power2.out",
-            scrollTrigger: { trigger: el, start: "top 90%", once: true },
-          });
-        });
+      function setupScrollEffects() {
+        ctx?.revert();
+        ctx = gsap.context(() => {
+          const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+          const progressBar = document.querySelector<HTMLElement>("[data-reading-progress-bar]");
+          const article = document.querySelector<HTMLElement>("article");
 
-        const moduleListItems = gsap.utils.toArray<HTMLElement>(".module-list li");
-        if (moduleListItems.length) {
-          gsap.from(moduleListItems, {
-            autoAlpha: 0,
-            y: 12,
-            duration: 0.4,
-            ease: "power2.out",
-            stagger: 0.08,
-            scrollTrigger: { trigger: ".module-list", start: "top 85%", once: true },
+          if (progressBar) {
+            if (article && !reducedMotion) {
+              // Scroll-scrubbed reading-progress indicator (redesign spec
+              // §3.4): fills 0% -> 100% as the reader scrolls through the
+              // module's <article>, driven by ScrollTrigger scrub (tied
+              // directly to scroll position, not a separate tween/timeline).
+              gsap.set(progressBar, { scaleX: 0 });
+              gsap.to(progressBar, {
+                scaleX: 1,
+                ease: "none",
+                scrollTrigger: {
+                  trigger: article,
+                  start: "top top",
+                  end: "bottom bottom",
+                  scrub: true,
+                },
+              });
+            } else if (article) {
+              // Reduced-motion: no scrub animation, just an instant/static
+              // reflection of progress with no smoothing or motion.
+              gsap.set(progressBar, { scaleX: 0 });
+              ScrollTrigger.create({
+                trigger: article,
+                start: "top top",
+                end: "bottom bottom",
+                onUpdate: (self) => gsap.set(progressBar, { scaleX: self.progress }),
+              });
+            } else {
+              // No article on this page (e.g. the homepage) — hide the bar.
+              gsap.set(progressBar, { scaleX: 0 });
+            }
+          }
+
+          if (reducedMotion) return;
+
+          gsap.utils.toArray<HTMLElement>("article > *").forEach((el) => {
+            gsap.from(el, {
+              autoAlpha: 0,
+              y: 16,
+              duration: 0.5,
+              ease: "power2.out",
+              scrollTrigger: { trigger: el, start: "top 90%", once: true },
+            });
           });
-        }
+
+          const moduleListItems = gsap.utils.toArray<HTMLElement>(".module-list li");
+          if (moduleListItems.length) {
+            gsap.from(moduleListItems, {
+              autoAlpha: 0,
+              y: 12,
+              duration: 0.4,
+              ease: "power2.out",
+              stagger: 0.08,
+              scrollTrigger: { trigger: ".module-list", start: "top 85%", once: true },
+            });
+          }
+        });
       }
+
+      setupScrollEffects();
+      document.addEventListener("astro:page-load", setupScrollEffects);
+      document.addEventListener("astro:after-swap", () => {
+        ctx?.revert();
+        ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
+      });
     </script>
     <footer class="site-footer">
       <p>
@@ -90,6 +160,28 @@ const { title, description = "A multi-cloud & OSS learning suite for building Ge
       </p>
     </footer>
     <style>
+      .reading-progress {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 3px;
+        z-index: 100;
+        background: transparent;
+        pointer-events: none;
+      }
+      .reading-progress__bar {
+        height: 100%;
+        width: 100%;
+        transform-origin: left center;
+        transform: scaleX(0);
+        background: var(--accent, #6366f1);
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .reading-progress__bar {
+          transition: none;
+        }
+      }
       .site-footer {
         border-top: 1px solid var(--border);
         margin-top: 4rem;

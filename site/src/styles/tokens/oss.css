@@ -8,6 +8,12 @@
   --font-heading: "JetBrains Mono", ui-monospace, monospace;
   --code-bg: #0d1117;
   --code-highlight: #22c55e;
+
+  /* View-transition timing (redesign spec §3.3) — "Hacker": snappiest and
+     sharpest of the four flavors, no easing curve at all, matching the
+     terminal/scanline aesthetic. */
+  --vt-duration: 150ms;
+  --vt-ease: linear;
 }
 
 :root[data-cloud="oss"][data-theme="dark"] {
