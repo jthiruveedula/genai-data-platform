@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - "site/**"
+      - "validation/**"
       - ".github/workflows/ci.yml"
 
 jobs:
@@ -23,3 +24,5 @@ jobs:
       - name: Build
         working-directory: site
         run: npm run build
+      - name: Check claim registry coverage
+        run: node validation/check-registry.mjs

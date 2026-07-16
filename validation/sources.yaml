@@ -63,3 +63,31 @@ claims:
     sources: []
     volatility: low
     verified_on: null
+
+  - id: gcp-dataflow-chunking
+    used_by: site/src/data/flavors/gcp.ts#15-chunking
+    claim: "Dataflow ParDo jobs are a supported way to run recursive chunking and land chunk rows into BigQuery"
+    sources: []
+    volatility: low
+    verified_on: null
+
+  - id: aws-lambda-chunking
+    used_by: site/src/data/flavors/aws.ts#15-chunking
+    claim: "Lambda functions are a supported way to run recursive chunking and write chunk JSON to S3"
+    sources: []
+    volatility: low
+    verified_on: null
+
+  - id: azure-functions-chunking
+    used_by: site/src/data/flavors/azure.ts#15-chunking
+    claim: "Azure Functions are a supported way to run recursive chunking and land chunk rows into Azure SQL"
+    sources: []
+    volatility: low
+    verified_on: null
+
+  - id: oss-airflow-chunking
+    used_by: site/src/data/flavors/oss.ts#15-chunking
+    claim: "Airflow tasks are a supported way to run recursive chunking and insert chunk rows into Postgres"
+    sources: []
+    volatility: low
+    verified_on: null
