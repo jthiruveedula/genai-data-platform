@@ -1,10 +1,27 @@
 ---
 import { CLOUDS } from "../data/modules";
 const base = import.meta.env.BASE_URL;
+const PIPELINE = ["INGEST", "PARSE", "CHUNK", "EMBED", "RETRIEVE", "ANSWER"];
 ---
 
 <section class="selector-hero" aria-labelledby="selector-heading">
-  <h1 id="selector-heading">Build a GenAI data platform — on your cloud.</h1>
+  <div class="pipeline" aria-hidden="true">
+    {
+      PIPELINE.map((stage, i) => (
+        <>
+          <span class="chip pipeline-chip" data-stage={stage}>
+            {stage}
+          </span>
+          {i < PIPELINE.length - 1 && <span class="pipeline-arrow">→</span>}
+        </>
+      ))
+    }
+  </div>
+  <p class="pipeline-caption">Every document on this site travels this exact path — pick a cloud to see it with your services.</p>
+
+  <h1 id="selector-heading" data-scramble="Build a GenAI data platform — on your cloud.">
+    Build a GenAI data platform — on your cloud.
+  </h1>
   <p class="lede">
     One curriculum. Four flavors. Pick a platform and the whole site — code, diagrams, and cost estimates — adapts.
   </p>
@@ -23,10 +40,84 @@ const base = import.meta.env.BASE_URL;
 </section>
 
 <script>
+  import { gsap } from "gsap";
+
   document.querySelectorAll<HTMLButtonElement>("[data-select-hero]").forEach((card) => {
     card.addEventListener("click", () => {
       document.querySelector<HTMLButtonElement>(`[data-cloud-btn="${card.dataset.cloudBtn}"]:not([data-select-hero])`)?.click();
     });
+  });
+
+  const SCRAMBLE_CHARS = "!<>-_\\/[]{}—=+*^?#";
+
+  function scrambleIn(el: HTMLElement, finalText: string, duration = 1.1) {
+    const state = { progress: 0 };
+    gsap.to(state, {
+      progress: 1,
+      duration,
+      ease: "power1.out",
+      onUpdate() {
+        const revealCount = Math.floor(state.progress * finalText.length);
+        let out = "";
+        for (let i = 0; i < finalText.length; i++) {
+          if (i < revealCount || finalText[i] === " ") out += finalText[i];
+          else out += SCRAMBLE_CHARS[(Math.random() * SCRAMBLE_CHARS.length) | 0];
+        }
+        el.textContent = out;
+      },
+      onComplete() {
+        el.textContent = finalText;
+      },
+    });
+  }
+
+  const mm = gsap.matchMedia();
+
+  mm.add({ reduceMotion: "(prefers-reduced-motion: reduce)" }, (context) => {
+    const { reduceMotion } = context.conditions as { reduceMotion: boolean };
+    const heading = document.querySelector<HTMLElement>("[data-scramble]");
+    const chips = gsap.utils.toArray<HTMLElement>(".pipeline-chip");
+    const cards = gsap.utils.toArray<HTMLElement>(".cloud-card");
+
+    if (reduceMotion) {
+      chips.forEach((c) => c.classList.add("chip--accent"));
+      return;
+    }
+
+    if (heading) {
+      const finalText = heading.dataset.scramble || heading.textContent || "";
+      scrambleIn(heading, finalText);
+    }
+
+    const tl = gsap.timeline({ delay: 0.15 });
+    chips.forEach((chip, i) => {
+      tl.fromTo(
+        chip,
+        { autoAlpha: 0, y: 6, scale: 0.92 },
+        {
+          autoAlpha: 1,
+          y: 0,
+          scale: 1,
+          duration: 0.3,
+          ease: "back.out(2)",
+          onStart: () => chip.classList.add("chip--accent"),
+        },
+        i * 0.28,
+      );
+    });
+
+    gsap.from(cards, {
+      autoAlpha: 0,
+      y: 16,
+      duration: 0.5,
+      ease: "power2.out",
+      stagger: 0.06,
+      delay: 0.3,
+    });
+
+    return () => {
+      chips.forEach((c) => c.classList.remove("chip--accent"));
+    };
   });
 </script>
 
@@ -36,9 +127,35 @@ const base = import.meta.env.BASE_URL;
     text-align: center;
   }
 
+  .pipeline {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-bottom: 0.6rem;
+  }
+
+  .pipeline-chip {
+    font-size: 0.7rem;
+  }
+
+  .pipeline-arrow {
+    color: var(--border);
+    font-family: var(--font-mono);
+  }
+
+  .pipeline-caption {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin: 0 0 1.75rem;
+  }
+
   .selector-hero h1 {
     font-size: clamp(1.75rem, 4vw, 2.75rem);
     margin-bottom: 0.5rem;
+    min-height: 1.2em;
   }
 
   .lede {
@@ -64,12 +181,13 @@ const base = import.meta.env.BASE_URL;
     padding: 1.5rem 1rem;
     min-height: 44px;
     cursor: pointer;
-    transition: transform var(--duration-micro) var(--ease-out), box-shadow var(--duration-micro) var(--ease-out);
+    transition: transform var(--duration-micro) var(--ease-out), box-shadow var(--duration-micro) var(--ease-out), border-color var(--duration-micro) var(--ease-out);
   }
 
-  .cloud-card:hover {
+  .cloud-card:hover,
+  .cloud-card:focus-visible {
     transform: translateY(-3px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 0 0 1px var(--accent), 0 8px 24px rgba(0, 0, 0, 0.08);
     border-color: var(--accent);
   }
 
