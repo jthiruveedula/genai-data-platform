@@ -1,0 +1,200 @@
+---
+/* Tabs.astro — generic, reusable ARIA tablist/tabpanel primitive (redesign
+   spec section 4.2). This is NOT a replacement for FlavorTabs.astro, which
+   has bespoke cross-cloud-selector sync logic specific to this site's
+   flavor-switching (left untouched). Tabs.astro replicates the same roving
+   -tabindex + arrow-key accessibility pattern implemented in
+   FlavorTabs.astro's <script>, but generically: content per tab comes from
+   named slots (one per tab id) instead of a cloud-specific data model.
+
+   Usage:
+     <Tabs tabs={[{ id: 'a', label: 'A' }, { id: 'b', label: 'B' }]}>
+       <Fragment slot="a">Panel A content</Fragment>
+       <Fragment slot="b">Panel B content</Fragment>
+     </Tabs> */
+import { cva, type VariantProps } from 'class-variance-authority';
+import { cn } from '../../lib/utils';
+
+export const tabsVariants = cva('tabs', {
+  variants: {
+    variant: {
+      line: 'tabs--line',
+      enclosed: 'tabs--enclosed',
+      soft: 'tabs--soft',
+    },
+  },
+  defaultVariants: {
+    variant: 'line',
+  },
+});
+
+type TabsVariants = VariantProps<typeof tabsVariants>;
+
+interface Tab {
+  id: string;
+  label: string;
+}
+
+interface Props {
+  tabs: Tab[];
+  variant?: TabsVariants['variant'];
+  class?: string;
+  /** Optional stable id prefix; auto-generated if omitted (keeps multiple
+   * <Tabs> instances on one page from colliding on element ids). */
+  id?: string;
+}
+
+const { tabs, variant = 'line', class: className, id } = Astro.props;
+
+const groupId = id ?? `tabs-${Math.random().toString(36).slice(2, 9)}`;
+const classes = cn(tabsVariants({ variant }), className);
+---
+
+<div class:list={[classes]} data-tabs-group={groupId}>
+  <div class="tabs__list" role="tablist" aria-label="Tabs">
+    {
+      tabs.map((tab, i) => (
+        <button
+          type="button"
+          role="tab"
+          id={`${groupId}-tab-${tab.id}`}
+          aria-controls={`${groupId}-panel-${tab.id}`}
+          aria-selected={i === 0 ? 'true' : 'false'}
+          data-tab-id={tab.id}
+          class="tabs__trigger"
+          tabindex={i === 0 ? 0 : -1}
+        >
+          {tab.label}
+        </button>
+      ))
+    }
+  </div>
+
+  {
+    tabs.map((tab, i) => (
+      <div
+        role="tabpanel"
+        id={`${groupId}-panel-${tab.id}`}
+        aria-labelledby={`${groupId}-tab-${tab.id}`}
+        data-panel-id={tab.id}
+        class="tabs__panel"
+        hidden={i !== 0}
+      >
+        <slot name={tab.id} />
+      </div>
+    ))
+  }
+</div>
+
+<script>
+  function activate(container: Element, tabId: string) {
+    container.querySelectorAll<HTMLButtonElement>('[data-tab-id]').forEach((tab) => {
+      const active = tab.dataset.tabId === tabId;
+      tab.setAttribute('aria-selected', String(active));
+      tab.tabIndex = active ? 0 : -1;
+    });
+    container.querySelectorAll<HTMLElement>('[data-panel-id]').forEach((panel) => {
+      panel.hidden = panel.dataset.panelId !== tabId;
+    });
+  }
+
+  document.querySelectorAll<HTMLElement>('[data-tabs-group]').forEach((container) => {
+    const tabs = container.querySelectorAll<HTMLButtonElement>('[data-tab-id]');
+    tabs.forEach((tab, i, all) => {
+      tab.addEventListener('click', () => activate(container, tab.dataset.tabId!));
+      tab.addEventListener('keydown', (e) => {
+        if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft' && e.key !== 'Home' && e.key !== 'End') return;
+        e.preventDefault();
+        let next: HTMLButtonElement;
+        if (e.key === 'Home') next = all[0];
+        else if (e.key === 'End') next = all[all.length - 1];
+        else {
+          const dir = e.key === 'ArrowRight' ? 1 : -1;
+          next = all[(i + dir + all.length) % all.length];
+        }
+        next.focus();
+        activate(container, next.dataset.tabId!);
+      });
+    });
+  });
+</script>
+
+<style>
+  .tabs__list {
+    display: flex;
+    gap: var(--tab-gap, 0.25rem);
+  }
+
+  .tabs__trigger {
+    background: transparent;
+    border: none;
+    padding: 0.5rem 0.9rem;
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition:
+      color var(--duration-micro) var(--ease-out),
+      background-color var(--duration-micro) var(--ease-out),
+      border-color var(--duration-micro) var(--ease-out);
+  }
+
+  .tabs__trigger:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  .tabs__panel {
+    padding-top: 1rem;
+  }
+
+  /* line variant — underline indicator (FlavorTabs.astro convention) */
+  .tabs--line .tabs__list {
+    border-bottom: 1px solid var(--border);
+  }
+
+  .tabs--line .tabs__trigger {
+    border-bottom: var(--tab-indicator-height, 2px) solid transparent;
+    margin-bottom: -1px;
+  }
+
+  .tabs--line .tabs__trigger[aria-selected='true'] {
+    color: var(--text);
+    border-bottom-color: var(--accent);
+  }
+
+  /* enclosed variant — bordered pill-like triggers, active tab merges with panel */
+  .tabs--enclosed .tabs__list {
+    border-bottom: 1px solid var(--border);
+  }
+
+  .tabs--enclosed .tabs__trigger {
+    border: 1px solid transparent;
+    border-bottom: none;
+    border-top-left-radius: var(--radius);
+    border-top-right-radius: var(--radius);
+  }
+
+  .tabs--enclosed .tabs__trigger[aria-selected='true'] {
+    color: var(--text);
+    background: var(--bg-card);
+    border-color: var(--border);
+  }
+
+  /* soft variant — pill-shaped triggers on a subtle track */
+  .tabs--soft .tabs__list {
+    background: var(--bg);
+    border-radius: var(--radius);
+    padding: 0.2rem;
+  }
+
+  .tabs--soft .tabs__trigger {
+    border-radius: var(--radius);
+  }
+
+  .tabs--soft .tabs__trigger[aria-selected='true'] {
+    color: var(--text);
+    background: var(--bg-card);
+    box-shadow: inset 0 0 0 1.5px var(--accent);
+  }
+</style>

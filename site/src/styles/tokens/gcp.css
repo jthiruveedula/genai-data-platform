@@ -37,3 +37,13 @@
 :root[data-cloud="gcp"] .btn {
   border-radius: 999px;
 }
+
+/* Component-token equivalent of the rule above (redesign spec §4.1). Left
+   both in place rather than replacing: no component currently reads
+   --btn-radius (that migration happens in a separate workstream), so
+   deleting the direct `button, .btn` rule would silently drop GCP's pill
+   buttons. This override is forward-looking prep for when components move
+   to var(--btn-radius). */
+:root[data-cloud="gcp"] {
+  --btn-radius: 999px;
+}

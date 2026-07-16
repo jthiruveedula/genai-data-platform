@@ -1,0 +1,46 @@
+/* Component-token layer (redesign spec §4.1).
+   These sit between the semantic layer (base.css) and the cloud overrides —
+   imported after base.css, before aws/azure/gcp/oss.css, so a cloud file can
+   still override a component token at the semantic layer if it wants a
+   different button/card/tab treatment for its flavor.
+
+   Defaults below were extracted from the *actual* hardcoded values already
+   in Navbar.astro, CloudSelector.astro, and FlavorTabs.astro so that adding
+   this file changes nothing visually — no component consumes these custom
+   properties yet (that migration is a separate workstream). Where a value
+   has no existing precedent in the codebase (e.g. text --input-height,
+   since the only input today is a native <input type="range">), a
+   conventional default is used instead and called out below. */
+
+:root {
+  /* Buttons — reproduces Navbar.astro .flavor-btn (padding, radius) and
+     .theme-toggle (height, radius). Neither sets an explicit font-weight,
+     so buttons inherit the body's normal weight today. */
+  --btn-padding-y: 0.35rem; /* .flavor-btn padding: 0.35rem 0.6rem */
+  --btn-padding-x: 0.6rem;
+  --btn-height: 36px; /* .theme-toggle width/height: 36px */
+  --btn-radius: var(--radius);
+  --btn-font-weight: 400;
+
+  /* Cards — reproduces CloudSelector.astro .cloud-card padding; radius is
+     already var(--radius) everywhere .card/.cloud-card appear (see
+     aws/azure/gcp/oss.css). Shadow defaults to none: AWS and OSS explicitly
+     set `box-shadow: none` on .card/.cloud-card today, Azure adds a soft
+     blur shadow, GCP adds an elevation shadow — those cloud files continue
+     to set box-shadow directly and are not required to route through this
+     token for this refactor. */
+  --card-padding: 1.5rem 1rem; /* .cloud-card padding: 1.5rem 1rem */
+  --card-shadow: none;
+  --card-border-width: 1px; /* .cloud-card / .result-card border: 1px solid */
+
+  /* Inputs — no existing text/number input in the codebase to source a
+     value from (CostCalculator.astro only uses native <input type="range">,
+     which has no explicit height today). 40px is a conventional control
+     height consistent with the --btn-height/--radius scale already in use. */
+  --input-height: 40px;
+
+  /* Tabs — reproduces FlavorTabs.astro .flavor-tabs button underline and
+     .flavor-tabs gap. */
+  --tab-indicator-height: 2px; /* border-bottom: 2px solid ... */
+  --tab-gap: 0.25rem; /* .flavor-tabs { gap: 0.25rem } */
+}
