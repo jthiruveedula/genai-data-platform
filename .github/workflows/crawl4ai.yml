@@ -1,0 +1,42 @@
+name: Crawl4AI pricing/docs watch
+
+# Phase 0 skeleton only (per redesign spec section 5.2: scrape -> extract ->
+# diff -> PR). No scraping logic is implemented yet — this just proves the
+# schedule + job shape exist for Phase 4 to fill in. Steps below are stubs.
+
+on:
+  schedule:
+    - cron: "0 2 * * *" # daily 02:00 UTC
+  workflow_dispatch: {} # allow manual runs while iterating in Phase 4
+
+jobs:
+  crawl-and-diff:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # - name: Set up Python + Crawl4AI
+      #   TODO(Phase 4): actions/setup-python@v5, pip install crawl4ai,
+      #   crawl4ai-setup / playwright install for its browser deps.
+
+      # - name: Scrape source pages
+      #   TODO(Phase 4): run Crawl4AI against the cloud pricing/docs pages
+      #   tracked in the claim registry (validation/) and write raw output
+      #   to a scratch directory (e.g. .crawl4ai/raw/).
+
+      # - name: Extract structured claims
+      #   TODO(Phase 4): parse scraped output into the claim-registry shape
+      #   (see validation/check-registry.mjs) — pricing figures, model
+      #   names, verified_on dates, etc.
+
+      # - name: Diff against current claim registry
+      #   TODO(Phase 4): compare extracted claims to site/src/data/*.ts and
+      #   validation/registry, producing a summary of what changed.
+
+      # - name: Open PR with updates
+      #   TODO(Phase 4): if a diff was found, commit the updated data files
+      #   and open a PR (e.g. via peter-evans/create-pull-request) for
+      #   human review — this workflow should never push to main directly.
+
+      - name: Placeholder (no-op)
+        run: echo "Crawl4AI workflow skeleton — scrape/extract/diff/PR steps land in Phase 4."

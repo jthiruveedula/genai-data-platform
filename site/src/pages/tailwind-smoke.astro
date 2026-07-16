@@ -1,0 +1,22 @@
+---
+// Phase 0 tooling smoke test — proves Tailwind v4 (@tailwindcss/vite) compiles
+// classes inside an Astro page. Throwaway; not linked from any nav.
+// Safe to delete once a later phase starts consuming Tailwind for real.
+import '../styles/tailwind.css';
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Tailwind smoke test</title>
+  </head>
+  <body class="bg-slate-900 text-slate-100 p-8 font-sans">
+    <h1 class="text-3xl font-bold underline decoration-emerald-400">
+      Tailwind v4 is compiling
+    </h1>
+    <p class="mt-4 rounded-lg bg-slate-800 px-4 py-2 text-sm text-slate-300">
+      If this box has padding, a rounded corner, and a dark background, Tailwind utility
+      classes made it through the Vite pipeline.
+    </p>
+  </body>
+</html>
