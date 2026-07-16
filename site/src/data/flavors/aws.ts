@@ -55,16 +55,16 @@ export const flavor: Record<string, FlavorEntry> = {
     claimId: "aws-titan-embeddings",
   },
   "25-serving": {
-    services: ["Lambda + API Gateway", "Bedrock (Claude)"],
+    services: ["Lambda + API Gateway", "Bedrock (Claude Haiku 4.5)"],
     storage: "N/A — reads the Module 20 OpenSearch index at request time",
-    snippet: `def handler(event, context):\n    query_vec = embed(event["question"])\n    neighbors = os_client.search(index="gdp-chunks", body={"knn": {"embedding": {"vector": query_vec, "k": 5}}})\n    prompt = build_prompt(event["question"], neighbors)\n    response = bedrock.invoke_model(modelId="anthropic.claude-3-5-haiku", body=json.dumps({"prompt": prompt}))\n    return {"answer": response, "citations": [n["chunk_id"] for n in neighbors]}`,
+    snippet: `def handler(event, context):\n    query_vec = embed(event["question"])\n    neighbors = os_client.search(index="gdp-chunks", body={"knn": {"embedding": {"vector": query_vec, "k": 5}}})\n    prompt = build_prompt(event["question"], neighbors)\n    response = bedrock.invoke_model(modelId="anthropic.claude-haiku-4-5", body=json.dumps({"prompt": prompt}))\n    return {"answer": response, "citations": [n["chunk_id"] for n in neighbors]}`,
     labSteps: [
-      "Deploy a Lambda behind API Gateway wrapping embed -> retrieve -> prompt -> Claude on Bedrock.",
+      "Deploy a Lambda behind API Gateway wrapping embed -> retrieve -> prompt -> Claude Haiku 4.5 on Bedrock.",
       "Ask a question your Module 10 documents can answer; confirm the response cites a real chunk.",
       "Ask an out-of-scope question; confirm the model says it doesn't know instead of guessing.",
       "Log every request/response pair — this becomes the event log Module 30 builds dashboards on.",
     ],
-    costNote: "~$0.01 per query (Claude fast tier) + negligible Lambda/API Gateway cost at low volume.",
+    costNote: "~$0.01 per query (Claude Haiku 4.5 fast tier) + negligible Lambda/API Gateway cost at low volume.",
     claimId: "aws-lambda-rag-api",
   },
   "35-retrieval": {

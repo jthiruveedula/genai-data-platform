@@ -57,7 +57,7 @@ export const flavor: Record<string, FlavorEntry> = {
   "25-serving": {
     services: ["FastAPI", "vLLM (open-weight model)"],
     storage: "N/A — reads the Module 20 Qdrant collection at request time",
-    snippet: `@app.post("/ask")\nasync def ask(q: Question):\n    query_vec = embed(q.text)\n    neighbors = client.query_points(collection_name="gdp_chunks", query=query_vec, limit=5)\n    prompt = build_prompt(q.text, neighbors.points)\n    response = await vllm_client.chat.completions.create(model="Qwen2.5-7B-Instruct", messages=prompt)\n    return {"answer": response, "citations": [n.id for n in neighbors.points]}`,
+    snippet: `@app.post("/ask")\nasync def ask(q: Question):\n    query_vec = embed(q.text)\n    neighbors = client.query_points(collection_name="gdp_chunks", query=query_vec, limit=5)\n    prompt = build_prompt(q.text, neighbors.points)\n    response = await vllm_client.chat.completions.create(model="Qwen3-8B-Instruct", messages=prompt)\n    return {"answer": response, "citations": [n.id for n in neighbors.points]}`,
     labSteps: [
       "Deploy a FastAPI app on K8s wrapping embed -> retrieve -> prompt -> vLLM-served model.",
       "Ask a question your Module 10 documents can answer; confirm the response cites a real chunk.",

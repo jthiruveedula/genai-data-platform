@@ -1,0 +1,9 @@
+/*
+ * Phase 0 scaffold only.
+ * Tailwind v4 CSS-first entrypoint (via @tailwindcss/vite).
+ * Not wired into any existing layout/page — imported only by the
+ * throwaway smoke-test page at src/pages/_tailwind-smoke.astro to
+ * prove the pipeline compiles. Later phases decide how (and whether)
+ * Tailwind gets applied to real components.
+ */
+@import 'tailwindcss';
