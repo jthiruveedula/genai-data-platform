@@ -1,0 +1,59 @@
+---
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import FlavorTabs from "../../../components/FlavorTabs.astro";
+import { flavor as gcp } from "../../../data/flavors/gcp";
+import { flavor as aws } from "../../../data/flavors/aws";
+import { flavor as azure } from "../../../data/flavors/azure";
+import { flavor as oss } from "../../../data/flavors/oss";
+
+const moduleId = "15-chunking";
+const entries = {
+  gcp: gcp[moduleId],
+  aws: aws[moduleId],
+  azure: azure[moduleId],
+  oss: oss[moduleId],
+};
+---
+
+<BaseLayout title="15 · Chunking">
+  <article>
+    <p class="chip">Module 15 · Beginner</p>
+    <h1>Chunking</h1>
+    <p>
+      A raw document is too big and too unstructured to embed as a single unit. Chunking splits it into smaller
+      pieces that are each small enough to embed meaningfully and retrieve independently — but where you cut
+      matters as much as how small the pieces are.
+    </p>
+
+    <h2>Fixed vs. recursive vs. semantic vs. layout-aware</h2>
+    <p>
+      <strong>Fixed-size</strong> chunking cuts every N characters/tokens regardless of content — simple, but it
+      slices sentences and tables in half. <strong>Recursive</strong> chunking tries a sequence of separators
+      (paragraph, then sentence, then word) so it prefers natural breaks while still respecting a size limit — the
+      practical default. <strong>Semantic</strong> chunking uses embedding similarity between adjacent sentences to
+      find natural topic boundaries rather than a size limit at all. <strong>Layout-aware</strong> chunking (needed
+      for PDFs with tables/columns) uses the document's visual structure — from Module 10's OCR/parsing stage — so a
+      table row doesn't get split from its header.
+    </p>
+
+    <h2>Chunk size and overlap</h2>
+    <p>
+      Too small, and a chunk loses the surrounding context a question needs ("orphaned context"). Too large, and
+      irrelevant text dilutes the embedding, making retrieval less precise, and you waste context-window budget at
+      query time. <strong>Overlap</strong> (repeating the tail of one chunk at the start of the next) reduces the
+      chance that a key sentence gets split exactly at a chunk boundary — at the cost of some storage and embedding
+      redundancy.
+    </p>
+
+    <h2>Try it in your flavor</h2>
+    <FlavorTabs moduleId={moduleId} entries={entries} />
+
+    <h2>Pitfalls</h2>
+    <ul>
+      <li>Picking one chunk size for every document type — a support ticket and a 200-page PDF don't want the same size.</li>
+      <li>Zero overlap — a sentence that carries the answer gets cut exactly at a chunk boundary and neither half retrieves well.</li>
+      <li>Chunking before parsing/OCR is done — you'll split mid-table or mid-figure-caption and lose the layout signal that would have prevented it.</li>
+      <li>Never revisiting chunk size after looking at real retrieval failures — chunking strategy should be evaluated (Module 45), not set once and forgotten.</li>
+    </ul>
+  </article>
+</BaseLayout>

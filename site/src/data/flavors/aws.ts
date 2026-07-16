@@ -28,4 +28,17 @@ export const flavor: Record<string, FlavorEntry> = {
     costNote: "~$0.05 for a handful of PDFs (S3 storage + one Glue crawler run + Athena scan).",
     claimId: "aws-glue-ingestion",
   },
+  "15-chunking": {
+    services: ["Lambda", "Athena"],
+    storage: "S3 (chunked JSON) + Athena (queryable)",
+    snippet: `# Recursive chunking with LangChain, run in a Lambda\nfrom langchain_text_splitters import RecursiveCharacterTextSplitter\n\nsplitter = RecursiveCharacterTextSplitter(chunk_size=800, chunk_overlap=120)\nchunks = splitter.split_text(document_text)\n\n# Each chunk written as JSON to\n# s3://\${ACCOUNT_ID}-gdp-raw/chunks/{doc_id}/{chunk_id}.json`,
+    labSteps: [
+      "Take the raw rows cataloged in Module 10's Glue table.",
+      "Run the recursive chunker at chunk_size=800, chunk_overlap=120 in a Lambda.",
+      "Write chunk JSON (doc_id, chunk_id, text, offsets) back to S3 and re-crawl with Glue.",
+      "Re-run with chunk_size=200 and compare via Athena: count chunks, spot orphaned mid-sentence splits.",
+    ],
+    costNote: "~$0.02 for a handful of Lambda invocations + Athena scan.",
+    claimId: "aws-lambda-chunking",
+  },
 };
