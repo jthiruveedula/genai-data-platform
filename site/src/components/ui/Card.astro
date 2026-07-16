@@ -1,0 +1,64 @@
+---
+// Card.astro — Radix-primitive-inspired card container, ported to Astro per
+// the redesign spec (section 4.2). Cloud-adaptive via component/semantic
+// CSS custom properties — border radius follows the site convention
+// (var(--radius), already cloud-adaptive per aws/azure/gcp/oss.css).
+import { cva, type VariantProps } from 'class-variance-authority';
+import { cn } from '../../lib/utils';
+
+export const cardVariants = cva('card', {
+  variants: {
+    variant: {
+      default: 'card--default',
+      elevated: 'card--elevated',
+      outlined: 'card--outlined',
+    },
+  },
+  defaultVariants: {
+    variant: 'default',
+  },
+});
+
+type CardVariants = VariantProps<typeof cardVariants>;
+
+interface Props {
+  variant?: CardVariants['variant'];
+  class?: string;
+}
+
+const { variant = 'default', class: className } = Astro.props;
+
+const classes = cn(cardVariants({ variant }), className);
+---
+
+<div class:list={[classes]}>
+  <slot />
+</div>
+
+<style>
+  .card {
+    background: var(--bg-card);
+    border-radius: var(--radius);
+    padding: var(--card-padding, 1.5rem 1rem);
+    transition:
+      box-shadow var(--duration-micro) var(--ease-out),
+      border-color var(--duration-micro) var(--ease-out),
+      transform var(--duration-micro) var(--ease-out);
+  }
+
+  .card--default {
+    border: var(--card-border-width, 1px) solid var(--border);
+    box-shadow: var(--card-shadow, none);
+  }
+
+  .card--elevated {
+    border: var(--card-border-width, 1px) solid transparent;
+    box-shadow: var(--card-shadow, 0 4px 16px rgba(0, 0, 0, 0.12));
+  }
+
+  .card--outlined {
+    border: var(--card-border-width, 1px) solid var(--border);
+    box-shadow: none;
+    background: transparent;
+  }
+</style>

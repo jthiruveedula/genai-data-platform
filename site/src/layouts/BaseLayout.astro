@@ -7,6 +7,7 @@ import "@fontsource/inter/800.css";
 import "@fontsource/jetbrains-mono/400.css";
 import "@fontsource/jetbrains-mono/500.css";
 import "../styles/tokens/base.css";
+import "../styles/tokens/component.css";
 import "../styles/tokens/aws.css";
 import "../styles/tokens/azure.css";
 import "../styles/tokens/gcp.css";
@@ -52,11 +53,13 @@ const { title, description = "A multi-cloud & OSS learning suite for building Ge
       import { ScrollTrigger } from "gsap/ScrollTrigger";
       gsap.registerPlugin(ScrollTrigger);
 
-      const mm = gsap.matchMedia();
-      mm.add({ reduceMotion: "(prefers-reduced-motion: reduce)" }, (context) => {
-        const { reduceMotion } = context.conditions as { reduceMotion: boolean };
-        if (reduceMotion) return;
-
+      // NOTE: gsap.matchMedia().add({name: query}, callback) only invokes the
+      // callback when the named condition currently evaluates true — for
+      // "no-preference" visitors (the vast majority), a `false` named
+      // condition silently never fires its callback (verified against gsap
+      // 3.15.0). That meant this entire scroll-reveal setup never ran for
+      // typical visitors. Using a plain matchMedia boolean check instead.
+      if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
         gsap.utils.toArray<HTMLElement>("article > *").forEach((el) => {
           gsap.from(el, {
             autoAlpha: 0,
@@ -78,7 +81,7 @@ const { title, description = "A multi-cloud & OSS learning suite for building Ge
             scrollTrigger: { trigger: ".module-list", start: "top 85%", once: true },
           });
         }
-      });
+      }
     </script>
     <footer class="site-footer">
       <p>

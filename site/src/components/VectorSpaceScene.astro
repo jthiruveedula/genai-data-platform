@@ -39,11 +39,14 @@ const CLUSTERS = [
   import { ScrollTrigger } from "gsap/ScrollTrigger";
   gsap.registerPlugin(ScrollTrigger);
 
-  const mm = gsap.matchMedia();
-  mm.add({ reduceMotion: "(prefers-reduced-motion: reduce)" }, (context) => {
-    const { reduceMotion } = context.conditions as { reduceMotion: boolean };
-    if (reduceMotion) return;
-
+  // NOTE: gsap.matchMedia().add({name: query}, callback) only invokes the
+  // callback when the named condition currently evaluates true — for
+  // "no-preference" visitors (the vast majority), a `false` named condition
+  // silently never fires its callback (verified against gsap 3.15.0). That
+  // meant this scroll-triggered scatter animation never ran for typical
+  // visitors (they only ever saw the static settled SVG). Using a plain
+  // matchMedia boolean check instead.
+  if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
     document.querySelectorAll<HTMLElement>("[data-vector-scene]").forEach((scene) => {
       const points = gsap.utils.toArray<SVGCircleElement>(scene.querySelectorAll(".vec-point"));
       if (!points.length) return;
@@ -72,7 +75,7 @@ const CLUSTERS = [
         },
       });
     });
-  });
+  }
 </script>
 
 <style>
