@@ -91,3 +91,31 @@ claims:
     sources: []
     volatility: low
     verified_on: null
+
+  - id: gcp-vector-search-hybrid
+    used_by: site/src/data/flavors/gcp.ts#35-retrieval
+    claim: "Vertex AI Vector Search supports hybrid dense + sparse queries with cross-encoder reranking"
+    sources: []
+    volatility: medium
+    verified_on: null
+
+  - id: aws-opensearch-hybrid
+    used_by: site/src/data/flavors/aws.ts#35-retrieval
+    claim: "Amazon OpenSearch Service supports hybrid BM25 + k-NN search pipelines with Bedrock reranking"
+    sources: []
+    volatility: medium
+    verified_on: null
+
+  - id: azure-ai-search-hybrid
+    used_by: site/src/data/flavors/azure.ts#35-retrieval
+    claim: "Azure AI Search supports hybrid keyword + vector search with semantic ranking"
+    sources: []
+    volatility: medium
+    verified_on: null
+
+  - id: oss-qdrant-hybrid
+    used_by: site/src/data/flavors/oss.ts#35-retrieval
+    claim: "Qdrant supports hybrid dense + sparse vector queries, with reranking served via TEI"
+    sources: []
+    volatility: low
+    verified_on: null
