@@ -41,4 +41,17 @@ export const flavor: Record<string, FlavorEntry> = {
     costNote: "$0 on a local kind cluster; negligible CPU for a handful of documents.",
     claimId: "oss-airflow-chunking",
   },
+  "35-retrieval": {
+    services: ["Qdrant", "TEI"],
+    storage: "Qdrant (hybrid dense + sparse vectors)",
+    snippet: `# Hybrid search in Qdrant: dense + sparse (BM25-like) vectors\nresults = client.query_points(\n    collection_name="gdp_chunks",\n    query=dense_vec,\n    using="dense",\n    with_payload=True,\n    limit=20,\n)\n\n# Rerank top-20 with a cross-encoder served via TEI\nreranked = cross_encoder.rerank(query, [r.payload["text"] for r in results.points], top_k=5)`,
+    labSteps: [
+      "Enable a sparse vector field on the Module 15 chunk collection alongside the dense one.",
+      "Run a query with dense search only, note top-5 results.",
+      "Re-run with Qdrant's hybrid (dense + sparse) query, compare top-5.",
+      "Add a cross-encoder reranking pass (served via TEI) over the top-20 hybrid results and compare the final top-5 again.",
+    ],
+    costNote: "$0 on a local kind cluster; negligible CPU for a handful of queries.",
+    claimId: "oss-qdrant-hybrid",
+  },
 };

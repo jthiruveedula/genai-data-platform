@@ -41,4 +41,12 @@ export const MODULES: Module[] = [
     summary:
       "Split ingested documents into retrievable pieces — fixed, recursive, semantic, or layout-aware — and see how chunk size and overlap choices show up later as retrieval quality.",
   },
+  {
+    id: "35-retrieval",
+    order: 35,
+    title: "Retrieval quality",
+    path: "intermediate",
+    summary:
+      "Hybrid search, rerankers, query rewriting, and HyDE — the techniques that turn 'similar embedding' into 'actually relevant answer,' measured with recall and precision.",
+  },
 ];

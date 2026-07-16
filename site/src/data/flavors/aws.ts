@@ -41,4 +41,17 @@ export const flavor: Record<string, FlavorEntry> = {
     costNote: "~$0.02 for a handful of Lambda invocations + Athena scan.",
     claimId: "aws-lambda-chunking",
   },
+  "35-retrieval": {
+    services: ["OpenSearch Service", "Bedrock"],
+    storage: "OpenSearch (hybrid BM25 + k-NN index)",
+    snippet: `// Hybrid search: combine BM25 and k-NN in one OpenSearch query\nconst res = await client.search({\n  index: "gdp-chunks",\n  body: {\n    query: {\n      hybrid: {\n        queries: [\n          { match: { text: query } },\n          { knn: { embedding: { vector: queryVec, k: 20 } } },\n        ],\n      },\n    },\n  },\n});\n\n// Rerank top-20 with a Bedrock reranker model before answering\nconst reranked = await rerank(query, res.hits, { topK: 5 });`,
+    labSteps: [
+      "Enable a hybrid search pipeline on the Module 15 chunk index (BM25 + k-NN).",
+      "Run a query with k-NN only, note top-5 results.",
+      "Re-run the same query through the hybrid pipeline, compare top-5.",
+      "Add a Bedrock reranking pass over the top-20 hybrid results and compare the final top-5 again.",
+    ],
+    costNote: "~$0.03 for a handful of hybrid queries + rerank calls on a small OpenSearch domain.",
+    claimId: "aws-opensearch-hybrid",
+  },
 };
