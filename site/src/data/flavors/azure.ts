@@ -41,4 +41,17 @@ export const flavor: Record<string, FlavorEntry> = {
     costNote: "~$0.02 for a handful of Function invocations + Azure SQL storage.",
     claimId: "azure-functions-chunking",
   },
+  "35-retrieval": {
+    services: ["Azure AI Search"],
+    storage: "Azure AI Search (hybrid keyword + vector + semantic ranking)",
+    snippet: `// Hybrid + semantic ranking in one Azure AI Search query\nconst results = await searchClient.search(queryText, {\n  vectorSearchOptions: {\n    queries: [{ kind: "vector", vector: queryVec, kNearestNeighborsCount: 20, fields: ["embedding"] }],\n  },\n  queryType: "semantic",\n  semanticSearchOptions: { configurationName: "gdp-semantic-config" },\n  top: 5,\n});`,
+    labSteps: [
+      "Enable vector + semantic ranking on the Module 15 chunk index.",
+      "Run a query with keyword search only, note top-5 results.",
+      "Re-run with hybrid (keyword + vector) search, compare top-5.",
+      "Enable semantic ranking on top of hybrid results and compare the final top-5 again.",
+    ],
+    costNote: "~$0.03 for a handful of hybrid + semantic queries on a small Search index.",
+    claimId: "azure-ai-search-hybrid",
+  },
 };

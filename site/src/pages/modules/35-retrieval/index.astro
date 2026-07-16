@@ -1,0 +1,73 @@
+---
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import FlavorTabs from "../../../components/FlavorTabs.astro";
+import { flavor as gcp } from "../../../data/flavors/gcp";
+import { flavor as aws } from "../../../data/flavors/aws";
+import { flavor as azure } from "../../../data/flavors/azure";
+import { flavor as oss } from "../../../data/flavors/oss";
+
+const moduleId = "35-retrieval";
+const entries = {
+  gcp: gcp[moduleId],
+  aws: aws[moduleId],
+  azure: azure[moduleId],
+  oss: oss[moduleId],
+};
+---
+
+<BaseLayout title="35 · Retrieval quality">
+  <article>
+    <p class="chip">Module 35 · Intermediate</p>
+    <h1>Retrieval quality</h1>
+    <p>
+      A working RAG pipeline finds <em>similar</em> chunks the moment embeddings exist. Retrieval quality is the
+      difference between "similar" and "actually relevant" — the gap that separates a demo from something a real
+      user trusts.
+    </p>
+
+    <h2>Hybrid search: BM25 + vector</h2>
+    <p>
+      Vector search alone misses exact matches — a product SKU, an error code, a person's name — because embeddings
+      encode meaning, not tokens. <strong>Hybrid search</strong> runs a keyword method (BM25) and vector search
+      together, then combines both rankings. It's the single highest-leverage upgrade from Module 15's plain vector
+      index: it fixes the class of failures where the right chunk exists but the embedding just wasn't close enough.
+    </p>
+
+    <h2>Rerankers</h2>
+    <p>
+      Vector and hybrid search are optimized to be fast over millions of chunks, which means they trade away
+      precision. A <strong>reranker</strong> (typically a cross-encoder) re-scores a small candidate set — say the
+      top 20 — by looking at the query and each candidate together, not independently. It's slower per-item but far
+      more accurate, so the pattern is: cheap retrieval for recall, reranking for precision.
+    </p>
+
+    <h2>Query rewriting and HyDE</h2>
+    <p>
+      Users don't phrase questions the way documents phrase answers. <strong>Query rewriting</strong> expands or
+      reformulates the query before retrieval (synonyms, decomposing multi-part questions).
+      <strong>HyDE</strong> (Hypothetical Document Embeddings) goes further: ask the LLM to draft a hypothetical
+      answer first, then embed <em>that</em> instead of the raw question — a hypothetical answer's phrasing tends to
+      resemble real answers more than a question does.
+    </p>
+
+    <h2>Measuring it: recall and precision</h2>
+    <p>
+      You can't tell if a retrieval change helped without a labeled set: a handful of queries with the correct
+      chunk(s) marked ahead of time. <strong>Recall@k</strong> asks "is the right chunk in the top k results?"
+      <strong>Precision@k</strong> asks "of the top k results, how many are actually relevant?" Module 45 builds this
+      into a full evaluation suite — this module is where you start collecting the labeled examples that suite will
+      need.
+    </p>
+
+    <h2>Try it in your flavor</h2>
+    <FlavorTabs moduleId={moduleId} entries={entries} />
+
+    <h2>Pitfalls</h2>
+    <ul>
+      <li>Shipping vector-only search and assuming it covers keyword-style queries (SKUs, codes, names) — it doesn't.</li>
+      <li>Reranking the entire index instead of a small candidate set — cross-encoders don't scale to "rerank everything."</li>
+      <li>Tuning retrieval by eyeballing a few queries instead of against a labeled recall/precision set — you'll optimize for the wrong thing.</li>
+      <li>Adding HyDE or query rewriting as a default for every query — they add latency and cost, and plain retrieval is often good enough for simple lookups.</li>
+    </ul>
+  </article>
+</BaseLayout>
