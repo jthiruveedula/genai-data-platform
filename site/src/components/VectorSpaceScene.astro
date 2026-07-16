@@ -1,0 +1,102 @@
+---
+// The embeddings "lesson animation" from PLAN.md §7.0.2: chunk text collapses
+// into a point that flies into a 2D vector space; semantically similar
+// chunks cluster and glow together. Static final frame is the no-JS /
+// reduced-motion fallback — the SVG below already renders the settled state.
+const CLUSTERS = [
+  { cx: 25, cy: 30, color: "var(--accent)", points: [[22, 26], [28, 32], [20, 34], [26, 22]] },
+  { cx: 70, cy: 25, color: "var(--accent-2, var(--accent))", points: [[68, 20], [74, 28], [66, 30], [72, 18]] },
+  { cx: 45, cy: 68, color: "var(--accent)", points: [[42, 64], [48, 72], [38, 70], [50, 62]] },
+];
+---
+
+<div class="vector-scene" data-vector-scene>
+  <svg viewBox="0 0 100 100" role="img" aria-labelledby="vector-scene-caption">
+    <title id="vector-scene-caption">
+      A 2D projection of chunk embeddings — semantically similar chunks cluster together in vector space.
+    </title>
+    {
+      CLUSTERS.map((cluster, ci) =>
+        cluster.points.map(([x, y], pi) => (
+          <circle
+            class="vec-point"
+            data-cluster={ci}
+            cx={x}
+            cy={y}
+            r="1.6"
+            fill={cluster.color}
+            opacity="0.85"
+          />
+        )),
+      )
+    }
+  </svg>
+  <p class="scene-caption">Chunks with similar meaning land near each other — this is what retrieval searches over.</p>
+</div>
+
+<script>
+  import { gsap } from "gsap";
+  import { ScrollTrigger } from "gsap/ScrollTrigger";
+  gsap.registerPlugin(ScrollTrigger);
+
+  const mm = gsap.matchMedia();
+  mm.add({ reduceMotion: "(prefers-reduced-motion: reduce)" }, (context) => {
+    const { reduceMotion } = context.conditions as { reduceMotion: boolean };
+    if (reduceMotion) return;
+
+    document.querySelectorAll<HTMLElement>("[data-vector-scene]").forEach((scene) => {
+      const points = gsap.utils.toArray<SVGCircleElement>(scene.querySelectorAll(".vec-point"));
+      if (!points.length) return;
+
+      // Start scattered randomly, then converge into their real cluster position on scroll.
+      const startPositions = points.map(() => ({
+        x: (Math.random() - 0.5) * 60,
+        y: (Math.random() - 0.5) * 60,
+      }));
+
+      gsap.set(points, { x: (i) => startPositions[i].x, y: (i) => startPositions[i].y, autoAlpha: 0 });
+
+      ScrollTrigger.create({
+        trigger: scene,
+        start: "top 80%",
+        once: true,
+        onEnter: () => {
+          gsap.to(points, {
+            x: 0,
+            y: 0,
+            autoAlpha: 0.85,
+            duration: 0.9,
+            ease: "power3.out",
+            stagger: { each: 0.04, from: "random" },
+          });
+        },
+      });
+    });
+  });
+</script>
+
+<style>
+  .vector-scene {
+    margin: 1.5rem 0 2rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-card);
+    padding: 1rem;
+  }
+
+  .vector-scene svg {
+    width: 100%;
+    max-width: 20rem;
+    display: block;
+    margin: 0 auto;
+    aspect-ratio: 1;
+  }
+
+  .scene-caption {
+    text-align: center;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    font-family: var(--font-mono);
+    margin: 0.75rem 0 0;
+  }
+</style>

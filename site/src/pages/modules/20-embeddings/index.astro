@@ -1,0 +1,57 @@
+---
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import FlavorTabs from "../../../components/FlavorTabs.astro";
+import VectorSpaceScene from "../../../components/VectorSpaceScene.astro";
+import { flavor as gcp } from "../../../data/flavors/gcp";
+import { flavor as aws } from "../../../data/flavors/aws";
+import { flavor as azure } from "../../../data/flavors/azure";
+import { flavor as oss } from "../../../data/flavors/oss";
+
+const moduleId = "20-embeddings";
+const entries = {
+  gcp: gcp[moduleId],
+  aws: aws[moduleId],
+  azure: azure[moduleId],
+  oss: oss[moduleId],
+};
+---
+
+<BaseLayout title="20 · Embeddings & vector store">
+  <article>
+    <p class="chip">Module 20 · Beginner</p>
+    <h1>Embeddings &amp; vector store</h1>
+    <p>
+      Module 15 gave you chunks — small enough to be meaningful, but still just text. This module turns each chunk
+      into a vector, and stores those vectors in an index built for one operation: "find me the K vectors closest to
+      this one." That single operation is what makes retrieval possible at all.
+    </p>
+
+    <VectorSpaceScene />
+
+    <h2>Picking an embedding model</h2>
+    <p>
+      Embedding models differ in dimensionality, language coverage, and what kind of similarity they were trained to
+      capture. The practical rule: use the same model to embed your chunks and your queries — mixing models breaks
+      the geometry the whole index depends on — and prefer a model your cloud's retrieval service integrates with
+      natively, since that keeps the embed → store → search path in one system instead of three.
+    </p>
+
+    <h2>What the vector index actually stores</h2>
+    <p>
+      Beyond the vector itself, every entry needs enough metadata to be useful once retrieved: the source
+      document, the chunk's original text, its position, and anything Module 65 (security) will later need for
+      access control. An index with vectors but no metadata can find a match — it just can't tell you what it
+      found or whether the requesting user is allowed to see it.
+    </p>
+
+    <h2>Try it in your flavor</h2>
+    <FlavorTabs moduleId={moduleId} entries={entries} />
+
+    <h2>Pitfalls</h2>
+    <ul>
+      <li>Embedding queries with a different model than the one used for chunks — similarity breaks silently, not loudly.</li>
+      <li>Storing vectors with no metadata — you can retrieve a match but not explain or filter it.</li>
+      <li>Re-embedding the entire index by hand after a chunking change — plan for incremental re-embedding from day one (Module 11: Orchestration).</li>
+    </ul>
+  </article>
+</BaseLayout>

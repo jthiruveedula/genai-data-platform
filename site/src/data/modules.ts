@@ -42,6 +42,22 @@ export const MODULES: Module[] = [
       "Split ingested documents into retrievable pieces — fixed, recursive, semantic, or layout-aware — and see how chunk size and overlap choices show up later as retrieval quality.",
   },
   {
+    id: "20-embeddings",
+    order: 20,
+    title: "Embeddings & vector store",
+    path: "beginner",
+    summary:
+      "Turn each chunk into a vector, store it in an index, and see semantically similar chunks cluster together in vector space — the step that makes retrieval possible at all.",
+  },
+  {
+    id: "25-serving",
+    order: 25,
+    title: "Serving a RAG API",
+    path: "beginner",
+    summary:
+      "Wire retrieval and an LLM together behind an API: embed the query, fetch nearest chunks, build a prompt with citations, call a fast model — your first complete, working RAG pipeline.",
+  },
+  {
     id: "35-retrieval",
     order: 35,
     title: "Retrieval quality",

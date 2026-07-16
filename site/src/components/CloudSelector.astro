@@ -18,6 +18,7 @@ const PIPELINE = ["INGEST", "PARSE", "CHUNK", "EMBED", "RETRIEVE", "ANSWER"];
     }
   </div>
   <p class="pipeline-caption">Every document on this site travels this exact path — pick a cloud to see it with your services.</p>
+  <p class="ticker chip mono" data-ticker aria-live="off">0 TOKENS · $0.0000</p>
 
   <h1 id="selector-heading" data-scramble="Build a GenAI data platform — on your cloud.">
     Build a GenAI data platform — on your cloud.
@@ -73,14 +74,23 @@ const PIPELINE = ["INGEST", "PARSE", "CHUNK", "EMBED", "RETRIEVE", "ANSWER"];
 
   const mm = gsap.matchMedia();
 
+  const TOKENS_TARGET = 2483;
+  const COST_PER_TOKEN = 0.0000027;
+
+  function formatTicker(tokens: number) {
+    return `${Math.floor(tokens).toLocaleString()} TOKENS · $${(tokens * COST_PER_TOKEN).toFixed(4)}`;
+  }
+
   mm.add({ reduceMotion: "(prefers-reduced-motion: reduce)" }, (context) => {
     const { reduceMotion } = context.conditions as { reduceMotion: boolean };
     const heading = document.querySelector<HTMLElement>("[data-scramble]");
     const chips = gsap.utils.toArray<HTMLElement>(".pipeline-chip");
     const cards = gsap.utils.toArray<HTMLElement>(".cloud-card");
+    const ticker = document.querySelector<HTMLElement>("[data-ticker]");
 
     if (reduceMotion) {
       chips.forEach((c) => c.classList.add("chip--accent"));
+      if (ticker) ticker.textContent = formatTicker(TOKENS_TARGET);
       return;
     }
 
@@ -89,11 +99,25 @@ const PIPELINE = ["INGEST", "PARSE", "CHUNK", "EMBED", "RETRIEVE", "ANSWER"];
       scrambleIn(heading, finalText);
     }
 
-    const tl = gsap.timeline({ delay: 0.15 });
+    gsap.from(cards, {
+      autoAlpha: 0,
+      y: 16,
+      duration: 0.5,
+      ease: "power2.out",
+      stagger: 0.06,
+      delay: 0.3,
+    });
+
+    // Pipeline lights up and the token ticker counts up, then resets and
+    // loops — an ambient demonstration of unit economics (PLAN.md §7.0.2),
+    // not just decoration: it's teaching "every query costs something."
+    const loop = gsap.timeline({ repeat: -1, repeatDelay: 2, delay: 0.15 });
+    loop.set(chips, { autoAlpha: 0, y: 6, scale: 0.92 });
+    loop.call(() => chips.forEach((c) => c.classList.remove("chip--accent")));
+
     chips.forEach((chip, i) => {
-      tl.fromTo(
+      loop.to(
         chip,
-        { autoAlpha: 0, y: 6, scale: 0.92 },
         {
           autoAlpha: 1,
           y: 0,
@@ -106,16 +130,24 @@ const PIPELINE = ["INGEST", "PARSE", "CHUNK", "EMBED", "RETRIEVE", "ANSWER"];
       );
     });
 
-    gsap.from(cards, {
-      autoAlpha: 0,
-      y: 16,
-      duration: 0.5,
-      ease: "power2.out",
-      stagger: 0.06,
-      delay: 0.3,
-    });
+    if (ticker) {
+      const counter = { tokens: 0 };
+      loop.to(
+        counter,
+        {
+          tokens: TOKENS_TARGET,
+          duration: 1.1,
+          ease: "power1.out",
+          onUpdate: () => {
+            ticker.textContent = formatTicker(counter.tokens);
+          },
+        },
+        "-=0.4",
+      );
+    }
 
     return () => {
+      loop.kill();
       chips.forEach((c) => c.classList.remove("chip--accent"));
     };
   });
@@ -149,7 +181,14 @@ const PIPELINE = ["INGEST", "PARSE", "CHUNK", "EMBED", "RETRIEVE", "ANSWER"];
     font-family: var(--font-mono);
     font-size: 0.75rem;
     color: var(--text-secondary);
-    margin: 0 0 1.75rem;
+    margin: 0 0 0.75rem;
+  }
+
+  .ticker {
+    font-size: 0.7rem;
+    font-variant-numeric: tabular-nums;
+    margin: 0 auto 1.75rem;
+    width: fit-content;
   }
 
   .selector-hero h1 {
