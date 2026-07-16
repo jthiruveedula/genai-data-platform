@@ -1,4 +1,11 @@
 ---
+import "@fontsource/ibm-plex-sans/400.css";
+import "@fontsource/ibm-plex-sans/500.css";
+import "@fontsource/ibm-plex-sans/700.css";
+import "@fontsource/inter/700.css";
+import "@fontsource/inter/800.css";
+import "@fontsource/jetbrains-mono/400.css";
+import "@fontsource/jetbrains-mono/500.css";
 import "../styles/tokens/base.css";
 import "../styles/tokens/aws.css";
 import "../styles/tokens/azure.css";
@@ -40,6 +47,39 @@ const { title, description = "A multi-cloud & OSS learning suite for building Ge
     <main id="main">
       <slot />
     </main>
+    <script>
+      import { gsap } from "gsap";
+      import { ScrollTrigger } from "gsap/ScrollTrigger";
+      gsap.registerPlugin(ScrollTrigger);
+
+      const mm = gsap.matchMedia();
+      mm.add({ reduceMotion: "(prefers-reduced-motion: reduce)" }, (context) => {
+        const { reduceMotion } = context.conditions as { reduceMotion: boolean };
+        if (reduceMotion) return;
+
+        gsap.utils.toArray<HTMLElement>("article > *").forEach((el) => {
+          gsap.from(el, {
+            autoAlpha: 0,
+            y: 16,
+            duration: 0.5,
+            ease: "power2.out",
+            scrollTrigger: { trigger: el, start: "top 90%", once: true },
+          });
+        });
+
+        const moduleListItems = gsap.utils.toArray<HTMLElement>(".module-list li");
+        if (moduleListItems.length) {
+          gsap.from(moduleListItems, {
+            autoAlpha: 0,
+            y: 12,
+            duration: 0.4,
+            ease: "power2.out",
+            stagger: 0.08,
+            scrollTrigger: { trigger: ".module-list", start: "top 85%", once: true },
+          });
+        }
+      });
+    </script>
     <footer class="site-footer">
       <p>
         Not affiliated with Amazon Web Services, Microsoft Azure, or Google Cloud. Logos used for identification
