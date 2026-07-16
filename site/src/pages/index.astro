@@ -3,27 +3,42 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 import CloudSelector from "../components/CloudSelector.astro";
 import { MODULES } from "../data/modules";
 const base = import.meta.env.BASE_URL;
+
+const PATHS = [
+  { key: "beginner", title: "Beginner path", caption: "Weeks 1–2 · single-source RAG with citations" },
+  { key: "intermediate", title: "Intermediate path", caption: "Weeks 3–5 · hybrid retrieval, guardrails, first eval suite" },
+  { key: "advanced", title: "Advanced path", caption: "Weeks 6–8 · multi-tenant, multi-cloud, eval-gated deploys" },
+] as const;
 ---
 
 <BaseLayout title="Home">
   <CloudSelector />
 
-  <section aria-labelledby="curriculum-heading">
-    <h2 id="curriculum-heading">Beginner path</h2>
-    <p class="chip">Weeks 1–2 · single-source RAG with citations</p>
-    <ul class="module-list">
-      {
-        MODULES.filter((m) => m.path === "beginner").map((m) => (
-          <li>
-            <a href={`${base}modules/${m.id}/`}>{m.title}</a>
-            <p>{m.summary}</p>
-          </li>
-        ))
-      }
-    </ul>
-  </section>
+  {
+    PATHS.map(({ key, title, caption }) => {
+      const modules = MODULES.filter((m) => m.path === key);
+      if (!modules.length) return null;
+      return (
+        <section aria-labelledby={`${key}-heading`}>
+          <h2 id={`${key}-heading`}>{title}</h2>
+          <p class="chip">{caption}</p>
+          <ul class="module-list">
+            {modules.map((m) => (
+              <li>
+                <a href={`${base}modules/${m.id}/`}>{m.title}</a>
+                <p>{m.summary}</p>
+              </li>
+            ))}
+          </ul>
+        </section>
+      );
+    })
+  }
 
   <style>
+    section + section {
+      margin-top: 3rem;
+    }
     .module-list {
       list-style: none;
       padding: 0;
