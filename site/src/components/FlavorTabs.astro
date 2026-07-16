@@ -34,8 +34,8 @@ const { moduleId, entries } = Astro.props;
       <div role="tabpanel" id={`panel-${moduleId}-${c.id}`} aria-labelledby={`tab-${moduleId}-${c.id}`} data-panel-cloud={c.id} hidden>
         <p class="services">
           <span class="chip">{entry.services.join(" · ")}</span>{" "}
-          <span class="chip chip--accent" data-claim-id={entry.claimId}>
-            ✓ verified
+          <span class="chip" data-claim-id={entry.claimId} title="No validation pipeline has checked this claim yet — see PLAN.md §9">
+            ? unverified
           </span>
         </p>
         <pre class="mono snippet"><code>{entry.snippet}</code></pre>
