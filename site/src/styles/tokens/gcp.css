@@ -9,6 +9,12 @@
   --bg: #ffffff;
   --code-bg: #202124;
   --code-highlight: #4285f4;
+
+  /* View-transition timing (redesign spec §3.3) — "Material": elevation and
+     surface changes read as smooth, physical motion. Slightly longer than
+     the base default with the Material Design "standard" easing curve. */
+  --vt-duration: 320ms;
+  --vt-ease: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 :root[data-cloud="gcp"][data-theme="dark"] {

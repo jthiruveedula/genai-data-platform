@@ -34,6 +34,12 @@
   --duration-micro: 175ms;
   --duration-theme: 250ms;
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* view-transition defaults (no cloud selected yet) — per-cloud overrides
+     live in aws.css/azure.css/gcp.css/oss.css and are picked up by
+     transitions.css (redesign spec §3.3). */
+  --vt-duration: 240ms;
+  --vt-ease: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 :root[data-theme="dark"] {

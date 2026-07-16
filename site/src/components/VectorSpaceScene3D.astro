@@ -1,0 +1,128 @@
+---
+// 3D upgrade of VectorSpaceScene.astro (redesign spec §3.2). Structure:
+//   1. The same static 2D SVG (data-v3d-static) is always in the markup —
+//      this is what no-JS visitors, pre-hydration visitors, and
+//      prefers-reduced-motion visitors see and keep seeing.
+//   2. A `<noscript>` block backs that up with an explicit CSS rule, in case
+//      any future styling change tries to hide the static SVG by default —
+//      no-JS visitors always get it back.
+//   3. The interactive 3D scene hydrates lazily (`client:visible`) — it does
+//      not mount until scrolled into view, so it never competes with LCP.
+//      Once hydrated, if (and only if) prefers-reduced-motion is not set,
+//      the React component itself flips `data-mode="3d"` on the wrapper,
+//      which is the only thing that hides the static SVG and reveals the
+//      canvas — see VectorSpaceScene3D.tsx.
+import VectorSpaceScene3D from "./VectorSpaceScene3D";
+
+const CLUSTERS = [
+  { cx: 25, cy: 30, color: "var(--accent)", points: [[22, 26], [28, 32], [20, 34], [26, 22]] },
+  { cx: 70, cy: 25, color: "var(--accent-2, var(--accent))", points: [[68, 20], [74, 28], [66, 30], [72, 18]] },
+  { cx: 45, cy: 68, color: "var(--accent)", points: [[42, 64], [48, 72], [38, 70], [50, 62]] },
+];
+---
+
+<div class="vector-scene-3d" data-vector-scene-3d>
+  <div class="v3d-static" data-v3d-static>
+    <svg viewBox="0 0 100 100" role="img" aria-labelledby="vector-scene-3d-caption">
+      <title id="vector-scene-3d-caption">
+        A 2D projection of chunk embeddings — semantically similar chunks cluster together in vector space. An
+        interactive 3D version of this scene loads once you scroll to it, unless you prefer reduced motion.
+      </title>
+      {
+        CLUSTERS.map((cluster, ci) =>
+          cluster.points.map(([x, y], pi) => (
+            <circle
+              class="vec-point"
+              data-cluster={ci}
+              cx={x}
+              cy={y}
+              r="1.6"
+              fill={cluster.color}
+              opacity="0.85"
+            />
+          )),
+        )
+      }
+    </svg>
+    <p class="scene-caption">Chunks with similar meaning land near each other — this is what retrieval searches over.</p>
+  </div>
+
+  <div class="v3d-mount" data-v3d-mount>
+    <VectorSpaceScene3D client:visible />
+  </div>
+
+  <noscript>
+    <style>
+      [data-v3d-mount] {
+        display: none !important;
+      }
+      [data-v3d-static] {
+        display: block !important;
+      }
+    </style>
+  </noscript>
+</div>
+
+<style>
+  .vector-scene-3d {
+    margin: 1.5rem 0 2rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-card);
+    padding: 1rem;
+  }
+
+  .v3d-static svg {
+    width: 100%;
+    max-width: 20rem;
+    display: block;
+    margin: 0 auto;
+    aspect-ratio: 1;
+  }
+
+  .scene-caption {
+    text-align: center;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    font-family: var(--font-mono);
+    margin: 0.75rem 0 0;
+  }
+
+  /* Default: static SVG visible, 3D mount present-but-invisible — covers
+     no-JS, pre-hydration, and prefers-reduced-motion (the React island simply
+     never flips the mode in that last case, per its own matchMedia check).
+     Deliberately NOT `display: none` on .v3d-mount: client:visible hydrates
+     via an IntersectionObserver watching this element, and a display:none
+     element never has a layout box to intersect with the viewport — that
+     would mean the island never hydrates at all, even under normal motion
+     (verified: canvas never mounted, no chunk request fired, with
+     display:none here). Stacking the two layers instead keeps .v3d-mount
+     observable while still hiding it visually until hydration flips the mode. */
+  .vector-scene-3d {
+    position: relative;
+  }
+
+  .v3d-static {
+    position: relative;
+    z-index: 2;
+  }
+
+  .v3d-mount {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .vector-scene-3d[data-mode="3d"] .v3d-static {
+    display: none;
+  }
+
+  .vector-scene-3d[data-mode="3d"] .v3d-mount {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+  }
+</style>

@@ -7,6 +7,12 @@
   --bg: #f5f9ff;
   --code-bg: #1b1a19;
   --code-highlight: #0078d4;
+
+  /* View-transition timing (redesign spec §3.3) — "Fluent": acrylic blur,
+     depth shadows. A longer, gentle ease-out lets the cross-fade feel like
+     translucent layers settling rather than a hard cut. */
+  --vt-duration: 380ms;
+  --vt-ease: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 :root[data-cloud="azure"][data-theme="dark"] {
