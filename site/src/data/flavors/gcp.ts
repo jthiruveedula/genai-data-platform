@@ -52,9 +52,9 @@ export const flavor: Record<string, FlavorEntry> = {
   "20-embeddings": {
     services: ["Vertex AI Embeddings", "Vertex AI Vector Search"],
     storage: "Vertex AI Vector Search index",
-    snippet: `from vertexai.language_models import TextEmbeddingModel\n\nmodel = TextEmbeddingModel.from_pretrained("text-embedding-004")\nembeddings = model.get_embeddings([chunk.text for chunk in chunks])\n\n# Upsert into a Vertex AI Vector Search index\nindex.upsert_datapoints(\n    datapoints=[{"datapoint_id": c.chunk_id, "feature_vector": e.values} for c, e in zip(chunks, embeddings)]\n)`,
+    snippet: `from vertexai.language_models import TextEmbeddingModel\n\nmodel = TextEmbeddingModel.from_pretrained("gemini-embedding-001")\nembeddings = model.get_embeddings([chunk.text for chunk in chunks])\n\n# Upsert into a Vertex AI Vector Search index\nindex.upsert_datapoints(\n    datapoints=[{"datapoint_id": c.chunk_id, "feature_vector": e.values} for c, e in zip(chunks, embeddings)]\n)`,
     labSteps: [
-      "Embed all chunks from Module 15 with text-embedding-004.",
+      "Embed all chunks from Module 15 with gemini-embedding-001.",
       "Create a Vertex AI Vector Search index and upsert the vectors.",
       "Embed two different queries and eyeball their nearest neighbors in the index.",
       "Confirm semantically similar chunks (not just keyword-similar) land near each other.",
@@ -63,16 +63,16 @@ export const flavor: Record<string, FlavorEntry> = {
     claimId: "gcp-vertex-embeddings",
   },
   "25-serving": {
-    services: ["Cloud Run", "Vertex AI (Gemini Flash)"],
+    services: ["Cloud Run", "Vertex AI (Gemini 3 Flash)"],
     storage: "N/A — reads the Module 20 vector index at request time",
-    snippet: `@app.post("/ask")\nasync def ask(q: Question):\n    query_vec = embed(q.text)\n    neighbors = index.find_neighbors(query_vec, num_neighbors=5)\n    prompt = build_prompt(q.text, neighbors)\n    response = gemini_flash.generate_content(prompt)\n    return {"answer": response.text, "citations": [n.chunk_id for n in neighbors]}`,
+    snippet: `@app.post("/ask")\nasync def ask(q: Question):\n    query_vec = embed(q.text)\n    neighbors = index.find_neighbors(query_vec, num_neighbors=5)\n    prompt = build_prompt(q.text, neighbors)\n    response = gemini_3_flash.generate_content(prompt)\n    return {"answer": response.text, "citations": [n.chunk_id for n in neighbors]}`,
     labSteps: [
-      "Deploy a small FastAPI app to Cloud Run wrapping embed -> retrieve -> prompt -> Gemini Flash.",
+      "Deploy a small FastAPI app to Cloud Run wrapping embed -> retrieve -> prompt -> Gemini 3 Flash.",
       "Ask a question your Module 10 documents can answer; confirm the response cites a real chunk.",
       "Ask an out-of-scope question; confirm the model says it doesn't know instead of guessing.",
       "Log every request/response pair — this becomes the event log Module 30 builds dashboards on.",
     ],
-    costNote: "~$0.01 per query (Gemini Flash fast tier) + negligible Cloud Run cost at low volume.",
+    costNote: "~$0.01 per query (Gemini 3 Flash fast tier) + negligible Cloud Run cost at low volume.",
     claimId: "gcp-cloud-run-rag-api",
   },
   "35-retrieval": {

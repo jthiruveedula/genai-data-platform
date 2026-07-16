@@ -55,16 +55,16 @@ export const flavor: Record<string, FlavorEntry> = {
     claimId: "azure-openai-embeddings",
   },
   "25-serving": {
-    services: ["Azure Functions", "Azure OpenAI (GPT-4o mini)"],
+    services: ["Azure Functions", "Azure OpenAI (GPT-5.6 Luna)"],
     storage: "N/A — reads the Module 20 Azure AI Search index at request time",
-    snippet: `@app.route(route="ask")\ndef ask(req: func.HttpRequest) -> func.HttpResponse:\n    query_vec = embed(req.get_json()["question"])\n    neighbors = search_client.search(vector_queries=[{"vector": query_vec, "k": 5, "fields": "embedding"}])\n    prompt = build_prompt(req.get_json()["question"], neighbors)\n    response = client.chat.completions.create(model="gpt-4o-mini", messages=prompt)\n    return func.HttpResponse(json.dumps({"answer": response, "citations": [n["chunk_id"] for n in neighbors]}))`,
+    snippet: `@app.route(route="ask")\ndef ask(req: func.HttpRequest) -> func.HttpResponse:\n    query_vec = embed(req.get_json()["question"])\n    neighbors = search_client.search(vector_queries=[{"vector": query_vec, "k": 5, "fields": "embedding"}])\n    prompt = build_prompt(req.get_json()["question"], neighbors)\n    response = client.chat.completions.create(model="gpt-5.6-luna", messages=prompt)\n    return func.HttpResponse(json.dumps({"answer": response, "citations": [n["chunk_id"] for n in neighbors]}))`,
     labSteps: [
-      "Deploy an Azure Function wrapping embed -> retrieve -> prompt -> GPT-4o mini.",
+      "Deploy an Azure Function wrapping embed -> retrieve -> prompt -> GPT-5.6 Luna.",
       "Ask a question your Module 10 documents can answer; confirm the response cites a real chunk.",
       "Ask an out-of-scope question; confirm the model says it doesn't know instead of guessing.",
       "Log every request/response pair — this becomes the event log Module 30 builds dashboards on.",
     ],
-    costNote: "~$0.01 per query (GPT-4o mini) + negligible Functions cost at low volume.",
+    costNote: "~$0.01 per query (GPT-5.6 Luna, fast tier) + negligible Functions cost at low volume.",
     claimId: "azure-functions-rag-api",
   },
   "35-retrieval": {
