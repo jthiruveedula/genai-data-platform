@@ -1,0 +1,65 @@
+# Claim registry (PLAN.md §9.1).
+#
+# Every claimId referenced from site/src/data/flavors/*.ts must have a
+# matching entry here. This is a seed: `sources` is intentionally empty and
+# `verified_on` is null for every claim until a real Firecrawl validation
+# run (§9.2) checks each source and fills them in. Until then, the site's
+# FlavorTabs chip renders these claims as "unverified" rather than falsely
+# claiming they've been checked.
+
+claims:
+  - id: gcp-vertex-model-garden
+    used_by: site/src/data/flavors/gcp.ts#00-foundations
+    claim: "Vertex AI Model Garden is where embedding and LLM models are selected on GCP"
+    sources: []
+    volatility: medium
+    verified_on: null
+
+  - id: gcp-dataflow-ingestion
+    used_by: site/src/data/flavors/gcp.ts#10-ingestion
+    claim: "Dataflow batch jobs are a supported way to land ingested documents into BigQuery"
+    sources: []
+    volatility: low
+    verified_on: null
+
+  - id: aws-bedrock-model-catalog
+    used_by: site/src/data/flavors/aws.ts#00-foundations
+    claim: "Amazon Bedrock's model catalog is where embedding and LLM models are selected on AWS"
+    sources: []
+    volatility: high
+    verified_on: null
+
+  - id: aws-glue-ingestion
+    used_by: site/src/data/flavors/aws.ts#10-ingestion
+    claim: "AWS Glue crawlers are a supported way to catalog ingested documents from S3"
+    sources: []
+    volatility: low
+    verified_on: null
+
+  - id: azure-foundry-model-catalog
+    used_by: site/src/data/flavors/azure.ts#00-foundations
+    claim: "Azure AI Foundry's model catalog is where embedding and LLM models are selected on Azure"
+    sources: []
+    volatility: high
+    verified_on: null
+
+  - id: azure-data-factory-ingestion
+    used_by: site/src/data/flavors/azure.ts#10-ingestion
+    claim: "Azure Data Factory pipelines are a supported way to land ingested documents into Azure SQL"
+    sources: []
+    volatility: low
+    verified_on: null
+
+  - id: oss-hf-hub-catalog
+    used_by: site/src/data/flavors/oss.ts#00-foundations
+    claim: "Hugging Face Hub is where embedding and LLM models are selected in the OSS flavor"
+    sources: []
+    volatility: medium
+    verified_on: null
+
+  - id: oss-airflow-ingestion
+    used_by: site/src/data/flavors/oss.ts#10-ingestion
+    claim: "Airflow DAGs are a supported way to land ingested documents into Postgres from MinIO"
+    sources: []
+    volatility: low
+    verified_on: null
