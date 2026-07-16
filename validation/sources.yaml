@@ -151,3 +151,59 @@ claims:
     volatility: high
     verified_on: null
     extract_schema: { gpu_hour_usd: number }
+
+  - id: gcp-vertex-embeddings
+    used_by: site/src/data/flavors/gcp.ts#20-embeddings
+    claim: "Vertex AI text-embedding-004 and Vector Search are a supported embed + index pairing"
+    sources: []
+    volatility: medium
+    verified_on: null
+
+  - id: gcp-cloud-run-rag-api
+    used_by: site/src/data/flavors/gcp.ts#25-serving
+    claim: "Cloud Run is a supported way to serve a RAG API calling Gemini Flash"
+    sources: []
+    volatility: low
+    verified_on: null
+
+  - id: aws-titan-embeddings
+    used_by: site/src/data/flavors/aws.ts#20-embeddings
+    claim: "Bedrock Titan Embeddings and OpenSearch Serverless k-NN are a supported embed + index pairing"
+    sources: []
+    volatility: medium
+    verified_on: null
+
+  - id: aws-lambda-rag-api
+    used_by: site/src/data/flavors/aws.ts#25-serving
+    claim: "Lambda + API Gateway is a supported way to serve a RAG API calling Claude on Bedrock"
+    sources: []
+    volatility: low
+    verified_on: null
+
+  - id: azure-openai-embeddings
+    used_by: site/src/data/flavors/azure.ts#20-embeddings
+    claim: "Azure OpenAI text-embedding-3-small and Azure AI Search vector fields are a supported embed + index pairing"
+    sources: []
+    volatility: medium
+    verified_on: null
+
+  - id: azure-functions-rag-api
+    used_by: site/src/data/flavors/azure.ts#25-serving
+    claim: "Azure Functions is a supported way to serve a RAG API calling GPT-4o mini"
+    sources: []
+    volatility: low
+    verified_on: null
+
+  - id: oss-tei-qdrant-embeddings
+    used_by: site/src/data/flavors/oss.ts#20-embeddings
+    claim: "TEI serving bge-base-en-v1.5 and Qdrant are a supported embed + index pairing"
+    sources: []
+    volatility: low
+    verified_on: null
+
+  - id: oss-vllm-rag-api
+    used_by: site/src/data/flavors/oss.ts#25-serving
+    claim: "FastAPI + vLLM is a supported way to serve a RAG API over an open-weight model"
+    sources: []
+    volatility: low
+    verified_on: null

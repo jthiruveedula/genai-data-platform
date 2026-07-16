@@ -1,0 +1,64 @@
+---
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import FlavorTabs from "../../../components/FlavorTabs.astro";
+import { flavor as gcp } from "../../../data/flavors/gcp";
+import { flavor as aws } from "../../../data/flavors/aws";
+import { flavor as azure } from "../../../data/flavors/azure";
+import { flavor as oss } from "../../../data/flavors/oss";
+
+const moduleId = "25-serving";
+const entries = {
+  gcp: gcp[moduleId],
+  aws: aws[moduleId],
+  azure: azure[moduleId],
+  oss: oss[moduleId],
+};
+---
+
+<BaseLayout title="25 · Serving a RAG API">
+  <article>
+    <p class="chip">Module 25 · Beginner</p>
+    <h1>Serving a RAG API</h1>
+    <p>
+      Everything so far — ingestion, chunking, embeddings — happens offline, once per document. This module wires
+      the online path: what happens the instant a user asks a question. This is the module where the pipeline
+      becomes a product.
+    </p>
+
+    <h2>The request path</h2>
+    <p>
+      Four steps, in order: <strong>embed</strong> the incoming question with the same model used in Module 20,
+      <strong>retrieve</strong> the nearest chunks from the vector index, <strong>construct a prompt</strong> that
+      includes the question plus the retrieved chunks (with enough structure that the model can cite which chunk
+      supports which claim), and <strong>call the LLM</strong> — a fast model by default, escalating to a reasoning
+      model only when the task calls for it (Module 75 covers that trade-off in cost terms).
+    </p>
+
+    <h2>Citations aren't optional</h2>
+    <p>
+      A RAG answer without a citation back to its source chunk is a claim you can't verify and a user can't trust.
+      Return the chunk ID (or document + offset) alongside every answer — it costs nothing extra since retrieval
+      already has that metadata, and it's the difference between "an AI said so" and "here's the paragraph it came
+      from."
+    </p>
+
+    <h2>Handling "I don't know"</h2>
+    <p>
+      When retrieval returns nothing relevant, the right answer is for the model to say so — not to answer from
+      general knowledge as if it had a source. A simple guard: if the top retrieved chunk's similarity score is
+      below a threshold, skip the LLM call for that context entirely and return a plain "not found in the indexed
+      documents" response.
+    </p>
+
+    <h2>Try it in your flavor</h2>
+    <FlavorTabs moduleId={moduleId} entries={entries} />
+
+    <h2>Pitfalls</h2>
+    <ul>
+      <li>No citation in the response — makes every answer unverifiable and erodes trust the moment it's wrong once.</li>
+      <li>Letting the model answer when retrieval found nothing relevant — this is where hallucination gets blamed on "the AI" when it's actually a missing guard.</li>
+      <li>Skipping request logging at launch "to add later" — Module 30's event log needs data from day one, and you can't retroactively log a request that already happened.</li>
+      <li>Defaulting to the most expensive/slowest model for every query — start fast-tier, escalate only when needed.</li>
+    </ul>
+  </article>
+</BaseLayout>

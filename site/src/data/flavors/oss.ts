@@ -41,6 +41,32 @@ export const flavor: Record<string, FlavorEntry> = {
     costNote: "$0 on a local kind cluster; negligible CPU for a handful of documents.",
     claimId: "oss-airflow-chunking",
   },
+  "20-embeddings": {
+    services: ["TEI (Text Embeddings Inference)", "Qdrant"],
+    storage: "Qdrant collection",
+    snippet: `# Embed via a local TEI server (bge-base-en-v1.5)\nresp = requests.post("http://tei:80/embed", json={"inputs": [c.text for c in chunks]})\nvectors = resp.json()\n\nclient.upsert(\n    collection_name="gdp_chunks",\n    points=[{"id": c.chunk_id, "vector": v, "payload": {"text": c.text}} for c, v in zip(chunks, vectors)],\n)`,
+    labSteps: [
+      "Run TEI locally serving bge-base-en-v1.5 and embed all chunks from Module 15.",
+      "Create a Qdrant collection and upsert the vectors.",
+      "Embed two different queries and eyeball their nearest neighbors.",
+      "Confirm semantically similar chunks (not just keyword-similar) land near each other.",
+    ],
+    costNote: "$0 on a local kind cluster; negligible CPU/GPU for a handful of documents.",
+    claimId: "oss-tei-qdrant-embeddings",
+  },
+  "25-serving": {
+    services: ["FastAPI", "vLLM (open-weight model)"],
+    storage: "N/A — reads the Module 20 Qdrant collection at request time",
+    snippet: `@app.post("/ask")\nasync def ask(q: Question):\n    query_vec = embed(q.text)\n    neighbors = client.query_points(collection_name="gdp_chunks", query=query_vec, limit=5)\n    prompt = build_prompt(q.text, neighbors.points)\n    response = await vllm_client.chat.completions.create(model="Qwen2.5-7B-Instruct", messages=prompt)\n    return {"answer": response, "citations": [n.id for n in neighbors.points]}`,
+    labSteps: [
+      "Deploy a FastAPI app on K8s wrapping embed -> retrieve -> prompt -> vLLM-served model.",
+      "Ask a question your Module 10 documents can answer; confirm the response cites a real chunk.",
+      "Ask an out-of-scope question; confirm the model says it doesn't know instead of guessing.",
+      "Log every request/response pair — this becomes the event log Module 30 builds dashboards on.",
+    ],
+    costNote: "$0 on a local kind cluster; GPU compute cost only if self-hosting at scale.",
+    claimId: "oss-vllm-rag-api",
+  },
   "35-retrieval": {
     services: ["Qdrant", "TEI"],
     storage: "Qdrant (hybrid dense + sparse vectors)",
