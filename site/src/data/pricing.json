@@ -1,0 +1,35 @@
+{
+  "gcp": {
+    "model": "Gemini Flash (fast tier)",
+    "input_per_mtok": 0.075,
+    "output_per_mtok": 0.3,
+    "embedding_per_mtok": 0.025,
+    "claimId": "gcp-pricing-gemini-flash",
+    "verified_on": null
+  },
+  "aws": {
+    "model": "Claude on Bedrock (fast tier)",
+    "input_per_mtok": 0.25,
+    "output_per_mtok": 1.25,
+    "embedding_per_mtok": 0.02,
+    "claimId": "aws-pricing-bedrock-claude",
+    "verified_on": null
+  },
+  "azure": {
+    "model": "Azure OpenAI (fast tier)",
+    "input_per_mtok": 0.15,
+    "output_per_mtok": 0.6,
+    "embedding_per_mtok": 0.02,
+    "claimId": "azure-pricing-openai",
+    "verified_on": null
+  },
+  "oss": {
+    "model": "Self-hosted (open-weight model, GPU compute only)",
+    "input_per_mtok": 0,
+    "output_per_mtok": 0,
+    "embedding_per_mtok": 0,
+    "gpu_hour_usd": 1.1,
+    "claimId": "oss-pricing-gpu-hour",
+    "verified_on": null
+  }
+}

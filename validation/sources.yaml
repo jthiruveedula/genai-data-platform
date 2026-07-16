@@ -119,3 +119,35 @@ claims:
     sources: []
     volatility: low
     verified_on: null
+
+  - id: gcp-pricing-gemini-flash
+    used_by: site/src/data/pricing.json#gcp
+    claim: "Gemini Flash fast-tier pricing is $0.075/$0.30 per million input/output tokens"
+    sources: []
+    volatility: high
+    verified_on: null
+    extract_schema: { input_per_mtok: number, output_per_mtok: number, model: string }
+
+  - id: aws-pricing-bedrock-claude
+    used_by: site/src/data/pricing.json#aws
+    claim: "Claude fast-tier pricing on Bedrock is $0.25/$1.25 per million input/output tokens"
+    sources: []
+    volatility: high
+    verified_on: null
+    extract_schema: { input_per_mtok: number, output_per_mtok: number, model: string }
+
+  - id: azure-pricing-openai
+    used_by: site/src/data/pricing.json#azure
+    claim: "Azure OpenAI fast-tier pricing is $0.15/$0.60 per million input/output tokens"
+    sources: []
+    volatility: high
+    verified_on: null
+    extract_schema: { input_per_mtok: number, output_per_mtok: number, model: string }
+
+  - id: oss-pricing-gpu-hour
+    used_by: site/src/data/pricing.json#oss
+    claim: "A small self-hosted serving GPU costs approximately $1.10/hour"
+    sources: []
+    volatility: high
+    verified_on: null
+    extract_schema: { gpu_hour_usd: number }

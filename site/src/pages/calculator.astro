@@ -1,0 +1,17 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import CostCalculator from "../components/CostCalculator.astro";
+---
+
+<BaseLayout title="Cost calculator" description="Estimate monthly GenAI data platform cost across AWS, Azure, GCP, and OSS.">
+  <article>
+    <p class="chip">FinOps</p>
+    <h1>Cost calculator</h1>
+    <p>
+      A rough monthly estimate based on documents ingested, query volume, and average tokens per query — the same
+      three inputs every module's per-lab cost note is built from. Use it to compare the shape of the cost curve
+      across clouds, not as an exact quote.
+    </p>
+    <CostCalculator />
+  </article>
+</BaseLayout>

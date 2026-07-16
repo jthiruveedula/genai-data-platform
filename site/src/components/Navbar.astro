@@ -5,6 +5,7 @@ const base = import.meta.env.BASE_URL;
 
 <header class="navbar">
   <a class="brand" href={base}>GenAI Data Platform</a>
+  <a class="nav-link" href={`${base}calculator/`}>Cost calculator</a>
 
   <div class="flavor-switch" role="group" aria-label="Choose cloud flavor">
     {
@@ -66,6 +67,17 @@ const base = import.meta.env.BASE_URL;
     color: var(--text);
     text-decoration: none;
     margin-right: auto;
+  }
+
+  .nav-link {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    text-decoration: none;
+    padding: 0.4rem 0.2rem;
+  }
+
+  .nav-link:hover {
+    color: var(--text);
   }
 
   .flavor-switch {
