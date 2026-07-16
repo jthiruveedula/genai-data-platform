@@ -1,0 +1,173 @@
+---
+import { CLOUDS } from "../data/modules";
+import pricing from "../data/pricing.json";
+
+type PricingEntry = {
+  model: string;
+  input_per_mtok: number;
+  output_per_mtok: number;
+  embedding_per_mtok: number;
+  gpu_hour_usd?: number;
+  claimId: string;
+  verified_on: string | null;
+};
+
+const typedPricing = pricing as Record<string, PricingEntry>;
+---
+
+<section class="calculator" aria-labelledby="calc-heading">
+  <h2 id="calc-heading">Cost calculator</h2>
+  <p class="calc-note">
+    Rough monthly estimate from token pricing — <span class="chip chip--pending">UNVERIFIED PRICING</span> until a
+    validation run confirms current rates (see <a href={`${import.meta.env.BASE_URL}`}>freshness policy</a>). Not a
+    quote.
+  </p>
+
+  <div class="controls">
+    <label>
+      Documents ingested
+      <input type="range" id="calc-docs" min="10" max="10000" step="10" value="500" />
+      <output for="calc-docs" id="calc-docs-out">500</output>
+    </label>
+    <label>
+      Queries per day
+      <input type="range" id="calc-queries" min="10" max="5000" step="10" value="200" />
+      <output for="calc-queries" id="calc-queries-out">200</output>
+    </label>
+    <label>
+      Avg tokens per query (in + out)
+      <input type="range" id="calc-tokens" min="200" max="8000" step="100" value="1500" />
+      <output for="calc-tokens" id="calc-tokens-out">1500</output>
+    </label>
+  </div>
+
+  <div class="results" role="group" aria-label="Estimated monthly cost per cloud">
+    {
+      CLOUDS.map((c) => (
+        <div class="result-card" data-cloud-result={c.id}>
+          <span class="label">{c.label}</span>
+          <span class="amount chip" data-amount>
+            $0.00 / mo
+          </span>
+          <span class="model-note">{typedPricing[c.id].model}</span>
+        </div>
+      ))
+    }
+  </div>
+</section>
+
+<script define:vars={{ pricing: typedPricing }}>
+  const docsEl = document.getElementById("calc-docs");
+  const queriesEl = document.getElementById("calc-queries");
+  const tokensEl = document.getElementById("calc-tokens");
+  const docsOut = document.getElementById("calc-docs-out");
+  const queriesOut = document.getElementById("calc-queries-out");
+  const tokensOut = document.getElementById("calc-tokens-out");
+
+  function fmt(n) {
+    return `$${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / mo`;
+  }
+
+  function recalc() {
+    const docs = Number(docsEl.value);
+    const queriesPerDay = Number(queriesEl.value);
+    const avgTokens = Number(tokensEl.value);
+    docsOut.textContent = docs.toLocaleString();
+    queriesOut.textContent = queriesPerDay.toLocaleString();
+    tokensOut.textContent = avgTokens.toLocaleString();
+
+    const monthlyQueries = queriesPerDay * 30;
+    const monthlyTokensMtok = (monthlyQueries * avgTokens) / 1_000_000;
+    // Rough split: assume half the tokens are input, half output.
+    const embeddingMtok = (docs * 500) / 1_000_000; // ~500 tokens/doc to embed once
+
+    for (const [cloudId, entry] of Object.entries(pricing)) {
+      const el = document.querySelector(`[data-cloud-result="${cloudId}"] [data-amount]`);
+      if (!el) continue;
+      if (entry.gpu_hour_usd) {
+        // OSS: flat compute estimate, ~4 GPU-hours/day regardless of load, for a small serving box.
+        const monthlyGpuCost = entry.gpu_hour_usd * 4 * 30;
+        el.textContent = fmt(monthlyGpuCost);
+      } else {
+        const inferenceCost = monthlyTokensMtok * ((entry.input_per_mtok + entry.output_per_mtok) / 2);
+        const embeddingCost = embeddingMtok * entry.embedding_per_mtok;
+        el.textContent = fmt(inferenceCost + embeddingCost);
+      }
+    }
+  }
+
+  [docsEl, queriesEl, tokensEl].forEach((el) => el.addEventListener("input", recalc));
+  recalc();
+</script>
+
+<style>
+  .calculator {
+    margin: 3rem 0;
+    padding: 1.5rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-card);
+  }
+
+  .calc-note {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    margin-top: 0.25rem;
+  }
+
+  .controls {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.25rem;
+    margin: 1.5rem 0;
+  }
+
+  .controls label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+  }
+
+  .controls input[type="range"] {
+    accent-color: var(--accent);
+  }
+
+  .controls output {
+    font-family: var(--font-mono);
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  .results {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1rem;
+  }
+
+  .result-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    padding: 1rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg);
+  }
+
+  .result-card .label {
+    font-family: var(--font-heading);
+    font-weight: 700;
+  }
+
+  .result-card .amount {
+    font-size: 1rem;
+    align-self: flex-start;
+  }
+
+  .result-card .model-note {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+  }
+</style>
