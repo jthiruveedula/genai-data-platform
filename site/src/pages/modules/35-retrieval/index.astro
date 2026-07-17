@@ -1,6 +1,8 @@
 ---
 import BaseLayout from "../../../layouts/BaseLayout.astro";
 import FlavorTabs from "../../../components/FlavorTabs.astro";
+import ModuleHero from "../../../components/module/ModuleHero.astro";
+import ModuleFooterNav from "../../../components/module/ModuleFooterNav.astro";
 import { flavor as gcp } from "../../../data/flavors/gcp";
 import { flavor as aws } from "../../../data/flavors/aws";
 import { flavor as azure } from "../../../data/flavors/azure";
@@ -17,13 +19,13 @@ const entries = {
 
 <BaseLayout title="35 · Retrieval quality">
   <article>
-    <p class="chip">Module 35 · Intermediate</p>
-    <h1>Retrieval quality</h1>
-    <p>
-      A working RAG pipeline finds <em>similar</em> chunks the moment embeddings exist. Retrieval quality is the
-      difference between "similar" and "actually relevant" — the gap that separates a demo from something a real
-      user trusts.
-    </p>
+    <ModuleHero moduleId={moduleId}>
+      <p>
+        A working RAG pipeline finds <em>similar</em> chunks the moment embeddings exist. Retrieval quality is the
+        difference between "similar" and "actually relevant" — the gap that separates a demo from something a real
+        user trusts.
+      </p>
+    </ModuleHero>
 
     <h2>Hybrid search: BM25 + vector</h2>
     <p>
@@ -70,4 +72,5 @@ const entries = {
       <li>Adding HyDE or query rewriting as a default for every query — they add latency and cost, and plain retrieval is often good enough for simple lookups.</li>
     </ul>
   </article>
+  <ModuleFooterNav moduleId={moduleId} />
 </BaseLayout>

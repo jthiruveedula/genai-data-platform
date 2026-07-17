@@ -2,6 +2,8 @@
 import BaseLayout from "../../../layouts/BaseLayout.astro";
 import FlavorTabs from "../../../components/FlavorTabs.astro";
 import VectorSpaceScene from "../../../components/VectorSpaceScene3D.astro";
+import ModuleHero from "../../../components/module/ModuleHero.astro";
+import ModuleFooterNav from "../../../components/module/ModuleFooterNav.astro";
 import { flavor as gcp } from "../../../data/flavors/gcp";
 import { flavor as aws } from "../../../data/flavors/aws";
 import { flavor as azure } from "../../../data/flavors/azure";
@@ -18,13 +20,13 @@ const entries = {
 
 <BaseLayout title="20 · Embeddings & vector store">
   <article>
-    <p class="chip">Module 20 · Beginner</p>
-    <h1>Embeddings &amp; vector store</h1>
-    <p>
-      Module 15 gave you chunks — small enough to be meaningful, but still just text. This module turns each chunk
-      into a vector, and stores those vectors in an index built for one operation: "find me the K vectors closest to
-      this one." That single operation is what makes retrieval possible at all.
-    </p>
+    <ModuleHero moduleId={moduleId}>
+      <p>
+        Module 15 gave you chunks — small enough to be meaningful, but still just text. This module turns each
+        chunk into a vector, and stores those vectors in an index built for one operation: "find me the K vectors
+        closest to this one." That single operation is what makes retrieval possible at all.
+      </p>
+    </ModuleHero>
 
     <VectorSpaceScene />
 
@@ -54,4 +56,5 @@ const entries = {
       <li>Re-embedding the entire index by hand after a chunking change — plan for incremental re-embedding from day one (Module 11: Orchestration).</li>
     </ul>
   </article>
+  <ModuleFooterNav moduleId={moduleId} />
 </BaseLayout>

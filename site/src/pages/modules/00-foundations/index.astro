@@ -1,6 +1,8 @@
 ---
 import BaseLayout from "../../../layouts/BaseLayout.astro";
 import FlavorTabs from "../../../components/FlavorTabs.astro";
+import ModuleHero from "../../../components/module/ModuleHero.astro";
+import ModuleFooterNav from "../../../components/module/ModuleFooterNav.astro";
 import { flavor as gcp } from "../../../data/flavors/gcp";
 import { flavor as aws } from "../../../data/flavors/aws";
 import { flavor as azure } from "../../../data/flavors/azure";
@@ -17,12 +19,12 @@ const entries = {
 
 <BaseLayout title="00 · Foundations">
   <article>
-    <p class="chip">Module 00 · Beginner</p>
-    <h1>Foundations</h1>
-    <p>
-      Before touching any cloud service, get the vocabulary straight. Every later module assumes you know these five
-      ideas cold.
-    </p>
+    <ModuleHero moduleId={moduleId}>
+      <p>
+        Before touching any cloud service, get the vocabulary straight. Every later module assumes you know these
+        five ideas cold.
+      </p>
+    </ModuleHero>
 
     <h2>Tokens</h2>
     <p>
@@ -66,4 +68,5 @@ const entries = {
       <li>Picking a fine-tune when the real problem is stale or missing data (RAG fixes that; fine-tuning doesn't).</li>
     </ul>
   </article>
+  <ModuleFooterNav moduleId={moduleId} />
 </BaseLayout>

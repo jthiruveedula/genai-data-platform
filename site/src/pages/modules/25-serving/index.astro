@@ -1,6 +1,8 @@
 ---
 import BaseLayout from "../../../layouts/BaseLayout.astro";
 import FlavorTabs from "../../../components/FlavorTabs.astro";
+import ModuleHero from "../../../components/module/ModuleHero.astro";
+import ModuleFooterNav from "../../../components/module/ModuleFooterNav.astro";
 import { flavor as gcp } from "../../../data/flavors/gcp";
 import { flavor as aws } from "../../../data/flavors/aws";
 import { flavor as azure } from "../../../data/flavors/azure";
@@ -17,13 +19,13 @@ const entries = {
 
 <BaseLayout title="25 · Serving a RAG API">
   <article>
-    <p class="chip">Module 25 · Beginner</p>
-    <h1>Serving a RAG API</h1>
-    <p>
-      Everything so far — ingestion, chunking, embeddings — happens offline, once per document. This module wires
-      the online path: what happens the instant a user asks a question. This is the module where the pipeline
-      becomes a product.
-    </p>
+    <ModuleHero moduleId={moduleId}>
+      <p>
+        Everything so far — ingestion, chunking, embeddings — happens offline, once per document. This module
+        wires the online path: what happens the instant a user asks a question. This is the module where the
+        pipeline becomes a product.
+      </p>
+    </ModuleHero>
 
     <h2>The request path</h2>
     <p>
@@ -61,4 +63,5 @@ const entries = {
       <li>Defaulting to the most expensive/slowest model for every query — start fast-tier, escalate only when needed.</li>
     </ul>
   </article>
+  <ModuleFooterNav moduleId={moduleId} />
 </BaseLayout>

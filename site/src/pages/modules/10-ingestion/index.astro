@@ -1,6 +1,8 @@
 ---
 import BaseLayout from "../../../layouts/BaseLayout.astro";
 import FlavorTabs from "../../../components/FlavorTabs.astro";
+import ModuleHero from "../../../components/module/ModuleHero.astro";
+import ModuleFooterNav from "../../../components/module/ModuleFooterNav.astro";
 import { flavor as gcp } from "../../../data/flavors/gcp";
 import { flavor as aws } from "../../../data/flavors/aws";
 import { flavor as azure } from "../../../data/flavors/azure";
@@ -17,13 +19,13 @@ const entries = {
 
 <BaseLayout title="10 · Ingestion">
   <article>
-    <p class="chip">Module 10 · Beginner</p>
-    <h1>Ingestion</h1>
-    <p>
-      Every pipeline starts the same way regardless of cloud: get raw content — documents, tickets, chats, web pages
-      — into durable object storage, then register enough metadata (source, filename, ingested-at, checksum) in a
-      table so later stages can find it and avoid re-processing duplicates.
-    </p>
+    <ModuleHero moduleId={moduleId}>
+      <p>
+        Every pipeline starts the same way regardless of cloud: get raw content — documents, tickets, chats, web
+        pages — into durable object storage, then register enough metadata (source, filename, ingested-at,
+        checksum) in a table so later stages can find it and avoid re-processing duplicates.
+      </p>
+    </ModuleHero>
 
     <h2>Why object storage first, not straight to a vector DB</h2>
     <p>
@@ -49,4 +51,5 @@ const entries = {
       <li>No idempotency check — re-running a job during development silently multiplies your document count.</li>
     </ul>
   </article>
+  <ModuleFooterNav moduleId={moduleId} />
 </BaseLayout>

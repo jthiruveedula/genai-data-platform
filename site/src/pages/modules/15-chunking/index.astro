@@ -1,6 +1,8 @@
 ---
 import BaseLayout from "../../../layouts/BaseLayout.astro";
 import FlavorTabs from "../../../components/FlavorTabs.astro";
+import ModuleHero from "../../../components/module/ModuleHero.astro";
+import ModuleFooterNav from "../../../components/module/ModuleFooterNav.astro";
 import { flavor as gcp } from "../../../data/flavors/gcp";
 import { flavor as aws } from "../../../data/flavors/aws";
 import { flavor as azure } from "../../../data/flavors/azure";
@@ -17,13 +19,13 @@ const entries = {
 
 <BaseLayout title="15 · Chunking">
   <article>
-    <p class="chip">Module 15 · Beginner</p>
-    <h1>Chunking</h1>
-    <p>
-      A raw document is too big and too unstructured to embed as a single unit. Chunking splits it into smaller
-      pieces that are each small enough to embed meaningfully and retrieve independently — but where you cut
-      matters as much as how small the pieces are.
-    </p>
+    <ModuleHero moduleId={moduleId}>
+      <p>
+        A raw document is too big and too unstructured to embed as a single unit. Chunking splits it into smaller
+        pieces that are each small enough to embed meaningfully and retrieve independently — but where you cut
+        matters as much as how small the pieces are.
+      </p>
+    </ModuleHero>
 
     <h2>Fixed vs. recursive vs. semantic vs. layout-aware</h2>
     <p>
@@ -56,4 +58,5 @@ const entries = {
       <li>Never revisiting chunk size after looking at real retrieval failures — chunking strategy should be evaluated (Module 45), not set once and forgotten.</li>
     </ul>
   </article>
+  <ModuleFooterNav moduleId={moduleId} />
 </BaseLayout>
