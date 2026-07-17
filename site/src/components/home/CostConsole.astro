@@ -13,6 +13,15 @@ type PricingEntry = {
   verified_on: string | null;
 };
 
+interface Props {
+  /** Hide the "Open the full cost console" link — set false when this
+   *  component IS the full console page (e.g. /calculator/) rather than
+   *  the homepage teaser section, where that link would point at itself. */
+  linkToFullConsole?: boolean;
+}
+
+const { linkToFullConsole = true } = Astro.props;
+
 const typedPricing = pricing as Record<string, PricingEntry>;
 const base = import.meta.env.BASE_URL;
 
@@ -123,7 +132,7 @@ const initial = Object.fromEntries(
           <span data-for="azure">Azure OpenAI fast tier + AI Search</span>
           <span data-for="oss">vLLM + BGE/TEI + Qdrant · GPU-hours, not tokens</span>
         </span>
-        <a class="arch-link" href={`${base}calculator/`}>Open the full cost console →</a>
+        {linkToFullConsole && <a class="arch-link" href={`${base}calculator/`}>Open the full cost console →</a>}
       </p>
     </div>
   </div>
@@ -359,6 +368,9 @@ const initial = Object.fromEntries(
 
 <style>
   .cost-console {
+    max-width: 72rem;
+    margin-inline: auto;
+    padding-inline: clamp(1rem, 4vw, 1.5rem);
     padding-block: clamp(3.5rem, 7vw, 5.5rem);
   }
 
