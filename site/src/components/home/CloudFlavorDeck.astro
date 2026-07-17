@@ -1,0 +1,461 @@
+---
+import { PERSONALITIES } from "../../data/platform";
+
+const base = import.meta.env.BASE_URL;
+
+/**
+ * The four cloud brand accents — the one sanctioned exception to the
+ * tokens-only rule: each panel keeps its provider's color regardless of the
+ * active theme, scoped via a per-panel --panel-accent custom property.
+ */
+const BRAND_ACCENTS: Record<string, string> = {
+  gcp: "#4285f4",
+  aws: "#ff9900",
+  azure: "#0078d4",
+  oss: "#22c55e",
+};
+
+/** Live translation strip: one concept, five labels — CSS shows the active one. */
+const CLOUD_KEYS = ["neutral", "gcp", "aws", "azure", "oss"] as const;
+
+const MAPPING: { label: string; values: Record<(typeof CLOUD_KEYS)[number], string> }[] = [
+  {
+    label: "VECTOR DB",
+    values: {
+      neutral: "Vector index",
+      gcp: "Vertex AI Vector Search",
+      aws: "OpenSearch Serverless",
+      azure: "Azure AI Search",
+      oss: "Qdrant",
+    },
+  },
+  {
+    label: "EMBEDDINGS",
+    values: {
+      neutral: "Embedding model",
+      gcp: "gemini-embedding-001",
+      aws: "Titan Embeddings v2",
+      azure: "Azure OpenAI embeddings",
+      oss: "BGE via TEI",
+    },
+  },
+  {
+    label: "LLM",
+    values: {
+      neutral: "Fast LLM",
+      gcp: "Gemini 3 Flash",
+      aws: "Claude Haiku 4.5",
+      azure: "Azure OpenAI fast tier",
+      oss: "Llama/Qwen on vLLM",
+    },
+  },
+];
+---
+
+<section id="clouds" data-flavor-deck aria-labelledby="clouds-heading">
+  <header class="deck-header">
+    <p class="section-kicker">Four flavors, one platform</p>
+    <h2 id="clouds-heading" class="section-title">Same architecture. Your stack.</h2>
+    <p class="section-lede">
+      Every module, diagram, and cost estimate speaks the language of the stack you pick — switch any time, nothing
+      else changes.
+    </p>
+  </header>
+
+  <div class="flavor-deck" role="group" aria-label="Choose your cloud flavor">
+    {
+      PERSONALITIES.map((p) => (
+        <button
+          type="button"
+          class="flavor-panel"
+          data-cloud-btn={p.id}
+          data-flavor={p.id}
+          aria-pressed="false"
+          style={`--panel-accent: ${BRAND_ACCENTS[p.id]}`}
+        >
+          <span class="active-flag" aria-hidden="true">
+            ACTIVE
+          </span>
+          <span class="panel-top">
+            <img src={`${base}logos/${p.id}.svg`} width="28" height="28" alt="" />
+            <span class="chip panel-archetype">{p.archetype}</span>
+          </span>
+          <span class="panel-name">{p.name}</span>
+          <span class="panel-thesis">{p.thesis}</span>
+          <span class="panel-stack" role="list">
+            {p.stack.map((item) => (
+              <span class="panel-stack-item" role="listitem">
+                {item}
+              </span>
+            ))}
+          </span>
+          <span class="panel-signal">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+              <path
+                d="M1.5 6h9m0 0L7 2.5M10.5 6 7 9.5"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+            {p.signal}
+          </span>
+        </button>
+      ))
+    }
+  </div>
+
+  <div class="translation-strip glass-panel" data-strip>
+    <p class="strip-caption">LIVE MAPPING — switches with your selection.</p>
+    <div class="strip-grid">
+      {
+        MAPPING.map((col) => (
+          <div class="strip-col">
+            <span class="strip-key">{col.label}</span>
+            <span class="strip-value cloud-swap">
+              {CLOUD_KEYS.map((k) => (
+                <span data-for={k}>{col.values[k]}</span>
+              ))}
+            </span>
+          </div>
+        ))
+      }
+    </div>
+  </div>
+</section>
+
+<script>
+  import { gsap } from "gsap";
+  import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+  gsap.registerPlugin(ScrollTrigger);
+
+  const prefersReducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  let ctx: gsap.Context | undefined;
+
+  function setup() {
+    const rootEl = document.querySelector<HTMLElement>("[data-flavor-deck]");
+    if (!rootEl) return;
+    ctx?.revert();
+    ctx = gsap.context(() => {
+      if (prefersReducedMotion()) return;
+
+      const panels = gsap.utils.toArray<HTMLElement>(".flavor-panel", rootEl);
+      if (panels.length) {
+        gsap.from(panels, {
+          autoAlpha: 0,
+          y: 28,
+          duration: 0.6,
+          ease: "power2.out",
+          stagger: 0.08,
+          scrollTrigger: { trigger: rootEl.querySelector(".flavor-deck"), start: "top 82%", once: true },
+        });
+      }
+
+      const strip = rootEl.querySelector<HTMLElement>("[data-strip]");
+      if (strip) {
+        gsap.from(strip, {
+          autoAlpha: 0,
+          y: 24,
+          duration: 0.6,
+          ease: "power2.out",
+          scrollTrigger: { trigger: strip, start: "top 88%", once: true },
+        });
+      }
+    }, rootEl);
+  }
+
+  // The strip pulse queries the live DOM on every event, so a single
+  // module-scope listener stays correct across ClientRouter navigations.
+  document.addEventListener("gdp:cloud-change", () => {
+    if (prefersReducedMotion()) return;
+    const values = document.querySelectorAll<HTMLElement>("[data-flavor-deck] .strip-value");
+    if (!values.length) return;
+    gsap.fromTo(values, { autoAlpha: 0.4 }, { autoAlpha: 1, duration: 0.35, ease: "power2.out", overwrite: "auto" });
+  });
+
+  setup();
+  document.addEventListener("astro:page-load", setup);
+  document.addEventListener("astro:after-swap", () => ctx?.revert());
+</script>
+
+<style>
+  section {
+    padding: 4.5rem 0 3rem;
+  }
+
+  .deck-header {
+    max-width: 46rem;
+  }
+
+  /* ------------------------------------------------------------------ deck */
+  .flavor-deck {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1rem;
+    margin-top: 2.25rem;
+  }
+
+  .flavor-panel {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.85rem;
+    overflow: hidden;
+    min-height: 44px;
+    padding: 1.4rem 1.25rem 1.25rem;
+    text-align: left;
+    cursor: pointer;
+    color: var(--text);
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-top: 2px solid var(--panel-accent);
+    border-radius: calc(var(--radius) + 4px);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    box-shadow: var(--shadow-panel);
+    transition:
+      transform var(--duration-micro) var(--ease-out),
+      box-shadow var(--duration-micro) var(--ease-out),
+      background var(--duration-micro) var(--ease-out);
+  }
+
+  /* Faint brand glow anchored top-left — personality, not decoration. */
+  .flavor-panel::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(
+      220px 190px at 12% 0%,
+      color-mix(in srgb, var(--panel-accent) 8%, transparent),
+      transparent 70%
+    );
+  }
+
+  .flavor-panel:hover,
+  .flavor-panel:focus-visible {
+    transform: translateY(-4px);
+    box-shadow: 0 14px 32px color-mix(in srgb, var(--panel-accent) 18%, transparent);
+  }
+
+  .flavor-panel[aria-pressed="true"] {
+    background: var(--bg-raised);
+    box-shadow:
+      inset 0 0 0 1.5px var(--panel-accent),
+      var(--shadow-panel);
+  }
+
+  .active-flag {
+    position: absolute;
+    top: 0.85rem;
+    right: 0.9rem;
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    letter-spacing: 0.14em;
+    color: var(--panel-accent);
+    opacity: 0;
+    transform: translateY(-4px);
+    transition:
+      opacity var(--duration-micro) var(--ease-out),
+      transform var(--duration-micro) var(--ease-out);
+  }
+
+  .flavor-panel[aria-pressed="true"] .active-flag {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* Per-provider micro-identity (subtle, CSS-only). */
+  .flavor-panel[data-flavor="gcp"] {
+    border-radius: 16px;
+  }
+
+  .flavor-panel[data-flavor="aws"] {
+    border-radius: 2px;
+  }
+
+  .flavor-panel[data-flavor="azure"] {
+    backdrop-filter: blur(calc(var(--glass-blur) * 1.6));
+    -webkit-backdrop-filter: blur(calc(var(--glass-blur) * 1.6));
+    box-shadow:
+      var(--shadow-panel),
+      0 18px 44px color-mix(in srgb, var(--bg-deep) 45%, transparent);
+  }
+
+  .flavor-panel[data-flavor="oss"] {
+    border-radius: 2px;
+  }
+
+  .flavor-panel[data-flavor="oss"] .panel-name {
+    font-family: var(--font-mono);
+    letter-spacing: -0.01em;
+  }
+
+  .flavor-panel[data-flavor="oss"]::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--text) 3%, transparent) 0 1px,
+      transparent 1px 3px
+    );
+  }
+
+  /* ------------------------------------------------------- panel internals */
+  .panel-top {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .panel-top img {
+    display: block;
+  }
+
+  .panel-archetype {
+    font-size: 0.62rem;
+    letter-spacing: 0.1em;
+  }
+
+  .panel-name {
+    font-family: var(--font-heading);
+    font-size: 1.15rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+
+  .panel-thesis {
+    font-size: 0.9rem;
+    line-height: 1.55;
+    color: var(--text-secondary);
+  }
+
+  .panel-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    width: 100%;
+  }
+
+  .panel-stack-item {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.02em;
+    color: var(--text-secondary);
+  }
+
+  .panel-stack-item::before {
+    content: "";
+    flex: none;
+    width: 3px;
+    height: 0.85em;
+    background: var(--panel-accent);
+  }
+
+  .panel-signal {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.45rem;
+    margin-top: auto;
+    padding-top: 0.35rem;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    line-height: 1.5;
+    color: var(--text-secondary);
+  }
+
+  .panel-signal svg {
+    flex: none;
+    margin-top: 0.2em;
+    color: var(--panel-accent);
+  }
+
+  /* ------------------------------------------------------ translation strip */
+  .translation-strip {
+    margin-top: 1.5rem;
+    padding: 1.25rem 1.5rem 1.4rem;
+  }
+
+  .strip-caption {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0 0 1rem;
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+    color: var(--text-secondary);
+  }
+
+  .strip-caption::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 8px color-mix(in srgb, var(--accent) 60%, transparent);
+  }
+
+  .strip-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem 2rem;
+  }
+
+  .strip-col {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    min-width: 0;
+  }
+
+  .strip-key {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.14em;
+    color: var(--text-secondary);
+  }
+
+  .strip-key::before {
+    content: "[ ";
+    color: var(--border);
+  }
+
+  .strip-key::after {
+    content: " ]";
+    color: var(--border);
+  }
+
+  .strip-value {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: var(--accent-text, var(--accent));
+    overflow-wrap: break-word;
+  }
+
+  /* ------------------------------------------------------------- responsive */
+  @media (max-width: 1080px) {
+    .flavor-deck {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 640px) {
+    .flavor-deck {
+      grid-template-columns: 1fr;
+    }
+
+    .strip-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

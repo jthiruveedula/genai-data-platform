@@ -1,0 +1,462 @@
+---
+import { LIFECYCLE } from "../../data/platform";
+
+const STAGE_COUNT = LIFECYCLE.length;
+
+/** Evenly spaced station positions along a gentle S-curve, viewBox 0 0 480 640. */
+const STATIONS = LIFECYCLE.map((stage, i) => {
+  const t = i / (STAGE_COUNT - 1);
+  const y = 40 + t * 560;
+  const x = 240 + Math.sin(t * Math.PI * 2.1) * 130;
+  return { stage, x, y };
+});
+
+const railPath = STATIONS.map((s, i) => `${i === 0 ? "M" : "L"}${s.x.toFixed(1)} ${s.y.toFixed(1)}`).join(" ");
+---
+
+<section id="architecture" class="arch-story" data-arch-story aria-labelledby="arch-heading">
+  <div class="scene-inner arch-intro">
+    <p class="section-kicker">THE LIFECYCLE</p>
+    <h2 id="arch-heading" class="section-title">One document. Ten stages. Any cloud.</h2>
+    <p class="section-lede">
+      Scroll to follow a single messy PDF from ingestion to a grounded, cited answer — and watch every stage re-map
+      when you switch clouds.
+    </p>
+  </div>
+
+  <div class="arch-pin" data-arch-pin>
+    <div class="arch-progress" aria-hidden="true"><span class="arch-progress-fill" data-arch-progress></span></div>
+
+    <div class="arch-readouts" data-arch-readouts>
+      {
+        LIFECYCLE.map((stage, i) => (
+          <div class="readout" data-readout-index={i}>
+            <span class="readout-count mono">
+              {String(i + 1).padStart(2, "0")} / {String(STAGE_COUNT).padStart(2, "0")}
+            </span>
+            <span class="chip chip--accent readout-chip">{stage.label}</span>
+            <p class="readout-narration">{stage.narration}</p>
+            <p class="readout-service mono">
+              <span class="readout-service-label">ON YOUR STACK →</span>
+              <span class="cloud-swap">
+                <span data-for="neutral">{stage.services.neutral}</span>
+                <span data-for="gcp">{stage.services.gcp}</span>
+                <span data-for="aws">{stage.services.aws}</span>
+                <span data-for="azure">{stage.services.azure}</span>
+                <span data-for="oss">{stage.services.oss}</span>
+              </span>
+            </p>
+          </div>
+        ))
+      }
+    </div>
+
+    <div class="arch-rail" aria-hidden="true">
+      <svg viewBox="0 0 480 640" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path class="rail-path-base" d={railPath} stroke="var(--border)" stroke-width="1.5"></path>
+        <path class="rail-path-draw" d={railPath} stroke="var(--accent)" stroke-width="2"></path>
+        {
+          STATIONS.map((s, i) => (
+            <g class="rail-station" data-station-index={i}>
+              <circle class="station-glow" cx={s.x} cy={s.y} r="14" fill="var(--accent)" opacity="0" />
+              <circle class="station-dot" cx={s.x} cy={s.y} r="7" fill="var(--bg-card)" stroke="var(--border)" stroke-width="1.5" />
+            </g>
+          ))
+        }
+        <g class="rail-token" data-rail-token opacity="0">
+          <rect x="-22" y="-15" width="44" height="30" rx="4" fill="var(--bg-raised)" stroke="var(--accent)" stroke-width="1.25" />
+          <line x1="-14" y1="-6" x2="14" y2="-6" stroke="var(--text-secondary)" stroke-width="1.5" />
+          <line x1="-14" y1="0" x2="10" y2="0" stroke="var(--text-secondary)" stroke-width="1.5" />
+          <line x1="-14" y1="6" x2="6" y2="6" stroke="var(--accent)" stroke-width="1.5" class="rail-token-citation" />
+        </g>
+      </svg>
+      {
+        LIFECYCLE.map((stage, i) => (
+          <span class="rail-label mono" data-rail-label-index={i} style={`left:${(STATIONS[i].x / 480) * 100}%; top:${(STATIONS[i].y / 640) * 100}%;`}>
+            {stage.label}
+          </span>
+        ))
+      }
+    </div>
+  </div>
+
+  <ol class="arch-list" data-arch-list aria-label="Platform lifecycle stages">
+    {
+      LIFECYCLE.map((stage, i) => (
+        <li class="list-row" data-list-row>
+          <span class="row-index mono">{String(i + 1).padStart(2, "0")}</span>
+          <div class="row-body">
+            <span class="chip chip--accent">{stage.label}</span>
+            <p class="row-narration">{stage.narration}</p>
+            <p class="row-service mono">
+              <span class="readout-service-label">ON YOUR STACK →</span>
+              <span class="cloud-swap">
+                <span data-for="neutral">{stage.services.neutral}</span>
+                <span data-for="gcp">{stage.services.gcp}</span>
+                <span data-for="aws">{stage.services.aws}</span>
+                <span data-for="azure">{stage.services.azure}</span>
+                <span data-for="oss">{stage.services.oss}</span>
+              </span>
+            </p>
+          </div>
+        </li>
+      ))
+    }
+  </ol>
+</section>
+
+<script>
+  import { gsap } from "gsap";
+  import { ScrollTrigger } from "gsap/ScrollTrigger";
+  import { MotionPathPlugin } from "gsap/MotionPathPlugin";
+
+  gsap.registerPlugin(ScrollTrigger, MotionPathPlugin);
+
+  const STAGE_COUNT_ATTR = "data-readout-index";
+
+  let ctx: gsap.Context | undefined;
+  let resizeTimer: ReturnType<typeof setTimeout> | undefined;
+
+  function setup() {
+    const rootEl = document.querySelector<HTMLElement>("[data-arch-story]");
+    if (!rootEl) return;
+    ctx?.revert();
+
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const wide = window.innerWidth >= 768;
+    const pinned = wide && !reduced;
+
+    ctx = gsap.context(() => {
+      const list = rootEl.querySelector<HTMLElement>("[data-arch-list]");
+      const pin = rootEl.querySelector<HTMLElement>("[data-arch-pin]");
+
+      if (!pinned) {
+        if (pin) pin.style.display = "none";
+        if (list) list.style.display = "flex";
+        if (!list) return;
+
+        const rows = gsap.utils.toArray<HTMLElement>("[data-list-row]", list);
+        if (reduced) {
+          gsap.set(rows, { autoAlpha: 1, y: 0 });
+          return;
+        }
+        rows.forEach((row) => {
+          gsap.from(row, {
+            autoAlpha: 0,
+            y: 24,
+            duration: 0.5,
+            ease: "power2.out",
+            scrollTrigger: { trigger: row, start: "top 88%", once: true },
+          });
+        });
+        return;
+      }
+
+      if (list) list.style.display = "none";
+      if (pin) pin.style.display = "";
+
+      const readouts = gsap.utils.toArray<HTMLElement>("[data-readout-index]", rootEl);
+      const stations = gsap.utils.toArray<SVGGElement>(".rail-station", rootEl);
+      const labels = gsap.utils.toArray<HTMLElement>("[data-rail-label-index]", rootEl);
+      const progressFill = rootEl.querySelector<HTMLElement>("[data-arch-progress]");
+      const railPath = rootEl.querySelector<SVGPathElement>(".rail-path-draw");
+      const railBase = rootEl.querySelector<SVGPathElement>(".rail-path-base");
+      const token = rootEl.querySelector<SVGGElement>("[data-rail-token]");
+      const stageCount = readouts.length;
+
+      gsap.set(readouts, { autoAlpha: 0 });
+      gsap.set(readouts[0], { autoAlpha: 1 });
+      gsap.set(labels, { autoAlpha: 0.35 });
+      gsap.set(progressFill, { scaleY: 0, transformOrigin: "top" });
+
+      let railLen = 0;
+      if (railPath) {
+        railLen = railPath.getTotalLength();
+        gsap.set(railPath, { strokeDasharray: railLen, strokeDashoffset: railLen });
+      }
+      if (token && railBase) gsap.set(token, { autoAlpha: 0 });
+
+      const tl = gsap.timeline({
+        scrollTrigger: {
+          trigger: pin,
+          start: "top top",
+          end: "+=450%",
+          scrub: 1,
+          pin: true,
+        },
+      });
+
+      tl.to(progressFill, { scaleY: 1, ease: "none" }, 0);
+      if (railPath) tl.to(railPath, { strokeDashoffset: 0, ease: "none" }, 0);
+      if (token && railBase) {
+        tl.to(
+          token,
+          {
+            autoAlpha: 1,
+            duration: 0.001,
+          },
+          0,
+        );
+        tl.to(
+          token,
+          {
+            motionPath: { path: railBase, align: railBase, alignOrigin: [0.5, 0.5] },
+            ease: "none",
+          },
+          0,
+        );
+      }
+
+      const segment = 1 / stageCount;
+      readouts.forEach((readout, i) => {
+        const start = i * segment;
+        if (i > 0) {
+          tl.to(readouts[i - 1], { autoAlpha: 0, duration: segment * 0.25 }, start - segment * 0.25);
+          tl.to(readout, { autoAlpha: 1, duration: segment * 0.25 }, start);
+        }
+        tl.call(
+          () => {
+            stations.forEach((st, si) => st.classList.toggle("is-active", si === i));
+            labels.forEach((lb, li) => gsap.to(lb, { autoAlpha: li === i ? 1 : 0.35, duration: 0.25, overwrite: "auto" }));
+            const glow = stations[i]?.querySelector<SVGCircleElement>(".station-glow");
+            if (glow) gsap.to(glow, { opacity: 1, duration: 0.25 });
+          },
+          undefined,
+          start,
+        );
+        if (i > 0) {
+          const prevGlow = stations[i - 1]?.querySelector<SVGCircleElement>(".station-glow");
+          if (prevGlow) tl.to(prevGlow, { opacity: 0, duration: 0.2 }, start - 0.02);
+        }
+        // Document token morphs: shrinks after EMBED, expands + citation highlight at ANSWER.
+        if (stations[i]?.getAttribute("data-station-index") === String(stageCount - 1) && token) {
+          tl.to(token, { scale: 1, duration: segment * 0.3 }, start);
+          const citation = token.querySelector<SVGLineElement>(".rail-token-citation");
+          if (citation) tl.to(citation, { opacity: 1, stroke: "var(--accent)", duration: segment * 0.3 }, start);
+        }
+      });
+
+      // Shrink into a glowing dot right after the EMBED stage.
+      const embedIdx = readouts.findIndex((el) => el.getAttribute(STAGE_COUNT_ATTR) === "3");
+      if (embedIdx >= 0 && token) {
+        tl.to(token, { scale: 0.4, transformOrigin: "50% 50%", duration: segment * 0.3 }, (embedIdx + 0.5) * segment);
+      }
+    }, rootEl);
+  }
+
+  function onCloudChange() {
+    const rootEl = document.querySelector<HTMLElement>("[data-arch-story]");
+    if (!rootEl) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const active = rootEl.querySelectorAll<HTMLElement>(".cloud-swap");
+    gsap.fromTo(active, { autoAlpha: 0.3 }, { autoAlpha: 1, duration: 0.3, ease: "power2.out", overwrite: "auto" });
+  }
+
+  function onResize() {
+    if (resizeTimer) clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      const wide = window.innerWidth >= 768;
+      const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const shouldPin = wide && !reduced;
+      const currentlyPinned = document.querySelector<HTMLElement>("[data-arch-pin]")?.style.display !== "none";
+      if (shouldPin !== currentlyPinned) setup();
+    }, 200);
+  }
+
+  setup();
+  document.addEventListener("astro:page-load", setup);
+  document.addEventListener("astro:after-swap", () => ctx?.revert());
+  document.addEventListener("gdp:cloud-change", onCloudChange);
+  window.addEventListener("resize", onResize);
+</script>
+
+<style>
+  .arch-story {
+    background: var(--bg-deep);
+    border-block: 1px solid var(--border);
+    padding-block: clamp(3.5rem, 7vw, 5rem) 0;
+    background-image: radial-gradient(color-mix(in srgb, var(--text) 6%, transparent) 1px, transparent 1px);
+    background-size: 28px 28px;
+    background-position: -8px -8px;
+  }
+
+  .arch-intro {
+    max-width: 46rem;
+    padding-bottom: 3rem;
+  }
+
+  .arch-pin {
+    position: relative;
+    height: 100vh;
+    display: grid;
+    grid-template-columns: minmax(0, 40fr) minmax(0, 60fr);
+    gap: 2rem;
+    align-items: center;
+    max-width: 72rem;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+    overflow: hidden;
+  }
+
+  .arch-progress {
+    position: absolute;
+    left: 0.5rem;
+    top: 8%;
+    bottom: 8%;
+    width: 2px;
+    background: var(--border);
+  }
+
+  .arch-progress-fill {
+    display: block;
+    width: 100%;
+    height: 100%;
+    background: var(--accent);
+    box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 60%, transparent);
+  }
+
+  .arch-readouts {
+    position: relative;
+    min-height: 16rem;
+    padding-left: 1.5rem;
+  }
+
+  .readout {
+    position: absolute;
+    inset: 0 auto 0 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    max-width: 26rem;
+  }
+
+  .readout-count {
+    font-size: 0.85rem;
+    letter-spacing: 0.1em;
+    color: var(--text-secondary);
+  }
+
+  .readout-chip {
+    width: fit-content;
+  }
+
+  .readout-narration {
+    margin: 0;
+    font-size: 1.05rem;
+    line-height: 1.6;
+    color: var(--text);
+  }
+
+  .readout-service {
+    margin: 0;
+    font-size: 0.82rem;
+    color: var(--accent-text, var(--accent));
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+
+  .readout-service-label {
+    color: var(--text-secondary);
+    letter-spacing: 0.08em;
+    font-size: 0.65rem;
+  }
+
+  .arch-rail {
+    position: relative;
+    height: 100%;
+    display: flex;
+    align-items: center;
+  }
+
+  .arch-rail svg {
+    width: 100%;
+    height: 90%;
+    max-height: 620px;
+  }
+
+  .station-dot {
+    transition: stroke var(--duration-theme) var(--ease-out);
+  }
+
+  .rail-station.is-active .station-dot {
+    stroke: var(--accent);
+    fill: var(--bg-raised);
+  }
+
+  .rail-label {
+    position: absolute;
+    transform: translate(1.1rem, -50%);
+    font-size: 0.62rem;
+    letter-spacing: 0.08em;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    pointer-events: none;
+  }
+
+  /* ---- Mobile / reduced-motion fallback list ---- */
+  .arch-list {
+    display: none;
+    flex-direction: column;
+    gap: 0;
+    list-style: none;
+    margin: 0;
+    padding: 0 1.5rem 3rem;
+    max-width: 46rem;
+    margin-inline: auto;
+  }
+
+  .list-row {
+    position: relative;
+    display: flex;
+    gap: 1.25rem;
+    padding: 1.25rem 0;
+    border-left: 2px solid var(--border);
+    padding-left: 1.5rem;
+  }
+
+  .list-row::before {
+    content: "";
+    position: absolute;
+    left: -6px;
+    top: 1.6rem;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--bg-card);
+    border: 1.5px solid var(--accent);
+  }
+
+  .row-index {
+    flex: none;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+  }
+
+  .row-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  .row-narration {
+    margin: 0;
+    line-height: 1.55;
+    color: var(--text);
+  }
+
+  .row-service {
+    margin: 0;
+    font-size: 0.8rem;
+    color: var(--accent-text, var(--accent));
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+
+  @media (max-width: 767px) {
+    .arch-list {
+      display: flex;
+    }
+  }
+</style>

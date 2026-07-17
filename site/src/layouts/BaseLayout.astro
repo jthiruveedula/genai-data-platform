@@ -19,9 +19,16 @@ import { ClientRouter } from "astro:transitions";
 interface Props {
   title: string;
   description?: string;
+  /** Homepage scenes manage their own width/rhythm — removes <main>'s
+   *  max-width and padding so sections can go edge-to-edge. */
+  fullBleed?: boolean;
 }
 
-const { title, description = "A multi-cloud & OSS learning suite for building GenAI data platforms." } = Astro.props;
+const {
+  title,
+  description = "A multi-cloud & OSS learning suite for building GenAI data platforms.",
+  fullBleed = false,
+} = Astro.props;
 ---
 
 <!doctype html>
@@ -39,9 +46,10 @@ const { title, description = "A multi-cloud & OSS learning suite for building Ge
         var root = document.documentElement;
         var params = new URLSearchParams(location.search);
         var cloud = params.get("cloud") || localStorage.getItem("gdp.cloud");
-        var theme = localStorage.getItem("gdp.theme");
+        // Dark-first: dark unless the visitor explicitly chose light.
+        var theme = localStorage.getItem("gdp.theme") || "dark";
         if (cloud) root.setAttribute("data-cloud", cloud);
-        if (theme) root.setAttribute("data-theme", theme);
+        root.setAttribute("data-theme", theme);
       })();
     </script>
   </head>
@@ -51,7 +59,7 @@ const { title, description = "A multi-cloud & OSS learning suite for building Ge
       <div class="reading-progress__bar" data-reading-progress-bar></div>
     </div>
     <Navbar />
-    <main id="main">
+    <main id="main" class:list={[{ "main--full-bleed": fullBleed }]}>
       <slot />
     </main>
     <script>
@@ -193,6 +201,10 @@ const { title, description = "A multi-cloud & OSS learning suite for building Ge
         max-width: 72rem;
         margin: 0 auto;
         padding: 0 1.5rem 3rem;
+      }
+      main.main--full-bleed {
+        max-width: none;
+        padding: 0;
       }
     </style>
   </body>

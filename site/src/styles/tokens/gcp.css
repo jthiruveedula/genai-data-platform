@@ -1,14 +1,21 @@
-/* GCP flavor — "Material": 16px radius cards, elevation, pill buttons */
+/* GCP flavor — "Material": 16px radius cards, elevation, pill buttons.
+   Dark-first: values at [data-cloud="gcp"] are the dark Material surfaces;
+   light mode is the explicit [data-theme="light"] fallback. */
 :root[data-cloud="gcp"] {
   --accent: #4285f4;
   --accent-2: #ea4335;
   --accent-3: #fbbc04;
   --accent-4: #34a853;
-  --accent-text: #1a56c4;
+  --accent-text: #8ab4f8; /* light-on-dark link/text variant */
   --radius: 16px;
-  --bg: #ffffff;
+  --bg: #17181b;
+  --bg-deep: #101114;
+  --bg-card: #202124;
+  --bg-raised: #292a2d;
+  --border: #3c4043;
   --code-bg: #202124;
   --code-highlight: #4285f4;
+  --glass-bg: rgba(32, 33, 36, 0.66);
 
   /* View-transition timing (redesign spec §3.3) — "Material": elevation and
      surface changes read as smooth, physical motion. Slightly longer than
@@ -17,20 +24,14 @@
   --vt-ease: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-:root[data-cloud="gcp"][data-theme="dark"] {
-  --bg: #202124;
-  --bg-card: #292a2d;
-  --border: #3c4043;
-  --accent-text: #8ab4f8;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root[data-cloud="gcp"]:not([data-theme="light"]) {
-    --bg: #202124;
-    --bg-card: #292a2d;
-    --border: #3c4043;
-    --accent-text: #8ab4f8;
-  }
+:root[data-cloud="gcp"][data-theme="light"] {
+  --bg: #ffffff;
+  --bg-deep: #f3f5f8;
+  --bg-card: var(--p-card);
+  --bg-raised: #ffffff;
+  --border: var(--p-border);
+  --accent-text: #1a56c4;
+  --glass-bg: rgba(253, 253, 253, 0.72);
 }
 
 :root[data-cloud="gcp"] .card,

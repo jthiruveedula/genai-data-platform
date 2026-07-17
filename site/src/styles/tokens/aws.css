@@ -1,12 +1,19 @@
-/* AWS flavor — "Console": dense, boxy, 2px radius, utilitarian */
+/* AWS flavor — "Console": dense, boxy, 2px radius, utilitarian.
+   Dark-first: values at [data-cloud="aws"] are the dark console surfaces;
+   light mode is the explicit [data-theme="light"] fallback. */
 :root[data-cloud="aws"] {
   --accent: #ff9900;
   --accent-2: #ec7211;
-  --accent-text: #b25e00; /* darkened for 4.5:1 text/link contrast on white */
+  --accent-text: #ffb84d; /* light-on-dark link/text variant */
   --radius: 2px;
-  --bg: #ffffff;
+  --bg: #10161f;
+  --bg-deep: #0b1017;
+  --bg-card: #161e2d;
+  --bg-raised: #1f2a3d;
+  --border: #2d3a52;
   --code-bg: #161e2d;
   --code-highlight: #ff9900;
+  --glass-bg: rgba(22, 30, 45, 0.66);
 
   /* View-transition timing (redesign spec §3.3) — "Console": dense,
      utilitarian, no-nonsense. A brisk, linear-ish cut reads as functional
@@ -15,20 +22,14 @@
   --vt-ease: cubic-bezier(0.4, 0, 1, 1);
 }
 
-:root[data-cloud="aws"][data-theme="dark"] {
-  --bg: #161e2d;
-  --bg-card: #1f2a3d;
-  --border: #2d3a52;
-  --accent-text: #ffb84d;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root[data-cloud="aws"]:not([data-theme="light"]) {
-    --bg: #161e2d;
-    --bg-card: #1f2a3d;
-    --border: #2d3a52;
-    --accent-text: #ffb84d;
-  }
+:root[data-cloud="aws"][data-theme="light"] {
+  --bg: #ffffff;
+  --bg-deep: #f4f6f9;
+  --bg-card: var(--p-card);
+  --bg-raised: #ffffff;
+  --border: var(--p-border);
+  --accent-text: #b25e00; /* darkened for 4.5:1 text/link contrast on white */
+  --glass-bg: rgba(253, 253, 253, 0.72);
 }
 
 :root[data-cloud="aws"] .card,

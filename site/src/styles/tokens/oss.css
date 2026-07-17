@@ -1,13 +1,20 @@
-/* OSS flavor — "Hacker": monospace-forward, 0-2px radius, scanline hero */
+/* OSS flavor — "Hacker": monospace-forward, 0-2px radius, scanline hero.
+   Dark-first: values at [data-cloud="oss"] are the dark terminal surfaces;
+   light mode is the explicit [data-theme="light"] fallback. */
 :root[data-cloud="oss"] {
   --accent: #22c55e;
   --accent-2: #a3e635;
-  --accent-text: #15803d;
+  --accent-text: #4ade80; /* light-on-dark link/text variant */
   --radius: 2px;
-  --bg: #fafaf9;
+  --bg: #0d1117;
+  --bg-deep: #090c10;
+  --bg-card: #161b22;
+  --bg-raised: #1c232c;
+  --border: #30363d;
   --font-heading: "JetBrains Mono", ui-monospace, monospace;
   --code-bg: #0d1117;
   --code-highlight: #22c55e;
+  --glass-bg: rgba(22, 27, 34, 0.66);
 
   /* View-transition timing (redesign spec §3.3) — "Hacker": snappiest and
      sharpest of the four flavors, no easing curve at all, matching the
@@ -16,20 +23,14 @@
   --vt-ease: linear;
 }
 
-:root[data-cloud="oss"][data-theme="dark"] {
-  --bg: #0d1117;
-  --bg-card: #161b22;
-  --border: #30363d;
-  --accent-text: #4ade80;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root[data-cloud="oss"]:not([data-theme="light"]) {
-    --bg: #0d1117;
-    --bg-card: #161b22;
-    --border: #30363d;
-    --accent-text: #4ade80;
-  }
+:root[data-cloud="oss"][data-theme="light"] {
+  --bg: #fafaf9;
+  --bg-deep: #f0f0ee;
+  --bg-card: var(--p-card);
+  --bg-raised: #ffffff;
+  --border: var(--p-border);
+  --accent-text: #15803d;
+  --glass-bg: rgba(253, 253, 253, 0.72);
 }
 
 :root[data-cloud="oss"] .card,
