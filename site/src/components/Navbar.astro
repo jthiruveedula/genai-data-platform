@@ -4,8 +4,14 @@ const base = import.meta.env.BASE_URL;
 ---
 
 <header class="navbar">
-  <a class="brand" href={base}>GenAI Data Platform</a>
-  <a class="nav-link" href={`${base}calculator/`}>Cost calculator</a>
+  <a class="brand" href={base}>
+    <span class="brand-mark" aria-hidden="true"></span>
+    GenAI Data Platform
+  </a>
+  <nav class="nav-links" aria-label="Primary">
+    <a class="nav-link" href={`${base}#curriculum`}>Curriculum</a>
+    <a class="nav-link" href={`${base}calculator/`}>Cost console</a>
+  </nav>
 
   <div class="flavor-switch" role="group" aria-label="Choose cloud flavor">
     {
@@ -35,14 +41,23 @@ const base = import.meta.env.BASE_URL;
     document.querySelectorAll<HTMLButtonElement>("[data-cloud-btn]").forEach((btn) => {
       btn.setAttribute("aria-pressed", String(btn.dataset.cloudBtn === id));
     });
+    // Scenes (hero canvas, architecture story, cost console) re-render their
+    // cloud-aware pieces off this event; CSS-only labels use .cloud-swap.
+    document.dispatchEvent(new CustomEvent("gdp:cloud-change", { detail: { cloud: id } }));
   }
 
-  document.querySelectorAll<HTMLButtonElement>("[data-cloud-btn]").forEach((btn) => {
-    btn.addEventListener("click", () => setCloud(btn.dataset.cloudBtn!));
-  });
+  function bindCloudControls() {
+    document.querySelectorAll<HTMLButtonElement>("[data-cloud-btn]").forEach((btn) => {
+      if (btn.dataset.cloudBound) return;
+      btn.dataset.cloudBound = "true";
+      btn.addEventListener("click", () => setCloud(btn.dataset.cloudBtn!));
+    });
+    const current = root.getAttribute("data-cloud");
+    if (current) setCloud(current);
+  }
 
-  const current = root.getAttribute("data-cloud");
-  if (current) setCloud(current);
+  bindCloudControls();
+  document.addEventListener("astro:page-load", bindCloudControls);
 
   document.getElementById("theme-toggle")?.addEventListener("click", () => {
     const next = root.getAttribute("data-theme") === "dark" ? "light" : "dark";
@@ -53,31 +68,57 @@ const base = import.meta.env.BASE_URL;
 
 <style>
   .navbar {
+    position: sticky;
+    top: 0;
+    z-index: 50;
     display: flex;
     align-items: center;
     gap: 1rem;
-    padding: 0.75rem 1.5rem;
-    border-bottom: 1px solid var(--border);
-    background: var(--bg-card);
+    padding: 0.65rem 1.5rem;
+    border-bottom: 1px solid var(--glass-border);
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
   }
 
   .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
     font-family: var(--font-heading);
     font-weight: 700;
     color: var(--text);
     text-decoration: none;
     margin-right: auto;
+    letter-spacing: -0.01em;
+  }
+
+  .brand-mark {
+    width: 9px;
+    height: 9px;
+    border-radius: 2px;
+    background: var(--accent);
+    box-shadow: 0 0 12px var(--accent);
+    transition: background-color var(--duration-theme) var(--ease-out), box-shadow var(--duration-theme) var(--ease-out);
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 0.25rem;
   }
 
   .nav-link {
     font-size: 0.85rem;
     color: var(--text-secondary);
     text-decoration: none;
-    padding: 0.4rem 0.2rem;
+    padding: 0.4rem 0.6rem;
+    border-radius: var(--radius);
+    transition: color var(--duration-micro) var(--ease-out), background-color var(--duration-micro) var(--ease-out);
   }
 
   .nav-link:hover {
     color: var(--text);
+    background: var(--bg-raised);
   }
 
   .flavor-switch {
@@ -86,6 +127,7 @@ const base = import.meta.env.BASE_URL;
     border: 1px solid var(--border);
     border-radius: var(--radius);
     padding: 0.2rem;
+    background: var(--bg-card);
   }
 
   .flavor-btn {
@@ -100,15 +142,16 @@ const base = import.meta.env.BASE_URL;
     font-size: 0.8rem;
     color: var(--text-secondary);
     cursor: pointer;
-    transition: background-color var(--duration-micro) var(--ease-out);
+    transition: background-color var(--duration-micro) var(--ease-out), color var(--duration-micro) var(--ease-out);
   }
 
   .flavor-btn:hover {
-    background: var(--bg);
+    background: var(--bg-raised);
+    color: var(--text);
   }
 
   .flavor-btn[aria-pressed="true"] {
-    background: var(--bg);
+    background: var(--bg-raised);
     color: var(--text);
     box-shadow: inset 0 0 0 1.5px var(--accent);
   }
@@ -125,5 +168,25 @@ const base = import.meta.env.BASE_URL;
     height: 36px;
     cursor: pointer;
     color: var(--text);
+    transition: border-color var(--duration-micro) var(--ease-out);
+  }
+
+  .theme-toggle:hover {
+    border-color: var(--accent);
+  }
+
+  @media (max-width: 720px) {
+    .navbar {
+      flex-wrap: wrap;
+      row-gap: 0.5rem;
+      padding: 0.6rem 1rem;
+    }
+    .nav-links {
+      order: 3;
+    }
+    .flavor-switch {
+      order: 4;
+      margin-left: auto;
+    }
   }
 </style>

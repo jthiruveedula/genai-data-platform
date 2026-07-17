@@ -162,3 +162,86 @@ export function shimmer(el: GSAPTarget, opts: ShimmerOptions = {}): gsap.core.Tw
   }
   return gsap.fromTo(el, { backgroundPosition: "200% 0" }, { backgroundPosition: "-200% 0", duration, ease, repeat });
 }
+
+export interface CountUpOptions {
+  duration?: number;
+  ease?: string;
+  /** Decimal places to format to. Default 0. */
+  decimals?: number;
+  prefix?: string;
+  suffix?: string;
+  /** Use `toLocaleString()` for thousands separators. Default true. */
+  locale?: boolean;
+}
+
+function formatCount(value: number, opts: Required<Pick<CountUpOptions, "decimals" | "prefix" | "suffix" | "locale">>): string {
+  const rounded = Number(value.toFixed(opts.decimals));
+  const body = opts.locale
+    ? rounded.toLocaleString(undefined, { minimumFractionDigits: opts.decimals, maximumFractionDigits: opts.decimals })
+    : rounded.toFixed(opts.decimals);
+  return `${opts.prefix}${body}${opts.suffix}`;
+}
+
+/**
+ * Animate a numeric counter into `el`'s text content, 0 → `target` (or from
+ * the number already parseable out of `el`'s current text, if present).
+ * Used for the homepage's ambient token ticker and the "why this matters"
+ * stat strip. Uses `overwrite: true` so retargeting (e.g. a slider dragged
+ * again mid-tween) never stacks tweens on the same element.
+ * Under prefers-reduced-motion: writes the final formatted value immediately
+ * and returns (no tween is created).
+ */
+export function countUp(el: HTMLElement, target: number, opts: CountUpOptions = {}): gsap.core.Tween | void {
+  const { duration = 0.6, ease = "power1.out", decimals = 0, prefix = "", suffix = "", locale = true } = opts;
+  const fmt = { decimals, prefix, suffix, locale };
+
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    el.textContent = formatCount(target, fmt);
+    return;
+  }
+
+  const state = { value: 0 };
+  return gsap.to(state, {
+    value: target,
+    duration,
+    ease,
+    overwrite: true,
+    onUpdate: () => {
+      el.textContent = formatCount(state.value, fmt);
+    },
+  });
+}
+
+export interface DrawPathOptions {
+  duration?: number;
+  ease?: string;
+  delay?: number;
+  scrollTrigger?: ScrollTrigger.Vars;
+}
+
+/**
+ * Stroke-draw reveal for an SVG path: sets `strokeDasharray`/`strokeDashoffset`
+ * to the path's total length, then tweens the offset to 0 so the path appears
+ * to draw itself. Used for the hero schematic's connectors and the
+ * architecture story's rail path.
+ * Under prefers-reduced-motion: clears the dash properties so the path
+ * renders fully drawn immediately, and returns (no tween is created).
+ */
+export function drawPath(path: SVGPathElement, opts: DrawPathOptions = {}): gsap.core.Tween | void {
+  const { duration = 1.2, ease = "power2.out", delay = 0, scrollTrigger } = opts;
+
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    gsap.set(path, { strokeDasharray: "none", strokeDashoffset: 0 });
+    return;
+  }
+
+  const length = path.getTotalLength();
+  gsap.set(path, { strokeDasharray: length, strokeDashoffset: length });
+  return gsap.to(path, {
+    strokeDashoffset: 0,
+    duration,
+    ease,
+    delay,
+    ...(scrollTrigger ? { scrollTrigger } : {}),
+  });
+}

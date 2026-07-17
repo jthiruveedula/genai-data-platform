@@ -1,0 +1,215 @@
+---
+import { OUTCOMES } from "../../data/platform";
+
+const STATS = [
+  { value: 4, suffix: "", label: "STACKS MAPPED" },
+  { value: 10, suffix: "", label: "LIFECYCLE STAGES" },
+  { value: 6, suffix: "", label: "MISSIONS LIVE" },
+  { value: 10, suffix: "", prefix: "<$", label: "TOTAL LAB SPEND" },
+];
+
+const ICONS = [
+  `<path d="M2 3.5h10M2 8h6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M2 3.5v9l3-2 3 2v-9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>`,
+  `<path d="M1 8h3l2-5 3 10 2-5h3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>`,
+  `<path d="M1.5 12.5A6.5 6.5 0 1 1 12.9 8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M7 8l3.5-3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>`,
+];
+---
+
+<section id="why" class="why" data-why aria-labelledby="why-heading">
+  <div class="scene-inner">
+    <header class="why-head">
+      <p class="section-kicker">WHY THIS EXISTS</p>
+      <h2 id="why-heading" class="section-title">For engineers who have to ship it, not demo it.</h2>
+      <p class="section-lede">
+        Data engineers, platform teams, and architects — the gap between a RAG notebook and a governed platform is
+        where this curriculum lives.
+      </p>
+    </header>
+
+    <div class="proof-stack">
+      {
+        OUTCOMES.map((o, i) => (
+          <article class="proof-panel glass-panel" style={`--offset:${i}`}>
+            <svg class="proof-icon" width="22" height="16" viewBox="0 0 14 14" fill="none" aria-hidden="true" set:html={ICONS[i]} />
+            <span class="chip chip--accent">{o.chip}</span>
+            <h3 class="proof-title">{o.title}</h3>
+            <p class="proof-description">{o.description}</p>
+          </article>
+        ))
+      }
+    </div>
+
+    <div class="stat-strip" data-stat-strip>
+      {
+        STATS.map((s) => (
+          <div class="stat-block">
+            <span class="stat-value mono" data-stat-value data-target={s.value} data-prefix={s.prefix ?? ""} data-suffix={s.suffix}>
+              {(s.prefix ?? "") + s.value + s.suffix}
+            </span>
+            <span class="stat-label">{s.label}</span>
+          </div>
+        ))
+      }
+    </div>
+  </div>
+</section>
+
+<script>
+  import { gsap } from "gsap";
+  import { ScrollTrigger } from "gsap/ScrollTrigger";
+  import { countUp } from "../../lib/motion/primitives";
+
+  gsap.registerPlugin(ScrollTrigger);
+
+  let ctx: gsap.Context | undefined;
+
+  function setup() {
+    const rootEl = document.querySelector<HTMLElement>("[data-why]");
+    if (!rootEl) return;
+    ctx?.revert();
+    ctx = gsap.context(() => {
+      const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const panels = gsap.utils.toArray<HTMLElement>(".proof-panel", rootEl);
+      const stats = gsap.utils.toArray<HTMLElement>("[data-stat-value]", rootEl);
+
+      if (reduced) {
+        gsap.set(panels, { autoAlpha: 1, y: 0 });
+        return;
+      }
+
+      gsap.from(panels, {
+        autoAlpha: 0,
+        y: 30,
+        duration: 0.6,
+        ease: "power2.out",
+        stagger: 0.12,
+        scrollTrigger: { trigger: rootEl.querySelector(".proof-stack"), start: "top 82%", once: true },
+      });
+
+      const strip = rootEl.querySelector<HTMLElement>("[data-stat-strip]");
+      if (strip) {
+        ScrollTrigger.create({
+          trigger: strip,
+          start: "top 88%",
+          once: true,
+          onEnter: () => {
+            stats.forEach((el) => {
+              const target = Number(el.dataset.target ?? "0");
+              countUp(el, target, {
+                duration: 1.2,
+                prefix: el.dataset.prefix ?? "",
+                suffix: el.dataset.suffix ?? "",
+              });
+            });
+          },
+        });
+      }
+    }, rootEl);
+  }
+
+  setup();
+  document.addEventListener("astro:page-load", setup);
+  document.addEventListener("astro:after-swap", () => ctx?.revert());
+</script>
+
+<style>
+  .why {
+    padding-block: clamp(3.5rem, 7vw, 5.5rem);
+    background: var(--bg-deep);
+    border-top: 1px solid var(--border);
+  }
+
+  .why-head {
+    max-width: 46rem;
+    margin-bottom: 2.5rem;
+  }
+
+  .proof-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    margin-bottom: 3rem;
+  }
+
+  .proof-panel {
+    position: relative;
+    max-width: 44rem;
+    margin-left: calc(var(--offset, 0) * 2rem);
+    padding: 1.5rem 1.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+  }
+
+  .proof-panel::before {
+    content: "";
+    position: absolute;
+    left: -1.25rem;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: var(--border);
+  }
+
+  .proof-panel:first-child::before {
+    display: none;
+  }
+
+  .proof-icon {
+    color: var(--accent-text, var(--accent));
+  }
+
+  .proof-title {
+    margin: 0;
+    font-size: 1.15rem;
+    font-weight: 700;
+  }
+
+  .proof-description {
+    margin: 0;
+    color: var(--text-secondary);
+    line-height: 1.55;
+  }
+
+  .stat-strip {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1.5rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .stat-block {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+
+  .stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--text);
+  }
+
+  .stat-label {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    color: var(--text-secondary);
+  }
+
+  @media (max-width: 720px) {
+    .proof-panel {
+      margin-left: 0 !important;
+    }
+
+    .proof-panel::before {
+      display: none;
+    }
+
+    .stat-strip {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+</style>

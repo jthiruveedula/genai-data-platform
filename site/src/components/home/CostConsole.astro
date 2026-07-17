@@ -1,0 +1,687 @@
+---
+import { COST_SCENARIOS } from "../../data/platform";
+import { CLOUDS } from "../../data/modules";
+import pricing from "../../data/pricing.json";
+
+type PricingEntry = {
+  model: string;
+  input_per_mtok: number;
+  output_per_mtok: number;
+  embedding_per_mtok: number;
+  gpu_hour_usd?: number;
+  claimId: string;
+  verified_on: string | null;
+};
+
+const typedPricing = pricing as Record<string, PricingEntry>;
+const base = import.meta.env.BASE_URL;
+
+/** Defaults mirror the slider defaults below so the no-JS render shows real numbers. */
+const DEFAULTS = { docs: 500, queriesPerDay: 200, avgTokens: 1500 };
+
+/** MUST match the client-side math (and the existing calculator) exactly. */
+function estimate(entry: PricingEntry, docs: number, queriesPerDay: number, avgTokens: number) {
+  const monthlyQueries = queriesPerDay * 30;
+  const monthlyTokensMtok = (monthlyQueries * avgTokens) / 1_000_000;
+  const embeddingMtok = (docs * 500) / 1_000_000;
+  const monthly = entry.gpu_hour_usd
+    ? entry.gpu_hour_usd * 4 * 30
+    : monthlyTokensMtok * ((entry.input_per_mtok + entry.output_per_mtok) / 2) +
+      embeddingMtok * entry.embedding_per_mtok;
+  return { monthly, perQuery: monthly / monthlyQueries };
+}
+
+const fmtUsd = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+const initial = Object.fromEntries(
+  CLOUDS.map((c) => [c.id, estimate(typedPricing[c.id], DEFAULTS.docs, DEFAULTS.queriesPerDay, DEFAULTS.avgTokens)])
+);
+---
+
+<section id="cost" class="cost-console" data-cost-console aria-labelledby="cost-title">
+  <header class="section-head">
+    <p class="section-kicker">UNIT ECONOMICS</p>
+    <h2 class="section-title" id="cost-title">Operate the platform before you build it.</h2>
+    <p class="section-lede">
+      Token pricing, embedding costs, and serving compute — tied to the exact services your cloud selection chose
+      upstream.
+    </p>
+  </header>
+
+  <div class="console glass-panel" data-console-panel>
+    <div class="status-bar">
+      <span class="status-id">COST CONSOLE // ESTIMATE</span>
+      <span class="status-right">
+        <span class="chip chip--pending">UNVERIFIED PRICING</span>
+        <span class="status-note">not a quote</span>
+      </span>
+    </div>
+
+    <div class="console-body">
+      <div class="scenarios" role="group" aria-label="Scenario presets">
+        {
+          COST_SCENARIOS.map((s) => (
+            <button type="button" class="scenario" data-scenario={s.id} aria-pressed="false">
+              <span class="scenario-label">{s.label}</span>
+              <span class="scenario-caption">{s.caption}</span>
+            </button>
+          ))
+        }
+      </div>
+
+      <div class="controls">
+        <div class="control">
+          <div class="control-head">
+            <label for="cc-docs">Documents ingested</label>
+            <output for="cc-docs" data-out="docs">500</output>
+          </div>
+          <input type="range" id="cc-docs" min="10" max="10000" step="10" value="500" />
+        </div>
+        <div class="control">
+          <div class="control-head">
+            <label for="cc-queries">Queries per day</label>
+            <output for="cc-queries" data-out="queries">200</output>
+          </div>
+          <input type="range" id="cc-queries" min="10" max="5000" step="10" value="200" />
+        </div>
+        <div class="control">
+          <div class="control-head">
+            <label for="cc-tokens">Avg tokens per query</label>
+            <output for="cc-tokens" data-out="tokens">1,500</output>
+          </div>
+          <input type="range" id="cc-tokens" min="200" max="8000" step="100" value="1500" />
+        </div>
+      </div>
+
+      <div class="readout" data-readout role="group" aria-label="Estimated monthly cost per cloud">
+        {
+          CLOUDS.map((c) => (
+            <article class="cloud-card" data-cloud-card={c.id}>
+              <header class="cloud-head">
+                <span class="cloud-label">{c.label}</span>
+                <span class="chip chip--accent stack-chip">YOUR STACK</span>
+              </header>
+              <span class="cloud-model">{typedPricing[c.id].model}</span>
+              <span class="cloud-monthly">
+                <span data-monthly>${fmtUsd(initial[c.id].monthly)}</span>
+                <span class="per-mo">/ mo</span>
+              </span>
+              <span class="cloud-perquery" data-per-query>${initial[c.id].perQuery.toFixed(4)} / query</span>
+            </article>
+          ))
+        }
+      </div>
+
+      <p class="visually-hidden" data-live-summary aria-live="polite"></p>
+
+      <p class="arch-line">
+        <span class="arch-label">MODEL:</span>
+        <span class="cloud-swap">
+          <span data-for="neutral">select a cloud above</span>
+          <span data-for="gcp">Gemini 3 Flash + gemini-embedding-001 + Vector Search</span>
+          <span data-for="aws">Claude Haiku 4.5 + Titan v2 + OpenSearch</span>
+          <span data-for="azure">Azure OpenAI fast tier + AI Search</span>
+          <span data-for="oss">vLLM + BGE/TEI + Qdrant · GPU-hours, not tokens</span>
+        </span>
+        <a class="arch-link" href={`${base}calculator/`}>Open the full cost console →</a>
+      </p>
+    </div>
+  </div>
+</section>
+
+<script>
+  import { gsap } from "gsap";
+  import { ScrollTrigger } from "gsap/ScrollTrigger";
+  import { COST_SCENARIOS } from "../../data/platform";
+  import pricingData from "../../data/pricing.json";
+
+  gsap.registerPlugin(ScrollTrigger);
+
+  interface PricingEntry {
+    model: string;
+    input_per_mtok: number;
+    output_per_mtok: number;
+    embedding_per_mtok: number;
+    gpu_hour_usd?: number;
+  }
+
+  const pricing = pricingData as Record<string, PricingEntry>;
+
+  function estimate(entry: PricingEntry, docs: number, queriesPerDay: number, avgTokens: number) {
+    const monthlyQueries = queriesPerDay * 30;
+    const monthlyTokensMtok = (monthlyQueries * avgTokens) / 1_000_000;
+    const embeddingMtok = (docs * 500) / 1_000_000;
+    const monthly = entry.gpu_hour_usd
+      ? entry.gpu_hour_usd * 4 * 30
+      : monthlyTokensMtok * ((entry.input_per_mtok + entry.output_per_mtok) / 2) +
+        embeddingMtok * entry.embedding_per_mtok;
+    return { monthly, perQuery: monthly / monthlyQueries };
+  }
+
+  const fmtUsd = (n: number) =>
+    n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  /** Highlight the readout card matching <html data-cloud>. Registered once at module level. */
+  function highlightActiveCloud() {
+    const rootEl = document.querySelector<HTMLElement>("[data-cost-console]");
+    if (!rootEl) return;
+    const cloud = document.documentElement.getAttribute("data-cloud");
+    rootEl.querySelectorAll<HTMLElement>("[data-cloud-card]").forEach((el) => {
+      el.classList.toggle("is-active", !!cloud && el.dataset.cloudCard === cloud);
+    });
+  }
+  document.addEventListener("gdp:cloud-change", highlightActiveCloud);
+
+  let ctx: gsap.Context | undefined;
+
+  function setup() {
+    const rootEl = document.querySelector<HTMLElement>("[data-cost-console]");
+    if (!rootEl) return;
+    ctx?.revert();
+    ctx = gsap.context(() => {
+      const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+      const docsEl = rootEl.querySelector<HTMLInputElement>("#cc-docs");
+      const queriesEl = rootEl.querySelector<HTMLInputElement>("#cc-queries");
+      const tokensEl = rootEl.querySelector<HTMLInputElement>("#cc-tokens");
+      const docsOut = rootEl.querySelector<HTMLOutputElement>('[data-out="docs"]');
+      const queriesOut = rootEl.querySelector<HTMLOutputElement>('[data-out="queries"]');
+      const tokensOut = rootEl.querySelector<HTMLOutputElement>('[data-out="tokens"]');
+      const readout = rootEl.querySelector<HTMLElement>("[data-readout]");
+      const liveEl = rootEl.querySelector<HTMLElement>("[data-live-summary]");
+      const panel = rootEl.querySelector<HTMLElement>("[data-console-panel]");
+      const scenarioBtns = Array.from(rootEl.querySelectorAll<HTMLButtonElement>("[data-scenario]"));
+      if (!docsEl || !queriesEl || !tokensEl) return;
+      const sliders = [docsEl, queriesEl, tokensEl];
+
+      const cards = Array.from(rootEl.querySelectorAll<HTMLElement>("[data-cloud-card]"))
+        .map((el) => ({
+          id: el.dataset.cloudCard ?? "",
+          el,
+          monthlyEl: el.querySelector<HTMLElement>("[data-monthly]"),
+          perQueryEl: el.querySelector<HTMLElement>("[data-per-query]"),
+          // One counter object per cloud — every retarget tweens THIS object with
+          // overwrite: true so tweens never stack.
+          state: { monthly: 0, perQuery: 0 },
+        }))
+        .filter((c) => c.monthlyEl && c.perQueryEl && pricing[c.id]);
+
+      let interacted = false;
+      let programmatic = false;
+      let liveTimer: ReturnType<typeof setTimeout> | undefined;
+      const scenarioProxy = { docs: 0, queries: 0, tokens: 0 };
+
+      const writeCard = (card: (typeof cards)[number]) => {
+        card.monthlyEl!.textContent = `$${fmtUsd(card.state.monthly)}`;
+        card.perQueryEl!.textContent = `$${card.state.perQuery.toFixed(4)} / query`;
+      };
+
+      function readInputs() {
+        return {
+          docs: Number(docsEl!.value),
+          queriesPerDay: Number(queriesEl!.value),
+          avgTokens: Number(tokensEl!.value),
+        };
+      }
+
+      function render(animate: boolean) {
+        const { docs, queriesPerDay, avgTokens } = readInputs();
+        if (docsOut) docsOut.textContent = docs.toLocaleString("en-US");
+        if (queriesOut) queriesOut.textContent = queriesPerDay.toLocaleString("en-US");
+        if (tokensOut) tokensOut.textContent = avgTokens.toLocaleString("en-US");
+
+        for (const card of cards) {
+          const { monthly, perQuery } = estimate(pricing[card.id], docs, queriesPerDay, avgTokens);
+          if (reduced || !animate) {
+            gsap.killTweensOf(card.state);
+            card.state.monthly = monthly;
+            card.state.perQuery = perQuery;
+            writeCard(card);
+          } else {
+            gsap.to(card.state, {
+              monthly,
+              perQuery,
+              duration: 0.5,
+              ease: "power1.out",
+              overwrite: true,
+              snap: { monthly: 0.01, perQuery: 0.0001 },
+              onUpdate: () => writeCard(card),
+            });
+          }
+        }
+      }
+
+      /** Announce once per input settle — never per animation frame. */
+      function scheduleLive() {
+        if (liveTimer) clearTimeout(liveTimer);
+        liveTimer = setTimeout(() => {
+          if (!interacted || !liveEl) return;
+          const { docs, queriesPerDay, avgTokens } = readInputs();
+          const parts = cards.map(
+            (c) => `${c.id.toUpperCase()} $${fmtUsd(estimate(pricing[c.id], docs, queriesPerDay, avgTokens).monthly)}`
+          );
+          liveEl.textContent = `Estimated monthly cost — ${parts.join(", ")}.`;
+        }, 500);
+      }
+
+      function clearActiveScenario() {
+        scenarioBtns.forEach((b) => b.setAttribute("aria-pressed", "false"));
+      }
+
+      function flashReadout() {
+        if (reduced || !readout) return;
+        readout.classList.add("is-flash");
+        setTimeout(() => readout.classList.remove("is-flash"), 550);
+      }
+
+      sliders.forEach((el) => {
+        el.addEventListener("input", () => {
+          if (!programmatic) clearActiveScenario();
+          interacted = true;
+          // While a scenario tween drives the sliders, write values directly —
+          // the proxy tween already provides the easing.
+          render(!programmatic);
+          scheduleLive();
+        });
+        // Grabbing a slider mid-preset-tween hands control back to the user.
+        el.addEventListener("pointerdown", () => {
+          gsap.killTweensOf(scenarioProxy);
+          programmatic = false;
+        });
+      });
+
+      scenarioBtns.forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const scenario = COST_SCENARIOS.find((s) => s.id === btn.dataset.scenario);
+          if (!scenario) return;
+          interacted = true;
+          scenarioBtns.forEach((b) => b.setAttribute("aria-pressed", String(b === btn)));
+          flashReadout();
+
+          const applyFinal = () => {
+            docsEl!.value = String(scenario.docs);
+            queriesEl!.value = String(scenario.queriesPerDay);
+            tokensEl!.value = String(scenario.avgTokens);
+            render(false);
+            scheduleLive();
+          };
+
+          if (reduced) {
+            applyFinal();
+            return;
+          }
+
+          scenarioProxy.docs = Number(docsEl!.value);
+          scenarioProxy.queries = Number(queriesEl!.value);
+          scenarioProxy.tokens = Number(tokensEl!.value);
+          programmatic = true;
+          gsap.to(scenarioProxy, {
+            docs: scenario.docs,
+            queries: scenario.queriesPerDay,
+            tokens: scenario.avgTokens,
+            duration: 0.6,
+            ease: "power2.out",
+            overwrite: true,
+            onUpdate() {
+              docsEl!.value = String(Math.round(scenarioProxy.docs / 10) * 10);
+              queriesEl!.value = String(Math.round(scenarioProxy.queries / 10) * 10);
+              tokensEl!.value = String(Math.round(scenarioProxy.tokens / 100) * 100);
+              sliders.forEach((el) => el.dispatchEvent(new Event("input", { bubbles: true })));
+            },
+            onComplete() {
+              programmatic = false;
+              applyFinal();
+            },
+          });
+        });
+      });
+
+      // Scroll reveal — panel rises once. Reduced motion: no reveal, console fully usable.
+      if (!reduced && panel) {
+        gsap.from(panel, {
+          autoAlpha: 0,
+          y: 36,
+          duration: 0.9,
+          ease: "power2.out",
+          scrollTrigger: { trigger: rootEl, start: "top 78%", once: true },
+        });
+      }
+
+      render(false);
+      highlightActiveCloud();
+    }, rootEl);
+  }
+
+  setup();
+  document.addEventListener("astro:page-load", setup);
+  document.addEventListener("astro:after-swap", () => ctx?.revert());
+</script>
+
+<style>
+  .cost-console {
+    padding-block: clamp(3.5rem, 7vw, 5.5rem);
+  }
+
+  .section-head {
+    max-width: 46rem;
+    margin-bottom: 2.25rem;
+  }
+
+  .console {
+    padding: 0;
+    overflow: hidden;
+  }
+
+  /* ---- status bar ---- */
+  .status-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    padding: 0.7rem 1.4rem;
+    border-bottom: 1px solid var(--border);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    color: var(--text-secondary);
+  }
+
+  .status-right {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .status-note {
+    font-size: 0.68rem;
+  }
+
+  .console-body {
+    padding: clamp(1.25rem, 3vw, 1.75rem);
+    display: grid;
+    gap: 1.75rem;
+  }
+
+  /* ---- scenario presets ---- */
+  .scenarios {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .scenario {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+    gap: 0.2rem;
+    min-height: 44px;
+    padding: 0.6rem 0.95rem;
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    border-radius: calc(var(--radius) * 0.75);
+    color: var(--text);
+    cursor: pointer;
+    transition:
+      border-color var(--duration-micro) var(--ease-out),
+      box-shadow var(--duration-micro) var(--ease-out);
+  }
+
+  .scenario:hover {
+    border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+  }
+
+  .scenario:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  .scenario[aria-pressed="true"] {
+    border-color: color-mix(in srgb, var(--accent) 65%, var(--border));
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent);
+  }
+
+  .scenario-label {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    letter-spacing: 0.1em;
+  }
+
+  .scenario[aria-pressed="true"] .scenario-label {
+    color: var(--accent-text);
+  }
+
+  .scenario-caption {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+  }
+
+  /* ---- sliders ---- */
+  .controls {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.25rem 1.75rem;
+  }
+
+  .control-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 0.75rem;
+    margin-bottom: 0.15rem;
+  }
+
+  .control-head label {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+  }
+
+  .control-head output {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--text);
+  }
+
+  .control input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 44px;
+    margin: 0;
+    background: transparent;
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+
+  .control input[type="range"]:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  .control input[type="range"]::-webkit-slider-runnable-track {
+    height: 4px;
+    border-radius: 2px;
+    background: var(--border);
+  }
+
+  .control input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    margin-top: -7px;
+    border: none;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow:
+      0 0 0 4px color-mix(in srgb, var(--accent) 18%, transparent),
+      0 0 12px color-mix(in srgb, var(--accent) 35%, transparent);
+  }
+
+  .control input[type="range"]::-moz-range-track {
+    height: 4px;
+    border-radius: 2px;
+    background: var(--border);
+  }
+
+  .control input[type="range"]::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border: none;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow:
+      0 0 0 4px color-mix(in srgb, var(--accent) 18%, transparent),
+      0 0 12px color-mix(in srgb, var(--accent) 35%, transparent);
+  }
+
+  /* ---- readout grid ---- */
+  .readout {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));
+    gap: 1rem;
+    border-radius: var(--radius);
+    transition: box-shadow 320ms var(--ease-out);
+  }
+
+  .readout.is-flash {
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 55%, transparent);
+  }
+
+  .cloud-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    padding: 1.1rem 1.2rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    transition:
+      transform var(--duration-micro) var(--ease-out),
+      border-color var(--duration-micro) var(--ease-out),
+      box-shadow var(--duration-micro) var(--ease-out);
+  }
+
+  .cloud-card.is-active {
+    border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, var(--accent) 40%, transparent),
+      0 8px 24px color-mix(in srgb, var(--accent) 10%, transparent);
+    transform: translateY(-3px);
+  }
+
+  .cloud-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .cloud-label {
+    font-family: var(--font-heading);
+    font-weight: 700;
+  }
+
+  .stack-chip {
+    display: none;
+  }
+
+  .cloud-card.is-active .stack-chip {
+    display: inline-flex;
+  }
+
+  .cloud-model {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.02em;
+    color: var(--text-secondary);
+  }
+
+  .cloud-monthly {
+    margin-top: 0.35rem;
+    font-family: var(--font-mono);
+    font-size: 1.6rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.1;
+    color: var(--text);
+  }
+
+  .cloud-monthly .per-mo {
+    font-size: 0.72rem;
+    font-weight: 400;
+    color: var(--text-secondary);
+  }
+
+  .cloud-perquery {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-secondary);
+  }
+
+  /* ---- architecture line ---- */
+  .arch-line {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.4rem 0.75rem;
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+  }
+
+  .arch-label {
+    letter-spacing: 0.1em;
+  }
+
+  .arch-line .cloud-swap {
+    color: var(--text);
+  }
+
+  .arch-link {
+    margin-left: auto;
+    padding-block: 0.5rem;
+    color: var(--accent-text);
+    text-decoration: none;
+  }
+
+  .arch-link:hover {
+    text-decoration: underline;
+  }
+
+  .arch-link:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 3px;
+  }
+
+  .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .scenario,
+    .readout,
+    .cloud-card {
+      transition: none;
+    }
+
+    .cloud-card.is-active {
+      transform: none;
+    }
+  }
+</style>

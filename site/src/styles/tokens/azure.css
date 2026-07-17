@@ -1,12 +1,19 @@
-/* Azure flavor — "Fluent": soft 8px radius, acrylic blur, depth shadows */
+/* Azure flavor — "Fluent": soft 8px radius, acrylic blur, depth shadows.
+   Dark-first: values at [data-cloud="azure"] are the dark Fluent surfaces;
+   light mode is the explicit [data-theme="light"] fallback. */
 :root[data-cloud="azure"] {
   --accent: #0078d4;
   --accent-2: #50e6ff;
-  --accent-text: #005a9e;
+  --accent-text: #6cc2ff; /* light-on-dark link/text variant */
   --radius: 8px;
-  --bg: #f5f9ff;
+  --bg: #16181d;
+  --bg-deep: #0f1115;
+  --bg-card: #1e2635;
+  --bg-raised: #243a5e;
+  --border: #33507a;
   --code-bg: #1b1a19;
-  --code-highlight: #0078d4;
+  --code-highlight: #50e6ff;
+  --glass-bg: rgba(30, 38, 53, 0.6);
 
   /* View-transition timing (redesign spec §3.3) — "Fluent": acrylic blur,
      depth shadows. A longer, gentle ease-out lets the cross-fade feel like
@@ -15,20 +22,14 @@
   --vt-ease: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-:root[data-cloud="azure"][data-theme="dark"] {
-  --bg: #1b1a19;
-  --bg-card: #243a5e;
-  --border: #33507a;
-  --accent-text: #6cc2ff;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root[data-cloud="azure"]:not([data-theme="light"]) {
-    --bg: #1b1a19;
-    --bg-card: #243a5e;
-    --border: #33507a;
-    --accent-text: #6cc2ff;
-  }
+:root[data-cloud="azure"][data-theme="light"] {
+  --bg: #f5f9ff;
+  --bg-deep: #e9f1fc;
+  --bg-card: var(--p-card);
+  --bg-raised: #ffffff;
+  --border: var(--p-border);
+  --accent-text: #005a9e;
+  --glass-bg: rgba(253, 253, 253, 0.72);
 }
 
 :root[data-cloud="azure"] .card,

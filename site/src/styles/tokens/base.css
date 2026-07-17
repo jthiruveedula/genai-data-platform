@@ -1,29 +1,56 @@
 /* Primitive + semantic base tokens, shared across all cloud flavors.
    Per-cloud files (aws.css/azure.css/gcp.css/oss.css) override the semantic
-   layer only — components must never reference a raw hex value. */
+   layer only — components must never reference a raw hex value.
+
+   DARK-FIRST (redesign): the :root defaults below are the dark "control
+   room" surfaces. Light mode is the explicit fallback, activated by
+   [data-theme="light"] (the theme-init script in BaseLayout resolves
+   localStorage/OS preference before paint). Cloud files follow the same
+   convention: dark surfaces at [data-cloud], light surfaces under
+   [data-cloud][data-theme="light"]. */
 
 :root {
-  /* primitive */
+  /* primitive — dark surface scale (deep navy-tinted neutrals, not pure
+     black: layered gradients need headroom below --bg) */
+  --p-ink-0: #07090d; /* page depths / hero vignette */
+  --p-ink-1: #0b0e14; /* page background */
+  --p-ink-2: #11151d; /* raised card */
+  --p-ink-3: #171c26; /* overlay / hover surface */
+  --p-line: #232936; /* hairline borders */
+  --p-fog: #98a2b3; /* secondary text */
+  --p-paper: #eef1f6; /* primary text on dark */
+  --p-radius: 6px;
+
+  /* primitive — light fallback scale (kept from the original design) */
   --p-white: #ffffff;
   --p-near-white: #f9f9f9;
   --p-card: #fdfdfd;
   --p-border: #e8e8e8;
   --p-gray-600: #727272;
   --p-gray-900: #1a1a1a;
-  --p-radius: 6px;
 
-  /* semantic — neutral default (no cloud selected yet) */
-  --bg: var(--p-near-white);
-  --bg-card: var(--p-card);
-  --border: var(--p-border);
-  --text: var(--p-gray-900);
-  --text-secondary: var(--p-gray-600);
-  --accent: #6b6b6b;
-  --accent-2: #9a9a9a;
-  --accent-text: #4a4a4a;
+  /* semantic — dark-first defaults (no cloud selected yet).
+     Neutral accent is a steel cyan: technical HUD, not "AI purple". */
+  --bg: var(--p-ink-1);
+  --bg-deep: var(--p-ink-0);
+  --bg-card: var(--p-ink-2);
+  --bg-raised: var(--p-ink-3);
+  --border: var(--p-line);
+  --text: var(--p-paper);
+  --text-secondary: var(--p-fog);
+  --accent: #67e8f9;
+  --accent-2: #38bdf8;
+  --accent-text: #a5f3fc;
   --radius: var(--p-radius);
-  --code-bg: #1e1e1e;
-  --code-highlight: #444444;
+  --code-bg: #0d1117;
+  --code-highlight: #38bdf8;
+
+  /* glass panels + atmosphere */
+  --glass-bg: rgba(17, 21, 29, 0.66);
+  --glass-border: rgba(152, 162, 179, 0.16);
+  --glass-blur: 14px;
+  --glow-strength: 0.22; /* multiplier hint for accent glows */
+  --shadow-panel: 0 24px 60px -24px rgba(0, 0, 0, 0.55);
 
   /* typography */
   --font-body: "IBM Plex Sans", system-ui, sans-serif;
@@ -33,7 +60,9 @@
   /* motion */
   --duration-micro: 175ms;
   --duration-theme: 250ms;
+  --duration-scene: 600ms;
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-inout: cubic-bezier(0.65, 0, 0.35, 1);
 
   /* view-transition defaults (no cloud selected yet) — per-cloud overrides
      live in aws.css/azure.css/gcp.css/oss.css and are picked up by
@@ -42,24 +71,22 @@
   --vt-ease: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-:root[data-theme="dark"] {
-  --bg: #14161a;
-  --bg-card: #1b1e24;
-  --border: #2a2d34;
-  --text: #f1f1f1;
-  --text-secondary: #a3a3a3;
-  --accent-text: #c2c2c2;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #14161a;
-    --bg-card: #1b1e24;
-    --border: #2a2d34;
-    --text: #f1f1f1;
-    --text-secondary: #a3a3a3;
-    --accent-text: #c2c2c2;
-  }
+/* Light fallback — explicit opt-in via the theme toggle (or OS preference,
+   resolved to an attribute by the theme-init script before paint). */
+:root[data-theme="light"] {
+  --bg: var(--p-near-white);
+  --bg-deep: #f1f3f7;
+  --bg-card: var(--p-card);
+  --bg-raised: var(--p-white);
+  --border: var(--p-border);
+  --text: var(--p-gray-900);
+  --text-secondary: var(--p-gray-600);
+  --accent: #0891b2;
+  --accent-2: #0e7490;
+  --accent-text: #0e7490;
+  --glass-bg: rgba(253, 253, 253, 0.72);
+  --glass-border: rgba(26, 26, 26, 0.08);
+  --shadow-panel: 0 24px 60px -30px rgba(15, 23, 42, 0.18);
 }
 
 * {
@@ -70,6 +97,10 @@ html,
 body {
   margin: 0;
   padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
@@ -83,6 +114,9 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
   * {
     transition-duration: 0ms !important;
     animation-duration: 0ms !important;
@@ -165,4 +199,72 @@ a {
 .chip--pending {
   color: var(--text-secondary);
   opacity: 0.75;
+}
+
+/* ---------------------------------------------------------------------------
+   Cloud-swap utility (site-wide): render all five labels in markup, CSS shows
+   only the active cloud's one. Zero-JS, survives view transitions, and the
+   neutral label is the no-selection default. Usage:
+
+     <span class="cloud-swap">
+       <span data-for="neutral">Object storage</span>
+       <span data-for="gcp">Cloud Storage</span>
+       ...
+     </span>
+--------------------------------------------------------------------------- */
+.cloud-swap > [data-for] {
+  display: none;
+}
+
+:root:not([data-cloud]) .cloud-swap > [data-for="neutral"],
+:root[data-cloud="gcp"] .cloud-swap > [data-for="gcp"],
+:root[data-cloud="aws"] .cloud-swap > [data-for="aws"],
+:root[data-cloud="azure"] .cloud-swap > [data-for="azure"],
+:root[data-cloud="oss"] .cloud-swap > [data-for="oss"] {
+  display: inline;
+}
+
+/* ---------------------------------------------------------------------------
+   Shared cinematic-section primitives (homepage scenes)
+--------------------------------------------------------------------------- */
+.glass-panel {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: calc(var(--radius) + 4px);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  box-shadow: var(--shadow-panel);
+}
+
+.section-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  color: var(--accent-text, var(--accent));
+  text-transform: uppercase;
+}
+
+.section-kicker::before {
+  content: "";
+  display: inline-block;
+  width: 1.5rem;
+  height: 1px;
+  background: var(--accent);
+}
+
+.section-title {
+  font-size: clamp(1.6rem, 3.4vw, 2.5rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin: 0.6rem 0 0.75rem;
+}
+
+.section-lede {
+  color: var(--text-secondary);
+  max-width: 40rem;
+  line-height: 1.6;
+  margin: 0;
 }

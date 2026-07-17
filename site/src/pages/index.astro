@@ -1,64 +1,45 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
-import CloudSelector from "../components/HeroCinematic.astro";
-import { MODULES } from "../data/modules";
-const base = import.meta.env.BASE_URL;
-
-const PATHS = [
-  { key: "beginner", title: "Beginner path", caption: "Weeks 1–2 · single-source RAG with citations" },
-  { key: "intermediate", title: "Intermediate path", caption: "Weeks 3–5 · hybrid retrieval, guardrails, first eval suite" },
-  { key: "advanced", title: "Advanced path", caption: "Weeks 6–8 · multi-tenant, multi-cloud, eval-gated deploys" },
-] as const;
+import HeroScene from "../components/home/HeroScene.astro";
+import ArchitectureStory from "../components/home/ArchitectureStory.astro";
+import CloudFlavorDeck from "../components/home/CloudFlavorDeck.astro";
+import CurriculumJourney from "../components/home/CurriculumJourney.astro";
+import CostConsole from "../components/home/CostConsole.astro";
+import WhyItMatters from "../components/home/WhyItMatters.astro";
+import FinalCTA from "../components/home/FinalCTA.astro";
 ---
 
-<BaseLayout title="Home">
-  <CloudSelector />
+<BaseLayout
+  title="Home"
+  description="A cinematic, interactive curriculum for building GenAI data platforms on GCP, AWS, Azure, or pure open source."
+  fullBleed
+>
+  <HeroScene />
+  <ArchitectureStory />
+  <CloudFlavorDeck />
+  <CurriculumJourney />
+  <CostConsole />
+  <WhyItMatters />
+  <FinalCTA />
+</BaseLayout>
 
-  {
-    PATHS.map(({ key, title, caption }) => {
-      const modules = MODULES.filter((m) => m.path === key);
-      if (!modules.length) return null;
-      return (
-        <section aria-labelledby={`${key}-heading`}>
-          <h2 id={`${key}-heading`}>{title}</h2>
-          <p class="chip">{caption}</p>
-          <ul class="module-list">
-            {modules.map((m) => (
-              <li>
-                <a href={`${base}modules/${m.id}/`}>{m.title}</a>
-                <p>{m.summary}</p>
-              </li>
-            ))}
-          </ul>
-        </section>
-      );
-    })
+<style is:global>
+  /* Homepage scene rhythm: every scene manages its own internal layout, the
+     page provides the shared width + vertical cadence. Scenes alternate
+     between --bg and --bg-deep via their own backgrounds. */
+  .main--full-bleed > section {
+    padding: 6rem 0;
   }
 
-  <style>
-    section + section {
-      margin-top: 3rem;
+  .main--full-bleed .scene-inner {
+    max-width: 72rem;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+  }
+
+  @media (max-width: 768px) {
+    .main--full-bleed > section {
+      padding: 4rem 0;
     }
-    .module-list {
-      list-style: none;
-      padding: 0;
-      display: grid;
-      gap: 1rem;
-    }
-    .module-list li {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 1rem 1.25rem;
-    }
-    .module-list a {
-      font-family: var(--font-heading);
-      font-weight: 700;
-      text-decoration: none;
-    }
-    .module-list p {
-      color: var(--text-secondary);
-      margin: 0.35rem 0 0;
-    }
-  </style>
-</BaseLayout>
+  }
+</style>
