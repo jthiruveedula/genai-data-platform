@@ -45,10 +45,13 @@ const FUTURE = [
       </p>
     </header>
 
-    <div class="lane-legend" aria-hidden="true">
-      <span class="chip chip--accent">CORE · {laneCounts.beginner ?? 0}</span>
-      <span class="chip">DEEPEN · {laneCounts.intermediate ?? 0}</span>
-      <span class="chip chip--pending">SCALE · SOON</span>
+    <div class="lane-legend-row">
+      <div class="lane-legend" aria-hidden="true">
+        <span class="chip chip--accent">CORE · {laneCounts.beginner ?? 0}</span>
+        <span class="chip">DEEPEN · {laneCounts.intermediate ?? 0}</span>
+        <span class="chip chip--pending">SCALE · SOON</span>
+      </div>
+      <p class="chip mono progress-summary" data-progress-summary hidden></p>
     </div>
 
     <div class="spine-wrap">
@@ -57,12 +60,13 @@ const FUTURE = [
       <ol class="missions" aria-label="Curriculum modules">
         {
           ordered.map((m, i) => (
-            <li class="mission" data-mission>
+            <li class="mission" data-mission data-module-id={m.id}>
               <span class="mission-node" data-mission-node aria-hidden="true" />
               <article class="mission-card glass-panel">
                 <div class="mission-meta">
                   <span class="mission-number mono">{String(i + 1).padStart(2, "0")}</span>
                   <span class="chip chip--accent">{LANE_LABEL[m.path]}</span>
+                  <span class="chip quiz-complete-badge" data-quiz-complete-badge hidden>✓ COMPLETE</span>
                 </div>
                 <div class="mission-body">
                   <h3 class="mission-title">
@@ -110,8 +114,35 @@ const FUTURE = [
 <script>
   import { gsap } from "gsap";
   import { ScrollTrigger } from "gsap/ScrollTrigger";
+  import { isModuleComplete, getCompletionSummary } from "../../lib/progress";
 
   gsap.registerPlugin(ScrollTrigger);
+
+  // Reads gdp.quiz.<id> localStorage entries written by ModuleQuiz.astro on
+  // a module page — separate from the GSAP entrance animation below since
+  // it's plain DOM/text state, not a tween, and needs to reflect whatever
+  // progress exists on THIS load (a full navigation back from a module page
+  // re-fires astro:page-load, which is the refresh point this relies on).
+  function renderProgress() {
+    const rootEl = document.querySelector<HTMLElement>("[data-curriculum]");
+    if (!rootEl) return;
+
+    const missions = Array.from(rootEl.querySelectorAll<HTMLElement>("[data-module-id]"));
+    const moduleIds = missions.map((el) => el.dataset.moduleId!);
+
+    missions.forEach((el) => {
+      const moduleId = el.dataset.moduleId!;
+      const badge = el.querySelector<HTMLElement>("[data-quiz-complete-badge]");
+      if (badge) badge.hidden = !isModuleComplete(moduleId);
+    });
+
+    const summary = rootEl.querySelector<HTMLElement>("[data-progress-summary]");
+    if (summary && moduleIds.length) {
+      const { completed, total } = getCompletionSummary(moduleIds);
+      summary.textContent = `${completed}/${total} MODULES COMPLETE`;
+      summary.hidden = completed === 0;
+    }
+  }
 
   let ctx: gsap.Context | undefined;
 
@@ -159,7 +190,11 @@ const FUTURE = [
   }
 
   setup();
-  document.addEventListener("astro:page-load", setup);
+  renderProgress();
+  document.addEventListener("astro:page-load", () => {
+    setup();
+    renderProgress();
+  });
   document.addEventListener("astro:after-swap", () => ctx?.revert());
 </script>
 
@@ -173,10 +208,28 @@ const FUTURE = [
     margin-bottom: 1.5rem;
   }
 
+  .lane-legend-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 2.5rem;
+  }
+
   .lane-legend {
     display: flex;
     gap: 0.6rem;
-    margin-bottom: 2.5rem;
+  }
+
+  .progress-summary {
+    color: var(--accent-text, var(--accent));
+  }
+
+  .quiz-complete-badge {
+    font-size: 0.65rem;
+    color: var(--accent-text, var(--accent));
+    border-color: var(--accent);
   }
 
   .spine-wrap {
