@@ -1,0 +1,182 @@
+---
+// Site-wide custom cursor: a tight-following dot plus a springy trailing
+// ring, both accent-colored so they re-theme per cloud with zero JS. Only
+// activates for fine-pointer (mouse/trackpad) devices with no reduced-motion
+// preference — touch devices have no cursor to replace, and a decorative
+// trailing effect is exactly the kind of motion prefers-reduced-motion asks
+// sites to skip. Purely decorative: aria-hidden, pointer-events: none, never
+// intercepts clicks or appears in the accessibility tree.
+---
+
+<div class="custom-cursor" data-custom-cursor aria-hidden="true">
+  <div class="cursor-dot" data-cursor-dot></div>
+  <div class="cursor-ring" data-cursor-ring></div>
+</div>
+
+<script>
+  import { gsap } from "gsap";
+
+  const INTERACTIVE_SELECTOR =
+    'a, button, input, textarea, select, label, [role="button"], [role="tab"], [role="radio"]';
+
+  let ctx: gsap.Context | undefined;
+
+  function setup() {
+    ctx?.revert();
+
+    const canActivate =
+      window.matchMedia("(pointer: fine)").matches &&
+      !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    const root = document.querySelector<HTMLElement>("[data-custom-cursor]");
+    if (!root) return;
+
+    if (!canActivate) {
+      root.hidden = true;
+      document.documentElement.classList.remove("has-custom-cursor");
+      return;
+    }
+
+    ctx = gsap.context(() => {
+      const dot = root.querySelector<HTMLElement>("[data-cursor-dot]");
+      const ring = root.querySelector<HTMLElement>("[data-cursor-ring]");
+      if (!dot || !ring) return;
+
+      root.hidden = false;
+      document.documentElement.classList.add("has-custom-cursor");
+
+      // Two follow speeds is what sells the "trailing" effect: the dot
+      // tracks the pointer almost instantly, the ring lags behind on a
+      // slower, springier ease.
+      const dotX = gsap.quickTo(dot, "x", { duration: 0.08, ease: "power3.out" });
+      const dotY = gsap.quickTo(dot, "y", { duration: 0.08, ease: "power3.out" });
+      const ringX = gsap.quickTo(ring, "x", { duration: 0.35, ease: "power3.out" });
+      const ringY = gsap.quickTo(ring, "y", { duration: 0.35, ease: "power3.out" });
+
+      let visible = false;
+
+      const onMove = (e: PointerEvent) => {
+        if (!visible) {
+          visible = true;
+          gsap.to(root, { autoAlpha: 1, duration: 0.2 });
+        }
+        dotX(e.clientX);
+        dotY(e.clientY);
+        ringX(e.clientX);
+        ringY(e.clientY);
+      };
+
+      const onLeaveWindow = () => {
+        visible = false;
+        gsap.to(root, { autoAlpha: 0, duration: 0.2 });
+      };
+
+      // Event delegation over one listener rather than binding every
+      // interactive element individually — covers content added after this
+      // script runs (e.g. quiz feedback, cloud-swap panels) with no rebind.
+      const onOverOut = (e: PointerEvent) => {
+        const target = (e.target as HTMLElement)?.closest?.(INTERACTIVE_SELECTOR);
+        const isEnter = e.type === "pointerover";
+        gsap.to(ring, {
+          scale: isEnter && target ? 1.8 : 1,
+          duration: 0.25,
+          ease: "power2.out",
+        });
+        gsap.to(dot, {
+          scale: isEnter && target ? 0.4 : 1,
+          duration: 0.25,
+          ease: "power2.out",
+        });
+      };
+
+      const onDown = () => gsap.to([dot, ring], { scale: "-=0.15", duration: 0.15, ease: "power2.out" });
+      const onUp = () => gsap.to([dot, ring], { scale: "+=0.15", duration: 0.2, ease: "power2.out" });
+
+      document.addEventListener("pointermove", onMove, { passive: true });
+      document.addEventListener("pointerover", onOverOut, { passive: true });
+      document.addEventListener("pointerout", onOverOut, { passive: true });
+      document.addEventListener("pointerdown", onDown);
+      document.addEventListener("pointerup", onUp);
+      document.addEventListener("mouseleave", onLeaveWindow);
+
+      return () => {
+        document.removeEventListener("pointermove", onMove);
+        document.removeEventListener("pointerover", onOverOut);
+        document.removeEventListener("pointerout", onOverOut);
+        document.removeEventListener("pointerdown", onDown);
+        document.removeEventListener("pointerup", onUp);
+        document.removeEventListener("mouseleave", onLeaveWindow);
+        document.documentElement.classList.remove("has-custom-cursor");
+      };
+    }, root);
+  }
+
+  setup();
+  document.addEventListener("astro:page-load", setup);
+  document.addEventListener("astro:after-swap", () => ctx?.revert());
+</script>
+
+<style>
+  /* Only takes effect once JS confirms a fine pointer + no reduced motion
+     and adds this class — never set unconditionally in CSS, so a visitor
+     never loses their cursor if the script fails to run at all. Text
+     inputs are excluded: a hidden native cursor over a text field removes
+     the caret-position affordance typing depends on. */
+  :global(html.has-custom-cursor),
+  :global(html.has-custom-cursor a),
+  :global(html.has-custom-cursor button),
+  :global(html.has-custom-cursor [role="button"]) {
+    cursor: none;
+  }
+
+  :global(html.has-custom-cursor input),
+  :global(html.has-custom-cursor textarea) {
+    cursor: auto;
+  }
+
+  .custom-cursor {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    pointer-events: none;
+    opacity: 0;
+  }
+
+  /* Centering uses negative margins, not `transform: translate(-50%,-50%)` —
+     GSAP's quickTo(el, "x"/"y", ...) takes ownership of the element's
+     `transform` via inline style the first time it runs, silently
+     overwriting any centering translate that came from this stylesheet
+     instead of composing with it. Margins don't conflict with GSAP's
+     transform management, so this is the safe way to center an
+     x/y-animated element on the pointer. */
+  .cursor-dot,
+  .cursor-ring {
+    position: fixed;
+    top: 0;
+    left: 0;
+    border-radius: 50%;
+    will-change: transform;
+  }
+
+  .cursor-dot {
+    width: 8px;
+    height: 8px;
+    margin: -4px 0 0 -4px;
+    background: var(--accent);
+    box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 70%, transparent);
+  }
+
+  .cursor-ring {
+    width: 34px;
+    height: 34px;
+    margin: -17px 0 0 -17px;
+    border: 1.5px solid var(--accent);
+    opacity: 0.6;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .custom-cursor {
+      display: none;
+    }
+  }
+</style>
