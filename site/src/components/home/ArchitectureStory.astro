@@ -458,5 +458,14 @@ const railPath = STATIONS.map((s, i) => `${i === 0 ? "M" : "L"}${s.x.toFixed(1)}
     .arch-list {
       display: flex;
     }
+
+    /* CSS-only backstop: setup() also sets this via JS once it runs, but a
+       visitor with JS disabled (or a script error before setup() executes)
+       would otherwise see both the pinned rail and the fallback list at
+       once on mobile. Desktop needs no equivalent rule — .arch-list is
+       already display:none by default outside this media query. */
+    .arch-pin {
+      display: none;
+    }
   }
 </style>
