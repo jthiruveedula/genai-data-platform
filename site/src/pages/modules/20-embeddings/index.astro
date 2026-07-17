@@ -4,6 +4,7 @@ import FlavorTabs from "../../../components/FlavorTabs.astro";
 import VectorSpaceScene from "../../../components/VectorSpaceScene3D.astro";
 import ModuleHero from "../../../components/module/ModuleHero.astro";
 import ModuleFooterNav from "../../../components/module/ModuleFooterNav.astro";
+import ModuleQuiz from "../../../components/module/ModuleQuiz.astro";
 import { flavor as gcp } from "../../../data/flavors/gcp";
 import { flavor as aws } from "../../../data/flavors/aws";
 import { flavor as azure } from "../../../data/flavors/azure";
@@ -56,5 +57,6 @@ const entries = {
       <li>Re-embedding the entire index by hand after a chunking change — plan for incremental re-embedding from day one (Module 11: Orchestration).</li>
     </ul>
   </article>
+  <ModuleQuiz moduleId={moduleId} />
   <ModuleFooterNav moduleId={moduleId} />
 </BaseLayout>
