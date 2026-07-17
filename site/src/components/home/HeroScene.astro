@@ -725,7 +725,14 @@ const SERVICE_OVERLAYS = [
     position: absolute;
     transform: translateX(-50%);
     width: max-content;
-    max-width: 24%;
+    /* The top-row nodes (SOURCES/INGEST/CHUNK/EMBED) sit ~24-25% of the
+       stage width apart center-to-center (see SERVICE_OVERLAYS above) — at
+       24% max-width, two adjacent captions' boxes touch with zero margin,
+       so any cloud whose service name runs long (several do — e.g. OSS's
+       "BGE via TEI (Text Embeddings Inference)" for EMBED) visibly crowds
+       or overlaps into the neighboring node's space. 19% leaves a real gap
+       regardless of which cloud's (longer) label is showing. */
+    max-width: 19%;
     text-align: center;
     font-family: var(--font-mono);
     font-size: 0.6rem;
