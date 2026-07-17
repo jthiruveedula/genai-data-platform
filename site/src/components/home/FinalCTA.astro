@@ -202,8 +202,10 @@ const STATEMENT_LINES = [
   }
 
   .btn-primary {
-    background: var(--accent);
-    color: var(--bg-deep);
+    /* See HeroScene.astro's .btn-primary for why: --bg-deep failed WCAG
+       contrast against --accent across every cloud in light mode. */
+    background: var(--accent-strong, var(--accent));
+    color: var(--accent-contrast, var(--bg-deep));
   }
 
   .btn-primary:hover,
