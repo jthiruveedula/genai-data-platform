@@ -1,0 +1,126 @@
+---
+import { MODULES } from "../../data/modules";
+
+interface Props {
+  moduleId: string;
+}
+
+const { moduleId } = Astro.props;
+const base = import.meta.env.BASE_URL;
+
+const ordered = [...MODULES].sort((a, b) => a.order - b.order);
+const index = ordered.findIndex((m) => m.id === moduleId);
+if (index === -1) throw new Error(`ModuleFooterNav: unknown module id "${moduleId}"`);
+
+const prev = index > 0 ? ordered[index - 1] : null;
+const next = index < ordered.length - 1 ? ordered[index + 1] : null;
+---
+
+<nav class="module-footer-nav glass-panel" aria-label="Module navigation">
+  <a class="nav-link nav-link--back" href={`${base}#curriculum`}>
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+      <path d="M8 3L4 7l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+    </svg>
+    Back to curriculum
+  </a>
+
+  <div class="nav-adjacent">
+    {
+      prev && (
+        <a class="nav-link nav-link--prev" href={`${base}modules/${prev.id}/`}>
+          <span class="nav-label">← Previous</span>
+          <span class="nav-title">{prev.title}</span>
+        </a>
+      )
+    }
+    {
+      next && (
+        <a class="nav-link nav-link--next" href={`${base}modules/${next.id}/`}>
+          <span class="nav-label">Next →</span>
+          <span class="nav-title">{next.title}</span>
+        </a>
+      )
+    }
+  </div>
+</nav>
+
+<style>
+  .module-footer-nav {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 3rem;
+    padding: 1.25rem 1.5rem;
+  }
+
+  .nav-link {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    text-decoration: none;
+    color: var(--text-secondary);
+    transition: color var(--duration-micro) var(--ease-out);
+  }
+
+  .nav-link:hover {
+    color: var(--accent-text, var(--accent));
+  }
+
+  .nav-link--back {
+    font-size: 0.85rem;
+    flex: none;
+  }
+
+  .nav-adjacent {
+    display: flex;
+    gap: 1.5rem;
+    margin-left: auto;
+  }
+
+  .nav-link--prev,
+  .nav-link--next {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.15rem;
+  }
+
+  .nav-link--next {
+    align-items: flex-end;
+    text-align: right;
+  }
+
+  .nav-label {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    color: var(--text-secondary);
+  }
+
+  .nav-title {
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .nav-link:hover .nav-title {
+    color: var(--accent-text, var(--accent));
+  }
+
+  @media (max-width: 600px) {
+    .module-footer-nav {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .nav-adjacent {
+      margin-left: 0;
+      justify-content: space-between;
+      width: 100%;
+    }
+
+    .nav-link--next {
+      align-items: flex-end;
+    }
+  }
+</style>
