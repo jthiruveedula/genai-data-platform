@@ -437,7 +437,12 @@ const SERVICE_OVERLAYS = [
     grid-template-columns: minmax(0, 45fr) minmax(0, 55fr);
     align-items: center;
     gap: clamp(2rem, 5vw, 4rem);
-    padding: 2.5rem 0 3.5rem;
+    /* Homepage <main> is full-bleed (see BaseLayout.astro's
+       main.main--full-bleed) so every section supplies its own horizontal
+       gutter — this one never did, leaving the H1 flush against the
+       viewport's left edge at every breakpoint (confirmed: 0px from the
+       edge, not a rendering artifact). */
+    padding: 2.5rem clamp(1.5rem, 5vw, 3rem) 3.5rem;
   }
 
   /* ---- Content column (left-aligned) ---- */
