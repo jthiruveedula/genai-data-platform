@@ -10,5 +10,16 @@ export default defineConfig({
   integrations: [react()],
   vite: {
     plugins: [tailwindcss()],
+    build: {
+      // Default is 500kb. VectorSpaceScene3D's chunk (three.js +
+      // @react-three/fiber + @react-three/drei, ~900kb) trips this on every
+      // build — three is a hard dependency of @react-three/fiber regardless
+      // of what that component imports, and the chunk is already deferred
+      // behind `client:visible` (see VectorSpaceScene3D.astro), so it's
+      // never fetched until the learner scrolls that specific module-20
+      // scene into view. Raised past that chunk's actual size so the
+      // warning only fires for genuinely unexpected bloat elsewhere.
+      chunkSizeWarningLimit: 1000,
+    },
   },
 });
