@@ -5,11 +5,24 @@
   --accent: #0078d4;
   --accent-2: #50e6ff;
   --accent-text: #6cc2ff; /* light-on-dark link/text variant */
+  /* Azure's brand blue sits in a "dead zone" of lightness where neither
+     black nor white text on the raw --accent clears 4.5:1 (best case,
+     white, is only 4.22:1) — unlike aws/gcp/oss/neutral, whose accents are
+     bright/saturated enough for plain black text. Darkening the button's
+     own background 15% toward black (not the shared --accent token, which
+     is used for borders/icons elsewhere and should stay brand-accurate)
+     gets white text to 5.50:1. Applies in both themes: --accent doesn't
+     change between them for this cloud, only the surrounding surfaces do. */
+  --accent-contrast: #f5f7fa;
+  --accent-strong: color-mix(in srgb, var(--accent) 85%, black);
   --radius: 8px;
   --bg: #16181d;
   --bg-deep: #0f1115;
   --bg-card: #1e2635;
-  --bg-raised: #243a5e;
+  /* #243a5e measured 4.43:1 for --text-secondary (dark) text rendered on
+     it (e.g. CostConsole's scenario-caption) — darkened with margin
+     (4.76:1), verified via axe-core. */
+  --bg-raised: #213652;
   --border: #33507a;
   --code-bg: #1b1a19;
   --code-highlight: #50e6ff;

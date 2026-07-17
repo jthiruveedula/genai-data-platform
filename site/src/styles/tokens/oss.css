@@ -29,7 +29,10 @@
   --bg-card: var(--p-card);
   --bg-raised: #ffffff;
   --border: var(--p-border);
-  --accent-text: #15803d;
+  /* #15803d measured only 4.40:1 against this cloud's --bg-deep (#f0f0ee)
+     — e.g. WhyItMatters' .section-kicker. Darkened with margin (5.37:1),
+     verified via axe-core. */
+  --accent-text: #12712f;
   --glass-bg: rgba(253, 253, 253, 0.72);
 }
 

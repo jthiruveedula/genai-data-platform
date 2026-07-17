@@ -106,9 +106,14 @@ const Tag = href ? 'a' : 'button';
 
   /* Variants */
   .btn--primary {
-    background: var(--accent);
-    color: var(--accent-text, #fff);
-    border-color: var(--accent);
+    /* --accent-text is calibrated for accent-colored text ON the page
+       background (e.g. links) — a different pairing than text rendered ON
+       TOP OF --accent, which is what --accent-contrast/--accent-strong
+       (base.css) are for. See HeroScene.astro's .btn-primary for the WCAG
+       failure this was causing before those tokens existed. */
+    background: var(--accent-strong, var(--accent));
+    color: var(--accent-contrast, #fff);
+    border-color: var(--accent-strong, var(--accent));
   }
 
   .btn--primary:hover {

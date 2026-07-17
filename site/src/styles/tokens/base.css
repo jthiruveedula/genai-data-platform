@@ -26,7 +26,11 @@
   --p-near-white: #f9f9f9;
   --p-card: #fdfdfd;
   --p-border: #e8e8e8;
-  --p-gray-600: #727272;
+  /* #727272 measured 4.21-4.44:1 against several clouds' light --bg-deep
+     shades (e.g. oss #f0f0ee, azure #e9f1fc) — just under WCAG AA's 4.5:1.
+     Darkened with margin (worst case now 5.03:1), verified via axe-core
+     against every cloud's actual --bg-deep. */
+  --p-gray-600: #666666;
   --p-gray-900: #1a1a1a;
 
   /* semantic — dark-first defaults (no cloud selected yet).
@@ -41,6 +45,13 @@
   --accent: #67e8f9;
   --accent-2: #38bdf8;
   --accent-text: #a5f3fc;
+  /* Text color for content rendered ON TOP OF --accent (e.g. the primary
+     button) — a different pairing than --accent-text (accent-colored text
+     on the page background). Near-black clears 4.5:1 against every cloud's
+     --accent except azure's mid-lightness blue, which overrides both this
+     and --accent-strong below (see azure.css). */
+  --accent-contrast: #0f1115;
+  --accent-strong: var(--accent);
   --radius: var(--p-radius);
   --code-bg: #0d1117;
   --code-highlight: #38bdf8;
@@ -209,9 +220,21 @@ a {
   color: var(--accent);
 }
 
+/* "Pending/unverified" is signaled by a dashed border (matching
+   .mission-card--locked's existing provisional-state language), not by
+   fading the whole chip's opacity — that used to also fade the text color
+   itself, which failed WCAG 4.5:1 contrast in several dark cloud themes
+   (as low as 3.98:1) and would fail light mode at almost any opacity
+   reduction (its base margin is only ~4.6:1 to begin with). The bracket
+   glyphs are decorative punctuation, not informational text, so muting
+   only those is contrast-safe. */
 .chip--pending {
-  color: var(--text-secondary);
-  opacity: 0.75;
+  border-style: dashed;
+}
+
+.chip--pending::before,
+.chip--pending::after {
+  opacity: 0.7;
 }
 
 /* ---------------------------------------------------------------------------

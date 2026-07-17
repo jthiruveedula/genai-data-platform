@@ -535,8 +535,14 @@ const SERVICE_OVERLAYS = [
   }
 
   .btn-primary {
-    background: var(--accent);
-    color: var(--bg-deep);
+    /* --accent-strong/--accent-contrast (base.css) default to --accent and
+       near-black, which clears 4.5:1 for aws/gcp/oss/neutral; azure
+       overrides both since its accent needs different handling (see
+       azure.css) — using --bg-deep here previously failed WCAG contrast
+       across every cloud in light mode (as low as 1.87:1) and in azure's
+       dark mode too. */
+    background: var(--accent-strong, var(--accent));
+    color: var(--accent-contrast, var(--bg-deep));
   }
 
   .btn-primary:hover,

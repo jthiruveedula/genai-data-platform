@@ -28,7 +28,12 @@
   --bg-card: var(--p-card);
   --bg-raised: #ffffff;
   --border: var(--p-border);
-  --accent-text: #b25e00; /* darkened for 4.5:1 text/link contrast on white */
+  /* #b25e00 was calibrated against plain white/p-card (4.5:1 there) but
+     only reached 4.32:1 against this cloud's own --bg-deep (#f4f6f9,
+     slightly darker) — e.g. WhyItMatters' .section-kicker. Darkened
+     further with margin (4.74:1 against --bg-deep), verified via
+     axe-core. */
+  --accent-text: #a85900;
   --glass-bg: rgba(253, 253, 253, 0.72);
 }
 
