@@ -163,6 +163,7 @@ const railPath = STATIONS.map((s, i) => `${i === 0 ? "M" : "L"}${s.x.toFixed(1)}
       const railBase = rootEl.querySelector<SVGPathElement>(".rail-path-base");
       const token = rootEl.querySelector<SVGGElement>("[data-rail-token]");
       const stageCount = readouts.length;
+      const segment = 1 / stageCount;
 
       gsap.set(readouts, { autoAlpha: 0 });
       gsap.set(readouts[0], { autoAlpha: 1 });
@@ -202,12 +203,21 @@ const railPath = STATIONS.map((s, i) => `${i === 0 ? "M" : "L"}${s.x.toFixed(1)}
           {
             motionPath: { path: railBase, align: railBase, alignOrigin: [0.5, 0.5] },
             ease: "none",
+            // Without an explicit duration this defaults to GSAP's global
+            // 0.5s default — which, on a scrubbed timeline whose authored
+            // span is 0-1 (stageCount * segment), meant the token raced
+            // along the ENTIRE rail in just the first half of the scroll
+            // range, then sat idle at the end for the second half —
+            // visibly desynced from the readout text (e.g. text showing
+            // stage 4/10 while the token sat at stage 8's position).
+            // Matching the full authored span keeps it in lockstep with
+            // the per-stage readouts below.
+            duration: stageCount * segment,
           },
           0,
         );
       }
 
-      const segment = 1 / stageCount;
       readouts.forEach((readout, i) => {
         const start = i * segment;
         if (i > 0) {
