@@ -1,6 +1,6 @@
 ---
 import { LIFECYCLE, CONCEPTS } from "../../data/platform";
-import { CLOUDS } from "../../data/modules";
+import { CLOUDS, MODULES } from "../../data/modules";
 
 const base = import.meta.env.BASE_URL;
 
@@ -43,8 +43,8 @@ const SERVICE_OVERLAYS = [
     </p>
 
     <div class="cta-row" data-rise>
-      <a class="btn btn-primary" href={`${base}modules/00-foundations/`}>
-        Start with Foundations
+      <a class="btn btn-primary" href={`${base}modules/00-foundations/`} data-primary-cta data-base={base}>
+        <span data-primary-cta-label>Start with Foundations</span>
         <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
           <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
         </svg>
@@ -204,6 +204,8 @@ const SERVICE_OVERLAYS = [
 <script>
   import { gsap } from "gsap";
   import { MotionPathPlugin } from "gsap/MotionPathPlugin";
+  import { MODULES } from "../../data/modules";
+  import { nextIncompleteModule } from "../../lib/progress";
 
   gsap.registerPlugin(MotionPathPlugin);
 
@@ -212,6 +214,39 @@ const SERVICE_OVERLAYS = [
 
   function tickerText(tokens: number): string {
     return `${Math.round(tokens).toLocaleString()} TOKENS · $${(tokens * COST_PER_TOKEN).toFixed(4)}`;
+  }
+
+  const ORDERED_MODULES = [...MODULES].sort((a, b) => a.order - b.order);
+
+  // Plain DOM/text swap, not a tween — kept out of the GSAP context below so
+  // it isn't reverted/reapplied on every ClientRouter navigation, and reads
+  // localStorage fresh each time (a full navigation back from a module page
+  // is what re-fires astro:page-load, the same refresh point CurriculumJourney
+  // relies on for its own progress badges).
+  function renderResumeCta() {
+    const link = document.querySelector<HTMLAnchorElement>("[data-primary-cta]");
+    const label = document.querySelector<HTMLElement>("[data-primary-cta-label]");
+    if (!link || !label || !ORDERED_MODULES.length) return;
+
+    // Read from data-base (set once from Astro's import.meta.env.BASE_URL),
+    // not by parsing link.href — href gets rewritten by this same function,
+    // so a second call would otherwise be parsing its own prior output.
+    const base = link.dataset.base ?? "/";
+    const next = nextIncompleteModule(ORDERED_MODULES.map((m) => m.id));
+
+    if (next === null) {
+      // Every module's quiz is passed — nothing left to "start" or "resume".
+      link.href = `${base}#curriculum`;
+      label.textContent = "Review the curriculum";
+    } else if (next === ORDERED_MODULES[0].id) {
+      // No progress yet — the default first-visit state, already in the markup.
+      link.href = `${base}modules/${next}/`;
+      label.textContent = "Start with Foundations";
+    } else {
+      const mod = ORDERED_MODULES.find((m) => m.id === next)!;
+      link.href = `${base}modules/${next}/`;
+      label.textContent = `Resume: ${mod.title}`;
+    }
   }
 
   let ctx: gsap.Context | undefined;
@@ -386,7 +421,11 @@ const SERVICE_OVERLAYS = [
   }
 
   setup();
-  document.addEventListener("astro:page-load", setup);
+  renderResumeCta();
+  document.addEventListener("astro:page-load", () => {
+    setup();
+    renderResumeCta();
+  });
   document.addEventListener("astro:after-swap", () => ctx?.revert());
 </script>
 
