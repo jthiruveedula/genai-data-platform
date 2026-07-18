@@ -121,6 +121,19 @@ const CLUSTERS = [
   }
 
   .vector-scene-3d[data-mode="3d"] .v3d-mount {
+    /* Back to normal flow once hydrated: kept absolute+inset:0 (sized to
+       match the small static-SVG placeholder) pre-hydration only so the
+       IntersectionObserver driving client:visible has a layout box to watch
+       while invisible (see the comment above). Left absolute after
+       data-mode="3d" flips, the real 3D scene — canvas up to 26rem tall,
+       plus the query form and legend below it — is capped at the static
+       placeholder's much shorter height and doesn't contribute to the
+       parent's height, so it visually overflows past .vector-scene-3d's
+       bottom edge and overlaps whatever section comes next on the page
+       (verified: FlavorTabs' "Try it in your flavor" panel content sits on
+       top of and intercepts clicks meant for the query input/button). */
+    position: static;
+    inset: auto;
     visibility: visible;
     opacity: 1;
     pointer-events: auto;

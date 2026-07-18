@@ -80,9 +80,16 @@ const base = import.meta.env.BASE_URL;
     gap: 1rem;
     padding: 0.65rem 1.5rem;
     border-bottom: 1px solid var(--glass-border);
-    background: var(--glass-bg);
-    backdrop-filter: blur(var(--glass-blur));
-    -webkit-backdrop-filter: blur(var(--glass-blur));
+    /* Deliberately more opaque/blurred than --glass-bg/--glass-blur (the
+       shared .glass-panel tokens used for occasional in-page cards): this
+       bar is permanently visible and sticky over the hero's bright,
+       saturated CTA button, which bled through as a distracting solid-color
+       patch behind the brand/nav-links at 0.66 alpha + 14px blur. A
+       one-off, sticky-nav-only override rather than raising the shared
+       tokens (which would also change every .glass-panel card's look). */
+    background: color-mix(in srgb, var(--glass-bg) 30%, var(--bg) 70%);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
   }
 
   .brand {
