@@ -263,13 +263,41 @@ a {
 /* ---------------------------------------------------------------------------
    Shared cinematic-section primitives (homepage scenes)
 --------------------------------------------------------------------------- */
+/* Elevated flat surface — not glass. A translucent, blurred "frosted card"
+   reads as the single most common dark-mode-SaaS default; a solid raised
+   panel with a hairline border and a soft directional shadow carries the
+   same "this sits above the page" signal without the borrowed-template look.
+   Lifts slightly and picks up a faint accent-tinted glow on hover, per this
+   product's own accent-is-the-only-color-driver principle. */
 .glass-panel {
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
   border-radius: calc(var(--radius) + 4px);
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
   box-shadow: var(--shadow-panel);
+  transition:
+    transform var(--duration-micro) var(--ease-out),
+    box-shadow var(--duration-micro) var(--ease-out),
+    border-color var(--duration-micro) var(--ease-out);
+}
+
+.glass-panel:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+  box-shadow:
+    var(--shadow-panel),
+    0 8px 28px -12px color-mix(in srgb, var(--accent) 25%, transparent);
+}
+
+/* Module pages are long-form prose; ModuleHero's own intro paragraph is
+   already capped at 44rem, but the concept h2/p/ul pairs that follow it
+   directly in <article> weren't, so the reading line-length ballooned to
+   the full 72rem main width past ~1000px viewports. FlavorTabs' code panels
+   and lab-step <ol> are untouched — they're not p/h2/ul direct children, so
+   they keep the full container width where wide content actually helps. */
+article > h2,
+article > p,
+article > ul {
+  max-width: 44rem;
 }
 
 .section-kicker {
