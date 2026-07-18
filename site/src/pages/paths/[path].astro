@@ -63,7 +63,7 @@ const moduleIds = modules.map((m) => m.id);
 
 <script>
   import { MODULES } from "../../data/modules";
-  import { isModuleComplete, readQuizScore, nextIncompleteModule, getCompletionSummary } from "../../lib/progress";
+  import { isModuleComplete, nextIncompleteModule, getCompletionSummary } from "../../lib/progress";
 
   function render() {
     const rail = document.querySelector<HTMLElement>("[data-module-rail]");
@@ -85,13 +85,11 @@ const moduleIds = modules.map((m) => m.id);
       if (!statusChip) return;
 
       if (isModuleComplete(moduleId)) {
-        const result = readQuizScore(moduleId);
-        statusChip.textContent = result ? `✓ PASS ${result.score}/${result.total}` : "✓ PASS";
+        statusChip.textContent = "✓ COMPLETE";
         statusChip.classList.add("rail-status-chip--complete");
         statusChip.classList.remove("rail-status-chip--next");
       } else if (moduleId === next) {
-        const hasAttempt = readQuizScore(moduleId) !== null;
-        statusChip.textContent = hasAttempt ? "RESUME" : "START";
+        statusChip.textContent = "START";
         statusChip.classList.add("rail-status-chip--next");
         statusChip.classList.remove("rail-status-chip--complete");
       } else {

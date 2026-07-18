@@ -4,7 +4,7 @@ import { expect, test } from '@playwright/test';
 // service-equivalence matrix, a new module page, learning-path pages, the
 // freshness/claims page, and the Pagefind search modal.
 
-test('module page renders content, flavor tabs, and quiz for a new module', async ({ page }) => {
+test('module page renders content, flavor tabs, and recap for a new module', async ({ page }) => {
   await page.goto('modules/45-evaluation/');
   await expect(page).toHaveTitle(/Evaluation/);
   await expect(page.locator('h1')).toHaveText(/Evaluation/);
@@ -13,9 +13,21 @@ test('module page renders content, flavor tabs, and quiz for a new module', asyn
   const tablist = page.locator('[role="tablist"]');
   await tablist.scrollIntoViewIfNeeded();
   await expect(tablist).toBeVisible();
-  const quiz = page.locator('.module-quiz, [data-quiz]').first();
-  await quiz.scrollIntoViewIfNeeded();
-  await expect(quiz).toBeVisible();
+  const recap = page.locator('[data-module-recap]');
+  await recap.scrollIntoViewIfNeeded();
+  await expect(recap).toBeVisible();
+});
+
+test('a chart-bearing recap lazy-loads echarts and renders a canvas', async ({ page }) => {
+  await page.goto('modules/75-finops/');
+  const recap = page.locator('[data-module-recap]');
+  await recap.scrollIntoViewIfNeeded();
+  // The echarts chunk is dynamically imported when the recap nears the
+  // viewport; a rendered chart means a canvas inside the chart mount.
+  await expect(page.locator('[data-recap-chart] canvas')).toBeVisible({ timeout: 10_000 });
+  // Seeing the recap marks the module complete for the curriculum journey.
+  const stored = await page.evaluate(() => localStorage.getItem('gdp.recap.75-finops'));
+  expect(stored).not.toBeNull();
 });
 
 test('matrix page lists every module as a row and supports sorting', async ({ page }) => {

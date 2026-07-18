@@ -3,7 +3,7 @@ import BaseLayout from "../../../layouts/BaseLayout.astro";
 import FlavorTabs from "../../../components/FlavorTabs.astro";
 import ModuleHero from "../../../components/module/ModuleHero.astro";
 import ModuleFooterNav from "../../../components/module/ModuleFooterNav.astro";
-import ModuleQuiz from "../../../components/module/ModuleQuiz.astro";
+import ModuleRecap from "../../../components/module/ModuleRecap.astro";
 import { flavor as gcp } from "../../../data/flavors/gcp";
 import { flavor as aws } from "../../../data/flavors/aws";
 import { flavor as azure } from "../../../data/flavors/azure";
@@ -79,8 +79,9 @@ const entries = {
       which flips the economics compared to per-token API pricing. The way to compare them honestly: divide the
       GPU's hourly rate by its sustained tokens/sec throughput to get an effective $/token floor, then compare that
       against the API price for an equivalent model. In practice that break-even point sits at meaningfully high,
-      steady volume — real-world estimates put it around single-digit-millions of tokens per month against a cheap
-      API, and that's before counting the engineering and on-call time to keep a serving stack healthy, which often
+      steady volume — against the fast-tier prices on the freshness page, a single ~$0.44/hour GPU running 24/7 only
+      pays for itself past roughly a hundred million output tokens a month (a few million a day), and that's before
+      counting the engineering and on-call time to keep a serving stack healthy, which often
       dwarfs the GPU bill itself at low-to-moderate volume. Below that volume, per-token API pricing usually wins
       even before factoring in ops cost. vLLM's own
       <a href="https://docs.vllm.ai/en/stable/features/automatic_prefix_caching/" target="_blank" rel="noopener">automatic
@@ -108,6 +109,6 @@ const entries = {
       <li>Comparing self-hosted GPU cost against API pricing using only the sticker price per hour, without counting the engineering/on-call time to keep a serving stack healthy — that overhead is often the larger number at low-to-moderate volume.</li>
     </ul>
   </article>
-  <ModuleQuiz moduleId={moduleId} />
+  <ModuleRecap moduleId={moduleId} />
   <ModuleFooterNav moduleId={moduleId} />
 </BaseLayout>

@@ -73,7 +73,7 @@
 
       // Event delegation over one listener rather than binding every
       // interactive element individually — covers content added after this
-      // script runs (e.g. quiz feedback, cloud-swap panels) with no rebind.
+      // script runs (e.g. recap charts, cloud-swap panels) with no rebind.
       const onOverOut = (e: PointerEvent) => {
         const target = (e.target as HTMLElement)?.closest?.(INTERACTIVE_SELECTOR);
         const isEnter = e.type === "pointerover";
