@@ -134,6 +134,7 @@ const base = import.meta.env.BASE_URL;
 
   .flavor-switch {
     display: flex;
+    flex-wrap: wrap;
     gap: 0.25rem;
     border: 1px solid var(--border);
     border-radius: var(--radius);
@@ -186,7 +187,14 @@ const base = import.meta.env.BASE_URL;
     border-color: var(--accent);
   }
 
-  @media (max-width: 720px) {
+  /* 860px, not 720px: at 768px (a real device width — iPad portrait, and
+     Playwright/Hallmark's own tablet checkpoint) the un-wrapped bar's
+     content (brand + 3 links + search + 4-cloud switcher + theme toggle)
+     was already wider than the viewport -- a genuine horizontal-scroll bug
+     verified via document.documentElement.scrollWidth (846px content in a
+     768px viewport). The old 720px threshold left a real gap between
+     "still full-width" and "actually fits full-width". */
+  @media (max-width: 860px) {
     .navbar {
       flex-wrap: wrap;
       row-gap: 0.5rem;
