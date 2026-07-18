@@ -1,5 +1,6 @@
 ---
 import { CLOUDS } from "../data/modules";
+import Search from "./Search.astro";
 const base = import.meta.env.BASE_URL;
 ---
 
@@ -11,7 +12,10 @@ const base = import.meta.env.BASE_URL;
   <nav class="nav-links" aria-label="Primary">
     <a class="nav-link" href={`${base}#curriculum`}>Curriculum</a>
     <a class="nav-link" href={`${base}calculator/`}>Cost console</a>
+    <a class="nav-link" href={`${base}matrix/`}>Matrix</a>
   </nav>
+
+  <Search />
 
   <div class="flavor-switch" role="group" aria-label="Choose cloud flavor">
     {
