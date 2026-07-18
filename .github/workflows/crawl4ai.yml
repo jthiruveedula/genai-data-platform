@@ -13,7 +13,7 @@ jobs:
   crawl-and-diff:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # - name: Set up Python + Crawl4AI
       #   TODO(Phase 4): actions/setup-python@v5, pip install crawl4ai,
