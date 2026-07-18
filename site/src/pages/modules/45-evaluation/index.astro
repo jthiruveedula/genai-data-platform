@@ -1,0 +1,81 @@
+---
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import FlavorTabs from "../../../components/FlavorTabs.astro";
+import ModuleHero from "../../../components/module/ModuleHero.astro";
+import ModuleFooterNav from "../../../components/module/ModuleFooterNav.astro";
+import ModuleQuiz from "../../../components/module/ModuleQuiz.astro";
+import { flavor as gcp } from "../../../data/flavors/gcp";
+import { flavor as aws } from "../../../data/flavors/aws";
+import { flavor as azure } from "../../../data/flavors/azure";
+import { flavor as oss } from "../../../data/flavors/oss";
+
+const moduleId = "45-evaluation";
+const entries = {
+  gcp: gcp[moduleId],
+  aws: aws[moduleId],
+  azure: azure[moduleId],
+  oss: oss[moduleId],
+};
+---
+
+<BaseLayout title="45 · Evaluation">
+  <article>
+    <ModuleHero moduleId={moduleId}>
+      <p>
+        Module 35 gave you recall@k and precision@k against a handful of hand-checked queries. Evaluation turns that
+        habit into a system: a golden dataset, automated metrics, and a gate in CI — so "the new prompt feels better"
+        becomes a number that either passed or didn't.
+      </p>
+    </ModuleHero>
+
+    <h2>Golden datasets</h2>
+    <p>
+      A <strong>golden dataset</strong> is 20 or more labeled question/answer pairs, ideally drawn from real user
+      questions plus the documents ingested back in Module 10. Each row needs a question, the reference context (which
+      chunks should be retrieved), and a reference answer. Without this set, every later metric has nothing to compare
+      against — it's the fixture the rest of the module runs on.
+    </p>
+
+    <h2>RAGAS-style metrics</h2>
+    <p>
+      <strong>Faithfulness</strong> checks whether every claim in the generated answer is actually supported by the
+      retrieved context — it catches hallucination even when the answer sounds confident. <strong>Answer
+      relevance</strong> checks whether the response actually addresses the question asked, independent of whether
+      it's grounded. <strong>Context precision</strong> and <strong>context recall</strong> score the retrieval half:
+      precision asks whether the retrieved chunks were relevant, recall asks whether the relevant chunks were
+      retrieved at all. Together they separate "retrieval failed" from "generation failed" instead of leaving you with
+      one blended "the answer was wrong" verdict.
+    </p>
+
+    <h2>LLM-as-judge and calibration</h2>
+    <p>
+      Most of these metrics are themselves computed by asking another LLM to score the response — an
+      <strong>LLM-as-judge</strong>. That's cheap and scales to hundreds of examples, but a judge model has its own
+      blind spots and biases. The fix is calibration: periodically sample judge scores and compare them against a
+      human's own rating on the same examples. If they disagree often, the judge prompt (or judge model) needs work
+      before you trust it to gate anything.
+    </p>
+
+    <h2>Regression evals in CI</h2>
+    <p>
+      Once you trust the metrics, wire them into CI as an <strong>eval-gated deploy</strong>: every change to the
+      prompt, retrieval pipeline, or model re-runs the golden dataset, and the build fails if faithfulness or context
+      recall drops below a threshold. This is the same discipline as a unit test suite, aimed at model quality instead
+      of code correctness — and it's what turns Module 55's traces from "interesting logs" into "the thing that stops
+      a bad release."
+    </p>
+
+    <h2>Try it in your flavor</h2>
+    <FlavorTabs moduleId={moduleId} entries={entries} />
+
+    <h2>Pitfalls</h2>
+    <ul>
+      <li>Trusting LLM-as-judge scores without ever checking them against human labels — an uncalibrated judge can be confidently wrong.</li>
+      <li>Building a golden dataset once and never updating it as real user questions drift from your original assumptions.</li>
+      <li>Blending faithfulness and context recall into one "quality score" — you lose the ability to tell whether retrieval or generation caused a regression.</li>
+      <li>Adding an eval gate to CI but never lowering the threshold as the pipeline improves, so it stops catching anything.</li>
+    </ul>
+  </article>
+  <ModuleQuiz moduleId={moduleId} />
+  <ModuleFooterNav moduleId={moduleId} />
+</BaseLayout>

@@ -1,0 +1,81 @@
+---
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import FlavorTabs from "../../../components/FlavorTabs.astro";
+import ModuleHero from "../../../components/module/ModuleHero.astro";
+import ModuleFooterNav from "../../../components/module/ModuleFooterNav.astro";
+import ModuleQuiz from "../../../components/module/ModuleQuiz.astro";
+import { flavor as gcp } from "../../../data/flavors/gcp";
+import { flavor as aws } from "../../../data/flavors/aws";
+import { flavor as azure } from "../../../data/flavors/azure";
+import { flavor as oss } from "../../../data/flavors/oss";
+
+const moduleId = "65-security";
+const entries = {
+  gcp: gcp[moduleId],
+  aws: aws[moduleId],
+  azure: azure[moduleId],
+  oss: oss[moduleId],
+};
+---
+
+<BaseLayout title="65 · Security for GenAI">
+  <article>
+    <ModuleHero moduleId={moduleId}>
+      <p>
+        Every module so far has assumed the documents in your index are trustworthy and the model's output is safe to
+        show a user. Security is where both assumptions get tested — because a working RAG pipeline is, by default,
+        wide open to both.
+      </p>
+    </ModuleHero>
+
+    <h2>Direct and indirect prompt injection</h2>
+    <p>
+      <strong>Direct injection</strong> is a user typing "ignore your instructions and..." into the chat box — annoying,
+      but scoped to that one user's own session. <strong>Indirect injection</strong> is worse: a malicious instruction
+      hidden inside a document that later gets ingested (back in Module 10) and retrieved (Module 35). Because the
+      model can't distinguish "trusted system instructions" from "text that happened to come back from retrieval," one
+      poisoned document in the index attacks every future query that retrieves it — not just its author's own
+      questions.
+    </p>
+
+    <h2>Data exfiltration via retrieval</h2>
+    <p>
+      Retrieval finds the most semantically similar chunk, full stop — it has no concept of "whose document this is"
+      unless you tell it. If the index mixes multiple tenants or users without a document-level ACL filter applied at
+      query time, one tenant's question can surface another tenant's private chunks. This isn't a hypothetical: it's
+      the direct consequence of skipping the access-control step that Module 20's embeddings work doesn't force you to
+      think about.
+    </p>
+
+    <h2>Jailbreaks vs. injection</h2>
+    <p>
+      It's worth keeping these distinct. A <strong>jailbreak</strong> targets the model's own safety training,
+      usually through the user's own prompt, to get it to say something it normally wouldn't. <strong>Injection</strong>
+      doesn't need to break any safety training at all — it just smuggles instructions in through data the model
+      treats as part of its context, exploiting the fact that the model can't tell instructions from content.
+    </p>
+
+    <h2>Output handling: treat model output as untrusted</h2>
+    <p>
+      If your frontend renders the model's answer as HTML without sanitizing it, and an attacker manages (via
+      injection) to get the model to emit a <code>&lt;script&gt;</code> tag, you have an XSS vulnerability that
+      originates from your own LLM. The fix is the same one web security has always taught: never trust input you
+      didn't fully control the generation of, and model output — shaped by retrieved documents you don't fully
+      control — qualifies. The <strong>OWASP LLM Top 10</strong> catalogs this and the injection/exfiltration risks
+      above under a shared vocabulary worth knowing before you ship a RAG app to real users.
+    </p>
+
+    <h2>Try it in your flavor</h2>
+    <FlavorTabs moduleId={moduleId} entries={entries} />
+
+    <h2>Pitfalls</h2>
+    <ul>
+      <li>Assuming injection requires a malicious user — a single poisoned document ingested from an untrusted source can attack every future query.</li>
+      <li>Skipping document-level access-control filters on retrieval because "we'll add multi-tenancy later" — by then the index already mixes everyone's data.</li>
+      <li>Rendering LLM output directly as HTML without sanitization, treating it as if it came from your own trusted code.</li>
+      <li>Conflating jailbreak defenses with injection defenses — a model resistant to jailbreaks can still be hijacked by injected content in retrieved context.</li>
+    </ul>
+  </article>
+  <ModuleQuiz moduleId={moduleId} />
+  <ModuleFooterNav moduleId={moduleId} />
+</BaseLayout>

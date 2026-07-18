@@ -1,0 +1,86 @@
+---
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import FlavorTabs from "../../../components/FlavorTabs.astro";
+import ModuleHero from "../../../components/module/ModuleHero.astro";
+import ModuleFooterNav from "../../../components/module/ModuleFooterNav.astro";
+import ModuleQuiz from "../../../components/module/ModuleQuiz.astro";
+import { flavor as gcp } from "../../../data/flavors/gcp";
+import { flavor as aws } from "../../../data/flavors/aws";
+import { flavor as azure } from "../../../data/flavors/azure";
+import { flavor as oss } from "../../../data/flavors/oss";
+
+const moduleId = "85-agents";
+const entries = {
+  gcp: gcp[moduleId],
+  aws: aws[moduleId],
+  azure: azure[moduleId],
+  oss: oss[moduleId],
+};
+---
+
+<BaseLayout title="85 · Agents & tool use">
+  <article>
+    <ModuleHero moduleId={moduleId}>
+      <p>
+        Every module so far has been a single retrieval pass answering a single question. Agents are for when the
+        task takes more than one step — and after evaluating, observing, securing, and costing out the pipeline, this
+        is where you decide when that extra complexity is actually worth it.
+      </p>
+    </ModuleHero>
+
+    <h2>Function calling</h2>
+    <p>
+      <strong>Function calling</strong> is the mechanism underneath every agent: the model emits a structured
+      description of a tool it wants to call (name and arguments), your runtime executes that tool — often the
+      Module 25 retrieval call itself — and the result goes back into the model's context as new input. The model
+      never runs code directly; it only ever asks, in a structured format your code chooses whether to honor.
+    </p>
+
+    <h2>Agent loops: plan, act, observe</h2>
+    <p>
+      A single function call answers a single-hop question. An <strong>agent loop</strong> repeats plan → act →
+      observe until the task is done: decide what to do next, call a tool, look at the result, and decide again. Left
+      unbounded, a loop stuck on an unsolvable task will keep planning and acting forever — so every agent needs a
+      hard iteration or token budget that forces it to stop and report failure instead of spinning.
+    </p>
+
+    <h2>MCP as a standard interface</h2>
+    <p>
+      Early agent frameworks each invented their own way to wire up tools, which meant re-integrating every data
+      source per framework. <strong>MCP (Model Context Protocol)</strong> standardizes that interface: a tool or data
+      source implements one MCP server, and any MCP-aware agent can call it — the same value a database driver
+      provides, applied to agent tooling instead of SQL.
+    </p>
+
+    <h2>When RAG beats agents (and vice versa)</h2>
+    <p>
+      If the task is "look this one thing up," Module 25's single-hop RAG is faster, cheaper, and simpler — an agent
+      loop around it just adds latency for no benefit. Agents earn their overhead on genuinely multi-step tasks:
+      "find X, then compare it against last quarter's version, then draft a summary" needs planning across several
+      tool calls that a single retrieval pass can't do. Knowing which one a request needs is itself a design decision,
+      not a default.
+    </p>
+
+    <h2>Safety: least privilege and human gates</h2>
+    <p>
+      An agent should only ever hold the tools and scopes its task actually needs — a research agent doesn't need
+      write access to a database. And for any tool call with a real side effect (sending an email, deleting a
+      record, spending money), insert a human-approval gate before it executes. Combined with the security lessons
+      from Module 65, this is what keeps a tool-using model from turning a planning mistake, or an injected
+      instruction, into an action with real consequences.
+    </p>
+
+    <h2>Try it in your flavor</h2>
+    <FlavorTabs moduleId={moduleId} entries={entries} />
+
+    <h2>Pitfalls</h2>
+    <ul>
+      <li>Running an agent loop with no iteration budget — an unsolvable task will keep planning and acting indefinitely.</li>
+      <li>Reaching for an agent on a single-hop lookup that Module 25's plain RAG API already answers faster and cheaper.</li>
+      <li>Granting an agent broad tool access "for flexibility," which turns any planning mistake or injected instruction into a much larger blast radius.</li>
+      <li>Letting an agent execute side-effecting tool calls (sending, deleting, spending) with no human approval step in between.</li>
+    </ul>
+  </article>
+  <ModuleQuiz moduleId={moduleId} />
+  <ModuleFooterNav moduleId={moduleId} />
+</BaseLayout>

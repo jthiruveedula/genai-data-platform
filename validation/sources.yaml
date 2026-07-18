@@ -207,3 +207,143 @@ claims:
     sources: []
     volatility: low
     verified_on: null
+
+  - id: gcp-vertex-eval-service
+    used_by: site/src/data/flavors/gcp.ts#45-evaluation
+    claim: "Vertex AI's Gen AI evaluation service supports model and RAG evaluation with built-in metrics"
+    sources: []
+    volatility: high
+    verified_on: null
+
+  - id: aws-bedrock-evaluation
+    used_by: site/src/data/flavors/aws.ts#45-evaluation
+    claim: "Amazon Bedrock supports model and RAG evaluation jobs including LLM-as-judge scoring"
+    sources: []
+    volatility: high
+    verified_on: null
+
+  - id: azure-foundry-evaluations
+    used_by: site/src/data/flavors/azure.ts#45-evaluation
+    claim: "Azure AI Foundry provides built-in evaluators for groundedness and relevance"
+    sources: []
+    volatility: high
+    verified_on: null
+
+  - id: oss-ragas-langfuse
+    used_by: site/src/data/flavors/oss.ts#45-evaluation
+    claim: "RAGAS computes faithfulness and relevance metrics, and Langfuse stores evaluation datasets and experiment runs"
+    sources: []
+    volatility: medium
+    verified_on: null
+
+  - id: gcp-cloud-trace-genai
+    used_by: site/src/data/flavors/gcp.ts#55-observability
+    claim: "Cloud Trace ingests OpenTelemetry spans for distributed tracing"
+    sources: []
+    volatility: low
+    verified_on: null
+
+  - id: aws-bedrock-invocation-logging
+    used_by: site/src/data/flavors/aws.ts#55-observability
+    claim: "Bedrock can log every invocation's request, response, and token counts to CloudWatch and S3"
+    sources: []
+    volatility: medium
+    verified_on: null
+
+  - id: azure-app-insights-tracing
+    used_by: site/src/data/flavors/azure.ts#55-observability
+    claim: "Application Insights ingests OpenTelemetry traces"
+    sources: []
+    volatility: low
+    verified_on: null
+
+  - id: oss-langfuse-tracing
+    used_by: site/src/data/flavors/oss.ts#55-observability
+    claim: "Langfuse captures nested LLM traces with token counts and cost"
+    sources: []
+    volatility: medium
+    verified_on: null
+
+  - id: gcp-model-armor
+    used_by: site/src/data/flavors/gcp.ts#65-security
+    claim: "Model Armor screens prompts and responses for injection and data loss"
+    sources: []
+    volatility: high
+    verified_on: null
+
+  - id: aws-bedrock-guardrails
+    used_by: site/src/data/flavors/aws.ts#65-security
+    claim: "Bedrock Guardrails provides content filters, denied topics, PII masking, and contextual grounding checks"
+    sources: []
+    volatility: high
+    verified_on: null
+
+  - id: azure-content-safety-prompt-shields
+    used_by: site/src/data/flavors/azure.ts#65-security
+    claim: "Content Safety Prompt Shields detects direct and indirect prompt injection"
+    sources: []
+    volatility: high
+    verified_on: null
+
+  - id: oss-llama-guard-presidio
+    used_by: site/src/data/flavors/oss.ts#65-security
+    claim: "Llama Guard classifies unsafe content and Presidio detects and redacts PII"
+    sources: []
+    volatility: medium
+    verified_on: null
+
+  - id: gcp-billing-export-bq
+    used_by: site/src/data/flavors/gcp.ts#75-finops
+    claim: "Cloud Billing export to BigQuery enables per-service cost queries"
+    sources: []
+    volatility: low
+    verified_on: null
+
+  - id: aws-cur-athena-finops
+    used_by: site/src/data/flavors/aws.ts#75-finops
+    claim: "The Cost and Usage Report delivered to S3 is queryable via Athena"
+    sources: []
+    volatility: low
+    verified_on: null
+
+  - id: azure-cost-management-ptu
+    used_by: site/src/data/flavors/azure.ts#75-finops
+    claim: "Microsoft Cost Management tracks Azure OpenAI spend; Provisioned Throughput Units and pay-as-you-go are the two purchase models"
+    sources: []
+    volatility: high
+    verified_on: null
+
+  - id: oss-opencost-k8s
+    used_by: site/src/data/flavors/oss.ts#75-finops
+    claim: "OpenCost allocates Kubernetes infrastructure cost per namespace and workload"
+    sources: []
+    volatility: medium
+    verified_on: null
+
+  - id: gcp-vertex-agent-builder
+    used_by: site/src/data/flavors/gcp.ts#85-agents
+    claim: "Vertex AI Agent Builder / Agent Engine hosts agents, and Gemini supports function calling"
+    sources: []
+    volatility: high
+    verified_on: null
+
+  - id: aws-bedrock-agents
+    used_by: site/src/data/flavors/aws.ts#85-agents
+    claim: "Bedrock Agents orchestrates tool use via action groups"
+    sources: []
+    volatility: high
+    verified_on: null
+
+  - id: azure-foundry-agent-service
+    used_by: site/src/data/flavors/azure.ts#85-agents
+    claim: "Azure AI Foundry Agent Service hosts tool-using agents"
+    sources: []
+    volatility: high
+    verified_on: null
+
+  - id: oss-mcp-agent-loop
+    used_by: site/src/data/flavors/oss.ts#85-agents
+    claim: "LiteLLM provides a unified function-calling API across open models, and MCP standardizes tool servers"
+    sources: []
+    volatility: medium
+    verified_on: null
