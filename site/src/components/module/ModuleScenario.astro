@@ -1,0 +1,99 @@
+---
+/* Hallmark · pre-emit critique: P4 H4 E4 S4 R5 V4 */
+// "In the field" aside — a beat from each of the two recurring composite
+// companies (an enterprise and a startup) showing how this module's idea
+// shows up in a realistic-but-invented deployment. Sits right after the
+// module hero, before the conceptual sections, so the story frames what
+// follows rather than summarizing it.
+import { SCENARIOS } from "../../data/scenarios";
+
+interface Props {
+  moduleId: string;
+}
+
+const { moduleId } = Astro.props;
+const content = SCENARIOS[moduleId];
+if (!content) throw new Error(`ModuleScenario: no scenario registered for module "${moduleId}"`);
+---
+
+<aside class="module-scenario" aria-label="In the field: composite scenario examples">
+  <p class="scenario-kicker">IN THE FIELD <span class="scenario-disclaimer">— composite, illustrative examples, not real companies</span></p>
+  <div class="scenario-beats">
+    {
+      content.beats.map((beat) => (
+        <div class="scenario-beat">
+          <p class="scenario-company">
+            <span class="chip chip--accent">{beat.company.kind}</span>
+            <strong>{beat.company.name}</strong>
+            <span class="scenario-context">— {beat.company.context}</span>
+          </p>
+          <p class="scenario-vignette">{beat.vignette}</p>
+        </div>
+      ))
+    }
+  </div>
+</aside>
+
+<style>
+  .module-scenario {
+    margin: 2rem 0 2.5rem;
+    padding: 1.4rem 1.6rem 1.6rem;
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: var(--radius);
+    background: var(--bg-raised);
+  }
+
+  .scenario-kicker {
+    margin: 0 0 1.1rem;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    color: var(--accent-text, var(--accent));
+    text-transform: uppercase;
+  }
+
+  .scenario-disclaimer {
+    color: var(--text-secondary);
+    letter-spacing: normal;
+    text-transform: none;
+  }
+
+  .scenario-beats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+  }
+
+  .scenario-company {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.5rem;
+    margin: 0 0 0.5rem;
+    font-size: 0.9rem;
+  }
+
+  .scenario-context {
+    color: var(--text-secondary);
+    font-size: 0.82rem;
+  }
+
+  .scenario-vignette {
+    margin: 0;
+    color: var(--text-secondary);
+    line-height: 1.55;
+    font-size: 0.92rem;
+  }
+
+  @media (max-width: 640px) {
+    .module-scenario {
+      padding: 1.15rem 1.15rem 1.3rem;
+    }
+
+    .scenario-beats {
+      grid-template-columns: 1fr;
+      gap: 1.25rem;
+    }
+  }
+</style>
