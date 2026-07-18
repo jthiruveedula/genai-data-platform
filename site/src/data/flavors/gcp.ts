@@ -136,6 +136,7 @@ export const flavor: Record<string, FlavorEntry> = {
       "Compute $/query and $/tenant, and confirm output tokens dominate cost versus embedding calls.",
       "Add a semantic cache in front of the Module 25 RAG API and measure the drop in $/query for repeated questions.",
       "Add a fast-model-first router that only escalates to a reasoning-tier model on low retrieval confidence, and re-measure.",
+      "Turn on Vertex AI context caching for the repeated system prompt + retrieved chunks prefix, and confirm the ~90% per-token discount shows up in the next billing export join.",
     ],
     costNote: "~$0.02 for the BigQuery scan over a small billing export + event log join.",
     claimId: "gcp-billing-export-bq",

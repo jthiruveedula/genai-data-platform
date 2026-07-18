@@ -44,7 +44,7 @@ const entries = {
       spend optimization effort.
     </p>
 
-    <h2>Caching and model routing</h2>
+    <h2>Semantic caching and model routing</h2>
     <p>
       Two changes move the needle without touching answer quality. <strong>Semantic caching</strong> matches a new
       query against previously answered ones — not just exact repeats — so rephrased or repeated questions skip the
@@ -52,6 +52,40 @@ const entries = {
       first, and escalates to a reasoning-tier model only when retrieval confidence is low or the fast model itself
       signals uncertainty — the same fast-first pattern Module 25 introduced for serving, now applied deliberately for
       cost.
+    </p>
+
+    <h2>Prompt caching: a different mechanism, a bigger discount</h2>
+    <p>
+      Semantic caching skips the call entirely for a repeated <em>question</em>. <strong>Prompt caching</strong> is
+      narrower but fires far more often: every provider now lets you cache a repeated <em>prefix</em> of the
+      prompt — the system prompt, the retrieved chunks, the tool definitions — so only the new part (the user's
+      actual question) gets processed at full price. The discount is consistently steep across providers:
+      Anthropic bills cache reads at <strong>10% of the base input price</strong> — a
+      <a href="https://platform.claude.com/docs/en/build-with-claude/prompt-caching" target="_blank" rel="noopener">90% discount</a>
+      — with a 5-minute or 1-hour TTL; <a href="https://aws.amazon.com/bedrock/prompt-caching/" target="_blank" rel="noopener">Bedrock's
+      prompt caching</a> matches that ~90% cut for Claude and Nova models via explicit cache checkpoints (minimum
+      1,024–4,096 tokens depending on model); OpenAI and Azure OpenAI
+      <a href="https://openai.com/index/api-prompt-caching/" target="_blank" rel="noopener">apply caching automatically</a>
+      to repeated prefixes with zero code changes; and
+      <a href="https://cloud.google.com/blog/products/ai-machine-learning/vertex-ai-context-caching" target="_blank" rel="noopener">Vertex
+      AI's context caching</a> bills cached tokens at roughly 10% of standard input price, with a small hourly
+      storage fee on top. The practical move: put your stable system prompt and retrieved context first in the
+      request and your variable question last — that ordering is what makes the prefix cacheable at all.
+    </p>
+
+    <h2>Private inference: when self-hosting beats per-token pricing</h2>
+    <p>
+      A GPU sitting under a self-hosted model costs the same per hour whether it serves one query or ten thousand,
+      which flips the economics compared to per-token API pricing. The way to compare them honestly: divide the
+      GPU's hourly rate by its sustained tokens/sec throughput to get an effective $/token floor, then compare that
+      against the API price for an equivalent model. In practice that break-even point sits at meaningfully high,
+      steady volume — real-world estimates put it around single-digit-millions of tokens per month against a cheap
+      API, and that's before counting the engineering and on-call time to keep a serving stack healthy, which often
+      dwarfs the GPU bill itself at low-to-moderate volume. Below that volume, per-token API pricing usually wins
+      even before factoring in ops cost. vLLM's own
+      <a href="https://docs.vllm.ai/en/stable/features/automatic_prefix_caching/" target="_blank" rel="noopener">automatic
+      prefix caching</a> (<code>enable_prefix_caching</code>) gets you the same repeated-context speedup as
+      hosted prompt caching, at no extra charge, if you do end up self-hosting.
     </p>
 
     <h2>Capacity planning</h2>
@@ -70,6 +104,8 @@ const entries = {
       <li>Adding a cache keyed on exact query text only, missing the much larger set of semantically repeated questions.</li>
       <li>Routing every query to the reasoning-tier model "to be safe," which quietly multiplies cost for queries the fast tier would have handled fine.</li>
       <li>Committing to reserved capacity before volume is predictable, locking in a fixed cost that ends up more expensive than pay-as-you-go.</li>
+      <li>Putting the variable part of the prompt (the user's question) before the stable part (system prompt, retrieved context) — that ordering makes nothing cacheable, so prompt caching's ~90% discount never fires.</li>
+      <li>Comparing self-hosted GPU cost against API pricing using only the sticker price per hour, without counting the engineering/on-call time to keep a serving stack healthy — that overhead is often the larger number at low-to-moderate volume.</li>
     </ul>
   </article>
   <ModuleQuiz moduleId={moduleId} />

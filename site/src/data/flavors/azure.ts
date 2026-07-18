@@ -7,10 +7,10 @@ export const flavor: Record<string, FlavorEntry> = {
   "00-foundations": {
     services: ["Azure OpenAI"],
     storage: "N/A (concepts only)",
-    snippet: `# No cloud calls in this module — pure concepts.\n# Azure AI Foundry model catalog is where you'll pick embedding + LLM models later.`,
+    snippet: `# No cloud calls in this module — pure concepts.\n# Microsoft Foundry model catalog is where you'll pick embedding + LLM models later.`,
     labSteps: [
       "Read the concept page and glossary.",
-      "Open Azure AI Foundry and browse the model catalog (no calls made).",
+      "Open Microsoft Foundry and browse the model catalog (no calls made).",
     ],
     costNote: "$0 — no infrastructure created in this module.",
     claimId: "azure-foundry-model-catalog",
@@ -81,12 +81,12 @@ export const flavor: Record<string, FlavorEntry> = {
     claimId: "azure-ai-search-hybrid",
   },
   "45-evaluation": {
-    services: ["Azure AI Foundry evaluations"],
+    services: ["Microsoft Foundry evaluations"],
     storage: "Azure Blob Storage (golden dataset + evaluation results)",
     snippet: `from azure.ai.evaluation import evaluate, GroundednessEvaluator, RelevanceEvaluator\n\nresult = evaluate(\n    data="golden_dataset.jsonl",\n    evaluators={\n        "groundedness": GroundednessEvaluator(model_config),\n        "relevance": RelevanceEvaluator(model_config),\n    },\n    evaluator_config={"default": {"column_mapping": {"query": "\${data.question}", "response": "\${data.answer}"}}},\n)\nresult["metrics"]  # -> {"groundedness.mean": 4.6, "relevance.mean": 4.4}`,
     labSteps: [
       "Build a golden dataset of 20+ labeled Q&A pairs from the documents ingested in Module 10.",
-      "Run Azure AI Foundry's built-in groundedness and relevance evaluators against the Module 25 RAG API.",
+      "Run Microsoft Foundry's built-in groundedness and relevance evaluators against the Module 25 RAG API.",
       "Spot-check 5 LLM-as-judge scores against your own human judgment and note any disagreement.",
       "Write the summary metrics to Blob Storage and wire a CI step that fails the build if groundedness drops below a threshold.",
     ],
@@ -128,16 +128,17 @@ export const flavor: Record<string, FlavorEntry> = {
       "Compute $/query and $/tenant, and confirm output tokens dominate cost versus embedding calls.",
       "Compare pay-as-you-go pricing against a Provisioned Throughput Unit (PTU) commitment for your observed volume.",
       "Add a fast-model-first router that only escalates to a reasoning-tier model on low retrieval confidence, and re-measure.",
+      "Confirm Azure OpenAI's automatic prompt caching is firing for the repeated system prompt + retrieved chunks prefix, and check the discounted cached-token line in the next Cost Management export.",
     ],
     costNote: "~$0.02 for the query over a small Cost Management export + event log join.",
     claimId: "azure-cost-management-ptu",
   },
   "85-agents": {
-    services: ["Azure AI Foundry Agent Service"],
+    services: ["Microsoft Foundry Agent Service"],
     storage: "N/A — reads the Module 20 Azure AI Search index and calls tools at request time",
     snippet: `from azure.ai.projects import AIProjectClient\n\nagent = project_client.agents.create_agent(\n    model="gpt-5.6-luna",\n    name="gdp-rag-agent",\n    instructions="Answer using the search_docs tool before responding.",\n    tools=[{"type": "function", "function": search_docs_schema}],\n)\n# Foundry Agent Service runs the plan -> call search_docs -> observe -> respond loop`,
     labSteps: [
-      "Wrap the Module 25 retrieval call as a function tool and register it with an agent in Azure AI Foundry Agent Service.",
+      "Wrap the Module 25 retrieval call as a function tool and register it with an agent in Microsoft Foundry Agent Service.",
       "Give the agent a multi-step task ('find X, then summarize how it changed across the last two documents') and trace the plan-act-observe loop.",
       "Cap the agent at a fixed iteration budget and confirm it stops instead of looping indefinitely on an unanswerable task.",
       "Add a human-approval gate before any tool call with a side effect (e.g. sending an email) and verify the agent pauses for it.",

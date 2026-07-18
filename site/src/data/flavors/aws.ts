@@ -128,6 +128,7 @@ export const flavor: Record<string, FlavorEntry> = {
       "Compute $/query and $/tenant, and confirm output tokens dominate cost versus embedding calls.",
       "Add a semantic cache in front of the Module 25 RAG API and measure the drop in $/query for repeated questions.",
       "Add a fast-model-first router that only escalates to a reasoning-tier model on low retrieval confidence, and re-measure.",
+      "Set a Bedrock prompt cache checkpoint after the repeated system prompt + retrieved chunks prefix, and confirm the ~90% cache-read discount shows up in the next CUR + event log join.",
     ],
     costNote: "~$0.02 for the Athena scan over a small CUR + event log join.",
     claimId: "aws-cur-athena-finops",

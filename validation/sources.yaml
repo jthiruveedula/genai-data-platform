@@ -1,349 +1,439 @@
 # Claim registry (PLAN.md §9.1).
 #
 # Every claimId referenced from site/src/data/flavors/*.ts must have a
-# matching entry here. This is a seed: `sources` is intentionally empty and
-# `verified_on` is null for every claim until a real Firecrawl validation
-# run (§9.2) checks each source and fills them in. Until then, the site's
-# FlavorTabs chip renders these claims as "unverified" rather than falsely
-# claiming they've been checked.
+# matching entry here. First real verification pass completed 2026-07-18:
+# every claim below was checked against its cited sources (WebSearch +
+# WebFetch against official docs/pricing pages, not a scripted crawler —
+# the automated Firecrawl pipeline in PLAN.md §9.2 is still unbuilt). Where
+# the claim text itself had drifted from reality (renamed products, retired
+# models, stale pricing), the text was corrected here and in the
+# corresponding flavors/*.ts entry, not just re-dated.
 
 claims:
   - id: gcp-vertex-model-garden
     used_by: site/src/data/flavors/gcp.ts#00-foundations
-    claim: "Vertex AI Model Garden is where embedding and LLM models are selected on GCP"
-    sources: []
-    volatility: medium
-    verified_on: null
+    claim: "Model Garden (now under Google's Gemini Enterprise Agent Platform, formerly Vertex AI) is where embedding and LLM models are selected on GCP"
+    sources:
+      - https://cloud.google.com/products/gemini-enterprise-agent-platform
+      - https://docs.cloud.google.com/gemini-enterprise-agent-platform/build/agent-garden
+    volatility: high
+    verified_on: "2026-07-18"
 
   - id: gcp-dataflow-ingestion
     used_by: site/src/data/flavors/gcp.ts#10-ingestion
     claim: "Dataflow batch jobs are a supported way to land ingested documents into BigQuery"
-    sources: []
+    sources:
+      - https://cloud.google.com/dataflow/docs/guides/write-to-bigquery
+      - https://cloud.google.com/dataflow/docs/guides/templates/provided/cloud-storage-to-bigquery
     volatility: low
-    verified_on: null
+    verified_on: "2026-07-18"
 
   - id: aws-bedrock-model-catalog
     used_by: site/src/data/flavors/aws.ts#00-foundations
     claim: "Amazon Bedrock's model catalog is where embedding and LLM models are selected on AWS"
-    sources: []
+    sources:
+      - https://docs.aws.amazon.com/bedrock/latest/userguide/model-cards.html
+      - https://aws.amazon.com/bedrock/model-choice/
     volatility: high
-    verified_on: null
+    verified_on: "2026-07-18"
 
   - id: aws-glue-ingestion
     used_by: site/src/data/flavors/aws.ts#10-ingestion
     claim: "AWS Glue crawlers are a supported way to catalog ingested documents from S3"
-    sources: []
+    sources:
+      - https://docs.aws.amazon.com/glue/latest/dg/add-crawler.html
+      - https://docs.aws.amazon.com/glue/latest/dg/catalog-and-crawler.html
     volatility: low
-    verified_on: null
+    verified_on: "2026-07-18"
 
   - id: azure-foundry-model-catalog
     used_by: site/src/data/flavors/azure.ts#00-foundations
-    claim: "Azure AI Foundry's model catalog is where embedding and LLM models are selected on Azure"
-    sources: []
+    claim: "Microsoft Foundry's model catalog (formerly Azure AI Foundry, renamed Jan 2026) is where embedding and LLM models are selected on Azure"
+    sources:
+      - https://learn.microsoft.com/en-us/azure/foundry/concepts/foundry-models-overview
+      - https://ai.azure.com/catalog
     volatility: high
-    verified_on: null
+    verified_on: "2026-07-18"
 
   - id: azure-data-factory-ingestion
     used_by: site/src/data/flavors/azure.ts#10-ingestion
     claim: "Azure Data Factory pipelines are a supported way to land ingested documents into Azure SQL"
-    sources: []
+    sources:
+      - https://learn.microsoft.com/en-us/azure/data-factory/concepts-pipelines-activities
+      - https://learn.microsoft.com/en-us/azure/cosmos-db/postgresql/howto-ingest-azure-data-factory
     volatility: low
-    verified_on: null
+    verified_on: "2026-07-18"
 
   - id: oss-hf-hub-catalog
     used_by: site/src/data/flavors/oss.ts#00-foundations
     claim: "Hugging Face Hub is where embedding and LLM models are selected in the OSS flavor"
-    sources: []
+    sources:
+      - https://huggingface.co/docs
+      - https://huggingface.co/models
     volatility: medium
-    verified_on: null
+    verified_on: "2026-07-18"
 
   - id: oss-airflow-ingestion
     used_by: site/src/data/flavors/oss.ts#10-ingestion
     claim: "Airflow DAGs are a supported way to land ingested documents into Postgres from MinIO"
-    sources: []
+    sources:
+      - https://airflow.apache.org/docs/apache-airflow-providers-amazon/stable/_api/airflow/providers/amazon/aws/hooks/s3/index.html
+      - https://airflow.apache.org/docs/apache-airflow-providers-postgres/
     volatility: low
-    verified_on: null
+    verified_on: "2026-07-18"
 
   - id: gcp-dataflow-chunking
     used_by: site/src/data/flavors/gcp.ts#15-chunking
     claim: "Dataflow ParDo jobs are a supported way to run recursive chunking and land chunk rows into BigQuery"
-    sources: []
+    sources:
+      - https://beam.apache.org/documentation/transforms/python/elementwise/pardo/
+      - https://docs.cloud.google.com/dataflow/docs/machine-learning/ml-generate-embeddings
     volatility: low
-    verified_on: null
+    verified_on: "2026-07-18"
 
   - id: aws-lambda-chunking
     used_by: site/src/data/flavors/aws.ts#15-chunking
     claim: "Lambda functions are a supported way to run recursive chunking and write chunk JSON to S3"
-    sources: []
+    sources:
+      - https://aws.amazon.com/blogs/machine-learning/accelerate-performance-using-a-custom-chunking-mechanism-with-amazon-bedrock/
+      - https://aws.amazon.com/blogs/machine-learning/amazon-bedrock-knowledge-bases-now-supports-advanced-parsing-chunking-and-query-reformulation-giving-greater-control-of-accuracy-in-rag-based-applications/
     volatility: low
-    verified_on: null
+    verified_on: "2026-07-18"
 
   - id: azure-functions-chunking
     used_by: site/src/data/flavors/azure.ts#15-chunking
     claim: "Azure Functions are a supported way to run recursive chunking and land chunk rows into Azure SQL"
-    sources: []
+    sources:
+      - https://learn.microsoft.com/en-us/azure/architecture/ai-ml/guide/rag/rag-chunking-phase
+      - https://learn.microsoft.com/en-us/azure/search/vector-search-how-to-chunk-documents
     volatility: low
-    verified_on: null
+    verified_on: "2026-07-18"
 
   - id: oss-airflow-chunking
     used_by: site/src/data/flavors/oss.ts#15-chunking
     claim: "Airflow tasks are a supported way to run recursive chunking and insert chunk rows into Postgres"
-    sources: []
+    sources:
+      - https://airflow.apache.org/docs/apache-airflow-providers-postgres/
+      - https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/operators.html
     volatility: low
-    verified_on: null
+    verified_on: "2026-07-18"
 
   - id: gcp-vector-search-hybrid
     used_by: site/src/data/flavors/gcp.ts#35-retrieval
-    claim: "Vertex AI Vector Search supports hybrid dense + sparse queries with cross-encoder reranking"
-    sources: []
+    claim: "Vertex AI Vector Search supports hybrid dense + sparse queries, reranked via a pretrained ranking model"
+    sources:
+      - https://docs.cloud.google.com/vertex-ai/docs/vector-search/overview
     volatility: medium
-    verified_on: null
+    verified_on: "2026-07-18"
 
   - id: aws-opensearch-hybrid
     used_by: site/src/data/flavors/aws.ts#35-retrieval
     claim: "Amazon OpenSearch Service supports hybrid BM25 + k-NN search pipelines with Bedrock reranking"
-    sources: []
+    sources:
+      - https://aws.amazon.com/blogs/big-data/hybrid-search-with-amazon-opensearch-service/
+      - https://aws.amazon.com/blogs/big-data/enhancing-search-relevancy-with-cohere-rerank-3-5-and-amazon-opensearch-service/
     volatility: medium
-    verified_on: null
+    verified_on: "2026-07-18"
 
   - id: azure-ai-search-hybrid
     used_by: site/src/data/flavors/azure.ts#35-retrieval
     claim: "Azure AI Search supports hybrid keyword + vector search with semantic ranking"
-    sources: []
+    sources:
+      - https://learn.microsoft.com/en-us/azure/search/hybrid-search-overview
+      - https://learn.microsoft.com/en-us/azure/search/semantic-search-overview
     volatility: medium
-    verified_on: null
+    verified_on: "2026-07-18"
 
   - id: oss-qdrant-hybrid
     used_by: site/src/data/flavors/oss.ts#35-retrieval
-    claim: "Qdrant supports hybrid dense + sparse vector queries, with reranking served via TEI"
-    sources: []
+    claim: "Qdrant's query_points API supports hybrid dense + sparse vector queries, with reranking served via TEI"
+    sources:
+      - https://qdrant.tech/documentation/search/hybrid-queries/
+      - https://huggingface.co/docs/text-embeddings-inference/en/index
     volatility: low
-    verified_on: null
+    verified_on: "2026-07-18"
 
   - id: gcp-pricing-gemini-flash
     used_by: site/src/data/pricing.json#gcp
-    claim: "Gemini Flash fast-tier pricing is $0.075/$0.30 per million input/output tokens"
-    sources: []
+    claim: "Gemini 3 Flash fast-tier pricing is $0.50/$3.00 per million input/output tokens"
+    sources:
+      - https://cloud.google.com/vertex-ai/generative-ai/pricing
+      - https://www.getmaxim.ai/bifrost/llm-cost-calculator/provider/vertex_ai/model/gemini-3-flash-preview
     volatility: high
-    verified_on: null
+    verified_on: "2026-07-18"
     extract_schema: { input_per_mtok: number, output_per_mtok: number, model: string }
 
   - id: aws-pricing-bedrock-claude
     used_by: site/src/data/pricing.json#aws
-    claim: "Claude fast-tier pricing on Bedrock is $0.25/$1.25 per million input/output tokens"
-    sources: []
+    claim: "Claude Haiku 4.5 fast-tier pricing on Bedrock is $1.00/$5.00 per million input/output tokens"
+    sources:
+      - https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-anthropic-claude-haiku-4-5.html
+      - https://www.anthropic.com/news/claude-haiku-4-5
     volatility: high
-    verified_on: null
+    verified_on: "2026-07-18"
     extract_schema: { input_per_mtok: number, output_per_mtok: number, model: string }
 
   - id: azure-pricing-openai
     used_by: site/src/data/pricing.json#azure
-    claim: "Azure OpenAI fast-tier pricing is $0.15/$0.60 per million input/output tokens"
-    sources: []
+    claim: "GPT-5.6 Luna fast-tier pricing on Azure OpenAI is $1.00/$6.00 per million input/output tokens"
+    sources:
+      - https://www.aipricing.guru/openai-pricing/
+      - https://azure.microsoft.com/en-us/pricing/details/azure-openai/
     volatility: high
-    verified_on: null
+    verified_on: "2026-07-18"
     extract_schema: { input_per_mtok: number, output_per_mtok: number, model: string }
 
   - id: oss-pricing-gpu-hour
     used_by: site/src/data/pricing.json#oss
-    claim: "A small self-hosted serving GPU costs approximately $1.10/hour"
-    sources: []
+    claim: "A small self-hosted serving GPU (NVIDIA L4, 24GB) costs approximately $0.44/hour on-demand"
+    sources:
+      - https://www.runpod.io/pricing
     volatility: high
-    verified_on: null
+    verified_on: "2026-07-18"
     extract_schema: { gpu_hour_usd: number }
 
   - id: gcp-vertex-embeddings
     used_by: site/src/data/flavors/gcp.ts#20-embeddings
-    claim: "Vertex AI text-embedding-004 and Vector Search are a supported embed + index pairing"
-    sources: []
+    claim: "gemini-embedding-001 and Vertex AI Vector Search are a supported embed + index pairing"
+    sources:
+      - https://developers.googleblog.com/en/gemini-embedding-text-model-now-available-gemini-api/
+      - https://docs.cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings
     volatility: medium
-    verified_on: null
+    verified_on: "2026-07-18"
 
   - id: gcp-cloud-run-rag-api
     used_by: site/src/data/flavors/gcp.ts#25-serving
     claim: "Cloud Run is a supported way to serve a RAG API calling Gemini Flash"
-    sources: []
+    sources:
+      - https://codelabs.developers.google.com/codelabs/how-to-cloud-run-gemini-function-calling
     volatility: low
-    verified_on: null
+    verified_on: "2026-07-18"
 
   - id: aws-titan-embeddings
     used_by: site/src/data/flavors/aws.ts#20-embeddings
     claim: "Bedrock Titan Embeddings and OpenSearch Serverless k-NN are a supported embed + index pairing"
-    sources: []
+    sources:
+      - https://aws.amazon.com/blogs/machine-learning/build-cost-effective-rag-applications-with-binary-embeddings-in-amazon-titan-text-embeddings-v2-amazon-opensearch-serverless-and-amazon-bedrock-knowledge-bases/
     volatility: medium
-    verified_on: null
+    verified_on: "2026-07-18"
 
   - id: aws-lambda-rag-api
     used_by: site/src/data/flavors/aws.ts#25-serving
     claim: "Lambda + API Gateway is a supported way to serve a RAG API calling Claude on Bedrock"
-    sources: []
+    sources:
+      - https://github.com/aws-samples/rag-with-amazon-bedrock-and-opensearch
     volatility: low
-    verified_on: null
+    verified_on: "2026-07-18"
 
   - id: azure-openai-embeddings
     used_by: site/src/data/flavors/azure.ts#20-embeddings
     claim: "Azure OpenAI text-embedding-3-small and Azure AI Search vector fields are a supported embed + index pairing"
-    sources: []
+    sources:
+      - https://learn.microsoft.com/en-us/azure/search/vector-search-how-to-generate-embeddings
+      - https://learn.microsoft.com/en-us/azure/search/vector-search-integrated-vectorization
     volatility: medium
-    verified_on: null
+    verified_on: "2026-07-18"
 
   - id: azure-functions-rag-api
     used_by: site/src/data/flavors/azure.ts#25-serving
-    claim: "Azure Functions is a supported way to serve a RAG API calling GPT-4o mini"
-    sources: []
+    claim: "Azure Functions is a supported way to serve a RAG API calling GPT-5.6 Luna"
+    sources:
+      - https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/model-retirement-schedule
+      - https://devblogs.microsoft.com/azure-sql/rag-with-azure-sql/
     volatility: low
-    verified_on: null
+    verified_on: "2026-07-18"
 
   - id: oss-tei-qdrant-embeddings
     used_by: site/src/data/flavors/oss.ts#20-embeddings
     claim: "TEI serving bge-base-en-v1.5 and Qdrant are a supported embed + index pairing"
-    sources: []
+    sources:
+      - https://huggingface.co/BAAI/bge-base-en-v1.5
+      - https://huggingface.co/docs/text-embeddings-inference/en/index
     volatility: low
-    verified_on: null
+    verified_on: "2026-07-18"
 
   - id: oss-vllm-rag-api
     used_by: site/src/data/flavors/oss.ts#25-serving
     claim: "FastAPI + vLLM is a supported way to serve a RAG API over an open-weight model"
-    sources: []
+    sources:
+      - https://docs.vllm.ai/en/v0.8.3/serving/openai_compatible_server.html
     volatility: low
-    verified_on: null
+    verified_on: "2026-07-18"
 
   - id: gcp-vertex-eval-service
     used_by: site/src/data/flavors/gcp.ts#45-evaluation
-    claim: "Vertex AI's Gen AI evaluation service supports model and RAG evaluation with built-in metrics"
-    sources: []
+    claim: "The Gen AI evaluation service (under Google's Gemini Enterprise Agent Platform) supports model and RAG evaluation with built-in metrics"
+    sources:
+      - https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/determine-eval
+      - https://codelabs.developers.google.com/codelabs/production-ready-ai-with-gc/6-ai-evaluation/evaluate-rag-systems-with-vertex-ai
     volatility: high
-    verified_on: null
+    verified_on: "2026-07-18"
 
   - id: aws-bedrock-evaluation
     used_by: site/src/data/flavors/aws.ts#45-evaluation
     claim: "Amazon Bedrock supports model and RAG evaluation jobs including LLM-as-judge scoring"
-    sources: []
+    sources:
+      - https://docs.aws.amazon.com/bedrock/latest/userguide/evaluation.html
+      - https://docs.aws.amazon.com/bedrock/latest/userguide/evaluation-judge.html
     volatility: high
-    verified_on: null
+    verified_on: "2026-07-18"
 
   - id: azure-foundry-evaluations
     used_by: site/src/data/flavors/azure.ts#45-evaluation
-    claim: "Azure AI Foundry provides built-in evaluators for groundedness and relevance"
-    sources: []
+    claim: "Microsoft Foundry (formerly Azure AI Foundry) provides built-in evaluators for groundedness and relevance"
+    sources:
+      - https://learn.microsoft.com/en-us/azure/foundry/concepts/evaluation-evaluators/rag-evaluators
+      - https://learn.microsoft.com/en-us/azure/foundry/concepts/built-in-evaluators
     volatility: high
-    verified_on: null
+    verified_on: "2026-07-18"
 
   - id: oss-ragas-langfuse
     used_by: site/src/data/flavors/oss.ts#45-evaluation
     claim: "RAGAS computes faithfulness and relevance metrics, and Langfuse stores evaluation datasets and experiment runs"
-    sources: []
+    sources:
+      - https://docs.ragas.io/en/v0.1.21/concepts/metrics/
+      - https://langfuse.com/guides/cookbook/evaluation_of_rag_with_ragas
     volatility: medium
-    verified_on: null
+    verified_on: "2026-07-18"
 
   - id: gcp-cloud-trace-genai
     used_by: site/src/data/flavors/gcp.ts#55-observability
     claim: "Cloud Trace ingests OpenTelemetry spans for distributed tracing"
-    sources: []
+    sources:
+      - https://docs.cloud.google.com/trace/docs/otlp
+      - https://cloud.google.com/blog/products/management-tools/opentelemetry-now-in-google-cloud-observability
     volatility: low
-    verified_on: null
+    verified_on: "2026-07-18"
 
   - id: aws-bedrock-invocation-logging
     used_by: site/src/data/flavors/aws.ts#55-observability
     claim: "Bedrock can log every invocation's request, response, and token counts to CloudWatch and S3"
-    sources: []
+    sources:
+      - https://docs.aws.amazon.com/bedrock/latest/userguide/model-invocation-logging.html
     volatility: medium
-    verified_on: null
+    verified_on: "2026-07-18"
 
   - id: azure-app-insights-tracing
     used_by: site/src/data/flavors/azure.ts#55-observability
     claim: "Application Insights ingests OpenTelemetry traces"
-    sources: []
+    sources:
+      - https://learn.microsoft.com/en-us/azure/azure-monitor/app/app-insights-overview
+      - https://learn.microsoft.com/en-us/azure/azure-monitor/app/opentelemetry-enable
     volatility: low
-    verified_on: null
+    verified_on: "2026-07-18"
 
   - id: oss-langfuse-tracing
     used_by: site/src/data/flavors/oss.ts#55-observability
     claim: "Langfuse captures nested LLM traces with token counts and cost"
-    sources: []
+    sources:
+      - https://langfuse.com/docs/observability/overview
+      - https://langfuse.com/docs/observability/features/token-and-cost-tracking
     volatility: medium
-    verified_on: null
+    verified_on: "2026-07-18"
 
   - id: gcp-model-armor
     used_by: site/src/data/flavors/gcp.ts#65-security
     claim: "Model Armor screens prompts and responses for injection and data loss"
-    sources: []
+    sources:
+      - https://cloud.google.com/security/products/model-armor
+      - https://docs.cloud.google.com/model-armor/overview
     volatility: high
-    verified_on: null
+    verified_on: "2026-07-18"
 
   - id: aws-bedrock-guardrails
     used_by: site/src/data/flavors/aws.ts#65-security
     claim: "Bedrock Guardrails provides content filters, denied topics, PII masking, and contextual grounding checks"
-    sources: []
+    sources:
+      - https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails.html
+      - https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-sensitive-filters.html
     volatility: high
-    verified_on: null
+    verified_on: "2026-07-18"
 
   - id: azure-content-safety-prompt-shields
     used_by: site/src/data/flavors/azure.ts#65-security
     claim: "Content Safety Prompt Shields detects direct and indirect prompt injection"
-    sources: []
+    sources:
+      - https://learn.microsoft.com/en-us/azure/ai-services/content-safety/concepts/jailbreak-detection
+      - https://techcommunity.microsoft.com/blog/azure-ai-foundry-blog/general-availability-of-prompt-shields-in-azure-ai-content-safety-and-azure-open/4235560
     volatility: high
-    verified_on: null
+    verified_on: "2026-07-18"
 
   - id: oss-llama-guard-presidio
     used_by: site/src/data/flavors/oss.ts#65-security
-    claim: "Llama Guard classifies unsafe content and Presidio detects and redacts PII"
-    sources: []
+    claim: "Llama Guard 4 classifies unsafe content and Presidio detects and redacts PII"
+    sources:
+      - https://huggingface.co/meta-llama/Llama-Guard-4-12B
+      - https://github.com/microsoft/presidio
     volatility: medium
-    verified_on: null
+    verified_on: "2026-07-18"
 
   - id: gcp-billing-export-bq
     used_by: site/src/data/flavors/gcp.ts#75-finops
     claim: "Cloud Billing export to BigQuery enables per-service cost queries"
-    sources: []
+    sources:
+      - https://docs.cloud.google.com/billing/docs/how-to/export-data-bigquery
+      - https://docs.cloud.google.com/billing/docs/how-to/bq-examples
     volatility: low
-    verified_on: null
+    verified_on: "2026-07-18"
 
   - id: aws-cur-athena-finops
     used_by: site/src/data/flavors/aws.ts#75-finops
     claim: "The Cost and Usage Report delivered to S3 is queryable via Athena"
-    sources: []
+    sources:
+      - https://docs.aws.amazon.com/cur/latest/userguide/cur-query-athena.html
+      - https://aws.amazon.com/blogs/aws-cloud-financial-management/querying-your-aws-cost-and-usage-report-using-amazon-athena/
     volatility: low
-    verified_on: null
+    verified_on: "2026-07-18"
 
   - id: azure-cost-management-ptu
     used_by: site/src/data/flavors/azure.ts#75-finops
     claim: "Microsoft Cost Management tracks Azure OpenAI spend; Provisioned Throughput Units and pay-as-you-go are the two purchase models"
-    sources: []
+    sources:
+      - https://learn.microsoft.com/en-us/azure/cost-management-billing/reservations/azure-openai
+      - https://learn.microsoft.com/en-us/azure/foundry/openai/how-to/provisioned-throughput-onboarding
     volatility: high
-    verified_on: null
+    verified_on: "2026-07-18"
 
   - id: oss-opencost-k8s
     used_by: site/src/data/flavors/oss.ts#75-finops
     claim: "OpenCost allocates Kubernetes infrastructure cost per namespace and workload"
-    sources: []
+    sources:
+      - https://opencost.io/docs/
+      - https://github.com/opencost/opencost
     volatility: medium
-    verified_on: null
+    verified_on: "2026-07-18"
 
   - id: gcp-vertex-agent-builder
     used_by: site/src/data/flavors/gcp.ts#85-agents
-    claim: "Vertex AI Agent Builder / Agent Engine hosts agents, and Gemini supports function calling"
-    sources: []
+    claim: "Google's Gemini Enterprise Agent Platform (formerly Vertex AI Agent Builder) hosts agents, and Gemini supports function calling"
+    sources:
+      - https://cloud.google.com/products/gemini-enterprise-agent-platform
     volatility: high
-    verified_on: null
+    verified_on: "2026-07-18"
 
   - id: aws-bedrock-agents
     used_by: site/src/data/flavors/aws.ts#85-agents
     claim: "Bedrock Agents orchestrates tool use via action groups"
-    sources: []
+    sources:
+      - https://docs.aws.amazon.com/bedrock/latest/userguide/agents-how.html
+      - https://docs.aws.amazon.com/bedrock/latest/userguide/agents-action-create.html
     volatility: high
-    verified_on: null
+    verified_on: "2026-07-18"
 
   - id: azure-foundry-agent-service
     used_by: site/src/data/flavors/azure.ts#85-agents
-    claim: "Azure AI Foundry Agent Service hosts tool-using agents"
-    sources: []
+    claim: "Foundry Agent Service (under Microsoft Foundry, formerly Azure AI Foundry Agent Service) hosts tool-using agents"
+    sources:
+      - https://learn.microsoft.com/en-us/azure/foundry/agents/overview
+      - https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/tool-catalog
     volatility: high
-    verified_on: null
+    verified_on: "2026-07-18"
 
   - id: oss-mcp-agent-loop
     used_by: site/src/data/flavors/oss.ts#85-agents
     claim: "LiteLLM provides a unified function-calling API across open models, and MCP standardizes tool servers"
-    sources: []
+    sources:
+      - https://docs.litellm.ai/docs/completion/function_call
+      - https://www.anthropic.com/news/model-context-protocol
     volatility: medium
-    verified_on: null
+    verified_on: "2026-07-18"

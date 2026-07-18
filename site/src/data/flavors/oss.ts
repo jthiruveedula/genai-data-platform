@@ -128,6 +128,7 @@ export const flavor: Record<string, FlavorEntry> = {
       "Join OpenCost's per-namespace cost against the Module 55 event log's request counts to get $/query.",
       "Confirm LLM-serving GPU cost dominates versus embedding/TEI compute cost.",
       "Add a fast-model-first router that only escalates to a reasoning-tier model on low retrieval confidence, and re-measure $/query.",
+      "Enable vLLM's enable_prefix_caching for the repeated system prompt + retrieved chunks prefix, and confirm the drop in GPU time per query in OpenCost's allocation.",
     ],
     costNote: "$0 on a local kind cluster; GPU compute cost only if self-hosting at scale.",
     claimId: "oss-opencost-k8s",
