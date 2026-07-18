@@ -60,8 +60,11 @@ test('search opens via keyboard shortcut and shows the built-index state', async
   await page.keyboard.type('embedding');
   // Either real Pagefind results render, or the graceful fallback note does —
   // both prove the search UI is wired up against the production build.
+  // .first() on the combined locator: a result excerpt can itself contain the
+  // words "search index", making both .or() branches match at once, which
+  // trips strict mode even though either match alone proves the point.
   await expect(
-    page.locator('[role="listbox"] [role="option"]').first().or(page.getByText(/search index/i)),
+    page.locator('[role="listbox"] [role="option"]').first().or(page.getByText(/search index/i)).first(),
   ).toBeVisible({ timeout: 5000 });
 });
 
