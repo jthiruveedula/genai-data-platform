@@ -1,0 +1,79 @@
+---
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import FlavorTabs from "../../../components/FlavorTabs.astro";
+import ModuleHero from "../../../components/module/ModuleHero.astro";
+import ModuleFooterNav from "../../../components/module/ModuleFooterNav.astro";
+import ModuleQuiz from "../../../components/module/ModuleQuiz.astro";
+import { flavor as gcp } from "../../../data/flavors/gcp";
+import { flavor as aws } from "../../../data/flavors/aws";
+import { flavor as azure } from "../../../data/flavors/azure";
+import { flavor as oss } from "../../../data/flavors/oss";
+
+const moduleId = "55-observability";
+const entries = {
+  gcp: gcp[moduleId],
+  aws: aws[moduleId],
+  azure: azure[moduleId],
+  oss: oss[moduleId],
+};
+---
+
+<BaseLayout title="55 · Observability for LLMs">
+  <article>
+    <ModuleHero moduleId={moduleId}>
+      <p>
+        Module 45 told you your pipeline is good on average, on a golden set you built ahead of time. Observability
+        answers the harder question: what happened on <em>this specific request</em>, right now, in production — and
+        it builds the event log every later module (evaluation regressions, security audits, cost analysis) ends up
+        reading from.
+      </p>
+    </ModuleHero>
+
+    <h2>Traces and spans for RAG</h2>
+    <p>
+      A single user question touches four stages: embed the query, retrieve chunks, assemble the prompt, and call the
+      model. Logging each stage separately makes it nearly impossible to reconstruct what happened for one request.
+      Instead, wrap the whole request in one <strong>trace</strong>, with each stage as a nested <strong>span</strong>.
+      When a user reports a bad answer, you open one trace and see exactly which stage went wrong — instead of
+      grepping four different logs and hoping the timestamps line up.
+    </p>
+
+    <h2>Token accounting per request</h2>
+    <p>
+      Attach input, output, and cached token counts as attributes on the generation span, per request. This looks like
+      overkill until Module 75, where the FinOps unit-economics work is a straight SQL join against this exact data —
+      without it, cost analysis degenerates into "the monthly bill went up, no idea why."
+    </p>
+
+    <h2>Latency budgets: TTFT vs. total latency</h2>
+    <p>
+      <strong>Time-to-first-token (TTFT)</strong> is how long a user waits before anything appears — the number that
+      determines whether a streaming response feels instant or sluggish. <strong>Total latency</strong> is how long
+      the full answer takes. A model can have great TTFT and mediocre total latency (streaming hides it) or the
+      reverse. Track both, and budget them separately: a chat UI cares more about TTFT, a batch job cares only about
+      total latency.
+    </p>
+
+    <h2>The event log as the analytical backbone</h2>
+    <p>
+      Once every request is a trace with token counts, latency, and outcome, that trace store stops being "just logs"
+      and becomes the platform's central table. Module 45's regression evals can sample real production traffic from
+      it. Module 65's security review can search it for suspicious patterns. Module 75's cost analysis joins directly
+      against it. Instrumenting this once, well, here is what makes the rest of the advanced curriculum possible
+      without re-plumbing logging every time.
+    </p>
+
+    <h2>Try it in your flavor</h2>
+    <FlavorTabs moduleId={moduleId} entries={entries} />
+
+    <h2>Pitfalls</h2>
+    <ul>
+      <li>Logging only the final response text — you lose the ability to tell whether retrieval or generation caused a bad answer.</li>
+      <li>Skipping token-count attributes because "we'll add cost tracking later" — Module 75 needs this data from day one, not retroactively.</li>
+      <li>Optimizing only for total latency and ignoring TTFT, which is what users actually perceive as "slow" in a streaming UI.</li>
+      <li>Treating traces as a debugging-only tool instead of the shared data source that evaluation, security, and cost modules all depend on.</li>
+    </ul>
+  </article>
+  <ModuleQuiz moduleId={moduleId} />
+  <ModuleFooterNav moduleId={moduleId} />
+</BaseLayout>

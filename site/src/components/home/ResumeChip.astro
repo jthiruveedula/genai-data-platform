@@ -1,0 +1,130 @@
+---
+const base = import.meta.env.BASE_URL;
+---
+
+<section class="resume-chip-section" data-resume-chip hidden aria-labelledby="resume-chip-heading">
+  <div class="scene-inner">
+    <div class="resume-row glass-panel">
+      <p id="resume-chip-heading" class="resume-label" data-resume-label>Resume where you left off</p>
+      <a class="chip chip--accent resume-link" data-resume-link href={base}>
+        <span data-resume-link-text>—</span>
+      </a>
+      <p class="chip mono resume-note" data-resume-note></p>
+    </div>
+  </div>
+</section>
+
+<script>
+  import { MODULES } from "../../data/modules";
+  import { nextIncompleteModule, getCompletionSummary } from "../../lib/progress";
+
+  const base = import.meta.env.BASE_URL;
+
+  function render() {
+    const section = document.querySelector<HTMLElement>("[data-resume-chip]");
+    if (!section) return;
+
+    const ordered = [...MODULES].sort((a, b) => a.order - b.order);
+    const ids = ordered.map((m) => m.id);
+    const { completed, total } = getCompletionSummary(ids);
+
+    // New visitor — no attempts recorded yet. Stay hidden rather than
+    // nudging someone who hasn't started toward "resuming" anything.
+    if (completed === 0) {
+      section.hidden = true;
+      return;
+    }
+
+    const label = section.querySelector<HTMLElement>("[data-resume-label]");
+    const link = section.querySelector<HTMLAnchorElement>("[data-resume-link]");
+    const linkText = section.querySelector<HTMLElement>("[data-resume-link-text]");
+    const note = section.querySelector<HTMLElement>("[data-resume-note]");
+
+    if (completed >= total) {
+      if (label) label.textContent = "You've cleared every module.";
+      if (link) link.href = `${base}paths/advanced/`;
+      if (linkText) linkText.textContent = "✓ CURRICULUM COMPLETE";
+      if (note) note.textContent = `${completed}/${total} complete`;
+      section.hidden = false;
+      return;
+    }
+
+    const nextId = nextIncompleteModule(ids);
+    if (!nextId) {
+      section.hidden = true;
+      return;
+    }
+
+    const nextModule = ordered.find((m) => m.id === nextId);
+    if (!nextModule) {
+      section.hidden = true;
+      return;
+    }
+
+    if (label) label.textContent = "Resume where you left off";
+    if (link) link.href = `${base}modules/${nextModule.id}/`;
+    if (linkText) {
+      linkText.textContent = `${String(nextModule.order).padStart(2, "0")} · ${nextModule.title}`;
+    }
+    if (note) note.textContent = `${completed}/${total} complete`;
+    section.hidden = false;
+  }
+
+  render();
+  document.addEventListener("astro:page-load", render);
+</script>
+
+<style>
+  .resume-chip-section {
+    padding-block: clamp(1.5rem, 3vw, 2.25rem);
+  }
+
+  .resume-chip-section[hidden] {
+    display: none;
+  }
+
+  .resume-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.85rem;
+    padding: 1rem 1.5rem;
+    animation: resume-fade-in var(--duration-micro, 150ms) var(--ease-out, ease-out);
+  }
+
+  .resume-label {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+  }
+
+  .resume-link {
+    font-size: 0.85rem;
+  }
+
+  .resume-note {
+    margin-left: auto;
+    color: var(--text-secondary);
+  }
+
+  @keyframes resume-fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .resume-row {
+      animation: none;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .resume-note {
+      margin-left: 0;
+    }
+  }
+</style>

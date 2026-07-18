@@ -1,0 +1,425 @@
+---
+const base = import.meta.env.BASE_URL;
+---
+
+<div class="search-launcher">
+  <button type="button" id="search-open" class="search-btn" aria-haspopup="dialog" aria-controls="search-dialog">
+    <svg class="search-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1.5"></circle>
+      <line x1="11" y1="11" x2="14.5" y2="14.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></line>
+    </svg>
+    <span class="search-label">Search</span>
+    <kbd class="search-kbd">/</kbd>
+  </button>
+
+  <dialog id="search-dialog" class="search-dialog" aria-label="Site search">
+    <div class="search-dialog__inner">
+      <div class="search-field">
+        <svg class="search-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1.5"></circle>
+          <line x1="11" y1="11" x2="14.5" y2="14.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></line>
+        </svg>
+        <input
+          type="text"
+          id="search-input"
+          class="search-input"
+          role="combobox"
+          aria-expanded="false"
+          aria-controls="search-results"
+          aria-autocomplete="list"
+          autocomplete="off"
+          spellcheck="false"
+          placeholder="Search the curriculum..."
+        />
+        <kbd class="search-kbd search-kbd--esc">esc</kbd>
+      </div>
+      <ul id="search-results" class="search-results" role="listbox" aria-label="Search results"></ul>
+      <p id="search-status" class="search-status" aria-live="polite"></p>
+    </div>
+  </dialog>
+</div>
+
+<script define:vars={{ base }}>
+  (function () {
+    let pagefindPromise = null;
+
+    function loadPagefind() {
+      if (!pagefindPromise) {
+        pagefindPromise = import(/* @vite-ignore */ `${base}pagefind/pagefind.js`).catch((err) => {
+          pagefindPromise = null;
+          throw err;
+        });
+      }
+      return pagefindPromise;
+    }
+
+    function normalizeUrl(url) {
+      let out = url.replace(/index\.html$/, "");
+      if (!out.startsWith(base)) {
+        out = base.replace(/\/$/, "") + "/" + out.replace(/^\//, "");
+      }
+      return out;
+    }
+
+    function bindSearch() {
+      const openBtn = document.getElementById("search-open");
+      const dialog = document.getElementById("search-dialog");
+      const input = document.getElementById("search-input");
+      const results = document.getElementById("search-results");
+      const status = document.getElementById("search-status");
+
+      if (!openBtn || !dialog || !input || !results || !status) return;
+      if (openBtn.dataset.searchBound === "true") return;
+      openBtn.dataset.searchBound = "true";
+
+      let queryToken = 0;
+      let debounceTimer;
+      let activeIndex = -1;
+      let currentItems = [];
+
+      function setStatus(msg) {
+        status.textContent = msg;
+      }
+
+      function clearResults() {
+        results.innerHTML = "";
+        currentItems = [];
+        activeIndex = -1;
+        input.removeAttribute("aria-activedescendant");
+      }
+
+      function renderResults(items) {
+        currentItems = items;
+        activeIndex = items.length ? 0 : -1;
+        results.innerHTML = items
+          .map((item, i) => {
+            return `<li id="search-result-${i}" class="search-result" role="option" aria-selected="${i === activeIndex}">
+              <a href="${item.url}" class="search-result__link" data-index="${i}">
+                <span class="search-result__title">${item.title}</span>
+                <span class="search-result__excerpt">${item.excerpt}</span>
+              </a>
+            </li>`;
+          })
+          .join("");
+        updateActiveDescendant();
+      }
+
+      function updateActiveDescendant() {
+        results.querySelectorAll("[role='option']").forEach((el, i) => {
+          el.setAttribute("aria-selected", String(i === activeIndex));
+        });
+        if (activeIndex >= 0) {
+          input.setAttribute("aria-activedescendant", `search-result-${activeIndex}`);
+          const el = document.getElementById(`search-result-${activeIndex}`);
+          el?.scrollIntoView({ block: "nearest" });
+        } else {
+          input.removeAttribute("aria-activedescendant");
+        }
+      }
+
+      async function runSearch(query) {
+        const token = ++queryToken;
+        if (!query.trim()) {
+          clearResults();
+          setStatus("");
+          return;
+        }
+        setStatus("Searching…");
+        let pf;
+        try {
+          pf = await loadPagefind();
+        } catch {
+          if (token !== queryToken) return;
+          clearResults();
+          setStatus("Search index is built at deploy time — run a production build to try it locally.");
+          return;
+        }
+        if (token !== queryToken) return;
+        const search = await pf.search(query);
+        if (token !== queryToken) return;
+        const topResults = search.results.slice(0, 8);
+        const data = await Promise.all(topResults.map((r) => r.data()));
+        if (token !== queryToken) return;
+        const items = data.map((d) => ({
+          title: d.meta?.title ?? "Untitled",
+          excerpt: d.excerpt,
+          url: normalizeUrl(d.url),
+        }));
+        if (!items.length) {
+          clearResults();
+          setStatus("No results found.");
+          return;
+        }
+        setStatus(`${items.length} result${items.length === 1 ? "" : "s"}`);
+        renderResults(items);
+      }
+
+      function openDialog() {
+        if (typeof dialog.showModal === "function") {
+          dialog.showModal();
+        } else {
+          dialog.setAttribute("open", "");
+        }
+        input.value = "";
+        clearResults();
+        setStatus("");
+        input.focus();
+        input.setAttribute("aria-expanded", "true");
+        // Warm the index on open so the first keystroke isn't the first
+        // (slow) import.
+        loadPagefind().catch(() => {});
+      }
+
+      function closeDialog() {
+        dialog.close?.();
+      }
+
+      openBtn.addEventListener("click", openDialog);
+
+      dialog.addEventListener("close", () => {
+        input.setAttribute("aria-expanded", "false");
+      });
+
+      // Clicking the backdrop (the dialog element itself, outside the inner
+      // panel) closes the dialog — <dialog> receives clicks on its own
+      // padding/backdrop area.
+      dialog.addEventListener("click", (e) => {
+        if (e.target === dialog) closeDialog();
+      });
+
+      input.addEventListener("input", () => {
+        window.clearTimeout(debounceTimer);
+        const query = input.value;
+        debounceTimer = window.setTimeout(() => runSearch(query), 150);
+      });
+
+      input.addEventListener("keydown", (e) => {
+        if (e.key === "ArrowDown") {
+          e.preventDefault();
+          if (!currentItems.length) return;
+          activeIndex = (activeIndex + 1) % currentItems.length;
+          updateActiveDescendant();
+        } else if (e.key === "ArrowUp") {
+          e.preventDefault();
+          if (!currentItems.length) return;
+          activeIndex = (activeIndex - 1 + currentItems.length) % currentItems.length;
+          updateActiveDescendant();
+        } else if (e.key === "Enter") {
+          if (activeIndex >= 0 && currentItems[activeIndex]) {
+            e.preventDefault();
+            window.location.href = currentItems[activeIndex].url;
+          }
+        }
+      });
+
+      results.addEventListener("click", (e) => {
+        const link = e.target instanceof Element ? e.target.closest("[data-index]") : null;
+        if (link) {
+          // Native <a> navigation handles this; nothing extra needed.
+        }
+      });
+
+      function isTypingTarget(el) {
+        if (!el) return false;
+        const tag = el.tagName?.toLowerCase();
+        return tag === "input" || tag === "textarea" || tag === "select" || el.isContentEditable;
+      }
+
+      document.addEventListener("keydown", (e) => {
+        if (dialog.open) return;
+        const meta = (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k";
+        const slash = e.key === "/" && !isTypingTarget(document.activeElement);
+        if (meta || slash) {
+          e.preventDefault();
+          openDialog();
+        }
+      });
+    }
+
+    bindSearch();
+    document.addEventListener("astro:page-load", bindSearch);
+  })();
+</script>
+
+<style>
+  .search-launcher {
+    display: contents;
+  }
+
+  .search-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.4rem 0.6rem;
+    min-height: 32px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: border-color var(--duration-micro) var(--ease-out), color var(--duration-micro) var(--ease-out);
+  }
+
+  .search-btn:hover,
+  .search-btn:focus-visible {
+    color: var(--text);
+    border-color: var(--accent);
+  }
+
+  .search-icon {
+    flex-shrink: 0;
+  }
+
+  .search-label {
+    white-space: nowrap;
+  }
+
+  .search-kbd {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 0.05rem 0.35rem;
+    line-height: 1.4;
+  }
+
+  @media (max-width: 720px) {
+    .search-label,
+    .search-btn .search-kbd {
+      display: none;
+    }
+    .search-btn {
+      padding: 0.4rem;
+    }
+  }
+
+  .search-dialog {
+    padding: 0;
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius);
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    color: var(--text);
+    width: min(560px, 90vw);
+    max-height: min(70vh, 560px);
+    margin: 10vh auto auto;
+    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.35);
+  }
+
+  .search-dialog::backdrop {
+    background: rgba(8, 10, 14, 0.5);
+  }
+
+  .search-dialog[open] {
+    animation: search-fade var(--duration-micro, 150ms) var(--ease-out);
+  }
+
+  @keyframes search-fade {
+    from {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .search-dialog[open] {
+      animation: none;
+    }
+  }
+
+  .search-dialog__inner {
+    display: flex;
+    flex-direction: column;
+    max-height: min(70vh, 560px);
+  }
+
+  .search-field {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .search-field .search-icon {
+    color: var(--text-secondary);
+  }
+
+  .search-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-size: 0.95rem;
+    font-family: inherit;
+  }
+
+  .search-input::placeholder {
+    color: var(--text-secondary);
+  }
+
+  .search-kbd--esc {
+    text-transform: uppercase;
+  }
+
+  .search-results {
+    list-style: none;
+    margin: 0;
+    padding: 0.4rem;
+    overflow-y: auto;
+  }
+
+  .search-result {
+    border-radius: var(--radius);
+  }
+
+  .search-result[aria-selected="true"] {
+    background: var(--bg-raised);
+  }
+
+  .search-result__link {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    padding: 0.55rem 0.65rem;
+    text-decoration: none;
+    color: var(--text);
+  }
+
+  .search-result__title {
+    font-size: 0.88rem;
+    font-weight: 600;
+  }
+
+  .search-result__excerpt {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+  }
+
+  .search-result__excerpt :global(mark) {
+    background: color-mix(in srgb, var(--accent) 35%, transparent);
+    color: var(--text);
+    border-radius: 2px;
+  }
+
+  .search-status {
+    margin: 0;
+    padding: 0 1rem 0.75rem;
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+  }
+
+  .search-status:empty {
+    padding: 0;
+  }
+</style>

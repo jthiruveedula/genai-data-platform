@@ -46,10 +46,10 @@ const FUTURE = [
     </header>
 
     <div class="lane-legend-row">
-      <div class="lane-legend" aria-hidden="true">
-        <span class="chip chip--accent">CORE · {laneCounts.beginner ?? 0}</span>
-        <span class="chip">DEEPEN · {laneCounts.intermediate ?? 0}</span>
-        <span class="chip chip--pending">SCALE · SOON</span>
+      <div class="lane-legend">
+        <a class="chip chip--accent lane-legend-link" href={`${base}paths/beginner/`}>CORE · {laneCounts.beginner ?? 0}</a>
+        <a class="chip lane-legend-link" href={`${base}paths/intermediate/`}>DEEPEN · {laneCounts.intermediate ?? 0}</a>
+        <a class="chip lane-legend-link" href={`${base}paths/advanced/`}>SCALE · {laneCounts.advanced ?? 0}</a>
       </div>
       <p class="chip mono progress-summary" data-progress-summary hidden></p>
     </div>
@@ -220,6 +220,17 @@ const FUTURE = [
   .lane-legend {
     display: flex;
     gap: 0.6rem;
+  }
+
+  .lane-legend-link {
+    text-decoration: none;
+    transition: border-color var(--duration-micro) var(--ease-out), color var(--duration-micro) var(--ease-out);
+  }
+
+  .lane-legend-link:hover,
+  .lane-legend-link:focus-visible {
+    border-color: var(--accent);
+    color: var(--accent-text, var(--accent));
   }
 
   .progress-summary {

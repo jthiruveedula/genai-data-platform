@@ -1,5 +1,6 @@
 ---
 import { CLOUDS } from "../data/modules";
+import { loadClaims, findClaim, claimStatus, type ClaimStatus } from "../lib/claims";
 
 interface Props {
   moduleId: string;
@@ -7,6 +8,28 @@ interface Props {
 }
 
 const { moduleId, entries } = Astro.props;
+const base = import.meta.env.BASE_URL;
+
+const claims = loadClaims();
+const now = new Date();
+
+const MONTH_YEAR = new Intl.DateTimeFormat("en-US", { month: "short", year: "numeric" });
+
+function claimChipClass(status: ClaimStatus): string {
+  if (status === "verified") return "chip chip--claim-verified";
+  if (status === "stale") return "chip chip--pending chip--claim-stale";
+  return "chip chip--pending chip--claim-unverified";
+}
+
+function claimLabel(status: ClaimStatus, verifiedOn: string | null): string {
+  if (status === "verified" && verifiedOn) {
+    return `✓ VERIFIED ${MONTH_YEAR.format(new Date(verifiedOn)).toUpperCase()}`;
+  }
+  if (status === "stale" && verifiedOn) {
+    return `⚠ STALE · LAST ${MONTH_YEAR.format(new Date(verifiedOn)).toUpperCase()}`;
+  }
+  return "UNVERIFIED";
+}
 ---
 
 <div class="flavor-tabs" data-flavor-tabs role="tablist" aria-label="Cloud flavor">
@@ -30,17 +53,22 @@ const { moduleId, entries } = Astro.props;
 {
   CLOUDS.map((c) => {
     const entry = entries[c.id];
+    const claim = findClaim(claims, entry.claimId);
+    const status: ClaimStatus = claim ? claimStatus(claim, now) : "unverified";
+    const claimHref = `${base}freshness/#claim-${entry.claimId}`;
+    const claimTitle =
+      status === "verified"
+        ? "Checked by the validation pipeline — see the content freshness page"
+        : status === "stale"
+          ? "Last checked over 90 days ago and due for re-verification — see the content freshness page"
+          : "No validation pipeline has checked this claim yet — see the content freshness page";
     return (
       <div role="tabpanel" id={`panel-${moduleId}-${c.id}`} aria-labelledby={`tab-${moduleId}-${c.id}`} data-panel-cloud={c.id} hidden>
         <p class="services">
           <span class="chip">{entry.services.join(" · ")}</span>{" "}
-          <span
-            class="chip chip--pending"
-            data-claim-id={entry.claimId}
-            title="No validation pipeline has checked this claim yet — see PLAN.md §9"
-          >
-            UNVERIFIED
-          </span>
+          <a class={claimChipClass(status)} data-claim-id={entry.claimId} href={claimHref} title={claimTitle}>
+            {claimLabel(status, claim?.verifiedOn ?? null)}
+          </a>
         </p>
         <pre class="mono snippet"><code>{entry.snippet}</code></pre>
         <ol class="lab-steps">
@@ -128,6 +156,52 @@ const { moduleId, entries } = Astro.props;
     border-radius: calc(var(--radius) + 4px);
     backdrop-filter: blur(var(--glass-blur));
     -webkit-backdrop-filter: blur(var(--glass-blur));
+  }
+
+  /* The claim chip is an <a> (linking to the freshness page) rather than a
+     plain <span> — undo the browser's default link underline so it keeps
+     the same pill look every other .chip has, and give it a visible hover
+     state since chips otherwise have none. */
+  a[data-claim-id] {
+    text-decoration: none;
+  }
+
+  a[data-claim-id]:hover {
+    color: var(--text);
+  }
+
+  /* Distinct, theme-aware colors per claim status (mirrors freshness.astro):
+     mixing a hue into --text keeps each status legible against
+     --bg-card/--glass-bg in both dark and light themes, rather than a fixed
+     hex that only reads well in one. */
+  .chip--claim-verified {
+    border-color: color-mix(in srgb, #22c55e 55%, var(--border));
+    color: color-mix(in srgb, #22c55e 55%, var(--text));
+  }
+
+  .chip--claim-verified::before,
+  .chip--claim-verified::after {
+    color: color-mix(in srgb, #22c55e 55%, var(--text));
+  }
+
+  .chip--claim-unverified {
+    border-color: color-mix(in srgb, #f59e0b 55%, var(--border));
+    color: color-mix(in srgb, #f59e0b 55%, var(--text));
+  }
+
+  .chip--claim-unverified::before,
+  .chip--claim-unverified::after {
+    color: color-mix(in srgb, #f59e0b 55%, var(--text));
+  }
+
+  .chip--claim-stale {
+    border-color: color-mix(in srgb, #ef4444 55%, var(--border));
+    color: color-mix(in srgb, #ef4444 55%, var(--text));
+  }
+
+  .chip--claim-stale::before,
+  .chip--claim-stale::after {
+    color: color-mix(in srgb, #ef4444 55%, var(--text));
   }
 
   .services {

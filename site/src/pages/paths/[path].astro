@@ -1,0 +1,237 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { MODULES } from "../../data/modules";
+import { PATHS, type PathInfo } from "../../data/paths";
+
+export function getStaticPaths() {
+  return PATHS.map((p) => ({
+    params: { path: p.id },
+    props: { path: p },
+  }));
+}
+
+interface Props {
+  path: PathInfo;
+}
+
+const { path } = Astro.props as Props;
+const base = import.meta.env.BASE_URL;
+
+const modules = MODULES.filter((m) => m.path === path.id).sort((a, b) => a.order - b.order);
+const moduleIds = modules.map((m) => m.id);
+---
+
+<BaseLayout title={`${path.label} path`} description={`${path.description} Ends with ${path.outcome}.`}>
+  <article class="path-page">
+    <header class="path-hero">
+      <div class="path-hero-chips">
+        <span class="chip chip--accent">{path.laneLabel}</span>
+        <span class="chip mono">{path.weeks}</span>
+      </div>
+      <h1 class="path-title">{path.label} path</h1>
+      <p class="path-outcome">Ends with {path.outcome}.</p>
+      <p class="path-description">{path.description}</p>
+      <p class="chip mono path-summary" data-path-summary aria-live="polite">
+        0 of {modules.length} modules complete
+      </p>
+    </header>
+
+    <ol class="module-rail" aria-label={`${path.label} path modules`} data-module-rail>
+      {
+        modules.map((m) => (
+          <li class="rail-item" data-rail-item data-module-id={m.id}>
+            <a class="rail-card glass-panel" href={`${base}modules/${m.id}/`}>
+              <span class="rail-order mono" aria-hidden="true">
+                {String(m.order).padStart(2, "0")}
+              </span>
+              <span class="rail-body">
+                <span class="rail-title">{m.title}</span>
+                <span class="rail-summary">{m.summary}</span>
+              </span>
+              <span class="rail-status">
+                <span class="chip rail-status-chip" data-rail-status>
+                  TODO
+                </span>
+              </span>
+            </a>
+          </li>
+        ))
+      }
+    </ol>
+  </article>
+</BaseLayout>
+
+<script>
+  import { MODULES } from "../../data/modules";
+  import { isModuleComplete, readQuizScore, nextIncompleteModule, getCompletionSummary } from "../../lib/progress";
+
+  function render() {
+    const rail = document.querySelector<HTMLElement>("[data-module-rail]");
+    if (!rail) return;
+
+    const items = Array.from(rail.querySelectorAll<HTMLElement>("[data-rail-item]"));
+    const moduleIds = items.map((el) => el.dataset.moduleId!);
+
+    // nextIncompleteModule expects curriculum order, not just this path's
+    // order, so a path page's "resume" target still lines up with the
+    // site-wide notion of "what's next" — but since this rail only lists
+    // this path's modules, restrict to those ids for the first-incomplete
+    // marker within the path.
+    const next = nextIncompleteModule(moduleIds);
+
+    items.forEach((el) => {
+      const moduleId = el.dataset.moduleId!;
+      const statusChip = el.querySelector<HTMLElement>("[data-rail-status]");
+      if (!statusChip) return;
+
+      if (isModuleComplete(moduleId)) {
+        const result = readQuizScore(moduleId);
+        statusChip.textContent = result ? `✓ PASS ${result.score}/${result.total}` : "✓ PASS";
+        statusChip.classList.add("rail-status-chip--complete");
+        statusChip.classList.remove("rail-status-chip--next");
+      } else if (moduleId === next) {
+        const hasAttempt = readQuizScore(moduleId) !== null;
+        statusChip.textContent = hasAttempt ? "RESUME" : "START";
+        statusChip.classList.add("rail-status-chip--next");
+        statusChip.classList.remove("rail-status-chip--complete");
+      } else {
+        statusChip.textContent = "TODO";
+        statusChip.classList.remove("rail-status-chip--complete", "rail-status-chip--next");
+      }
+    });
+
+    const summary = document.querySelector<HTMLElement>("[data-path-summary]");
+    if (summary) {
+      const { completed, total } = getCompletionSummary(moduleIds);
+      summary.textContent = `${completed} of ${total} modules complete`;
+    }
+  }
+
+  render();
+  document.addEventListener("astro:page-load", render);
+</script>
+
+<style>
+  .path-page {
+    padding-block: clamp(2.5rem, 6vw, 4rem);
+  }
+
+  .path-hero {
+    max-width: 46rem;
+    margin-bottom: 2.5rem;
+  }
+
+  .path-hero-chips {
+    display: flex;
+    gap: 0.6rem;
+    margin-bottom: 1rem;
+  }
+
+  .path-title {
+    font-size: clamp(2rem, 4vw, 2.75rem);
+    margin: 0 0 0.75rem;
+  }
+
+  .path-outcome {
+    font-size: 1.1rem;
+    color: var(--accent-text, var(--accent));
+    margin: 0 0 0.75rem;
+  }
+
+  .path-description {
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin: 0 0 1.5rem;
+  }
+
+  .path-summary {
+    color: var(--text-secondary);
+  }
+
+  .module-rail {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .rail-item {
+    position: relative;
+  }
+
+  .rail-card {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 1.25rem 1.5rem;
+    text-decoration: none;
+    color: inherit;
+    transition:
+      transform var(--duration-micro) var(--ease-out),
+      border-color var(--duration-micro) var(--ease-out);
+  }
+
+  .rail-card:hover,
+  .rail-card:focus-visible {
+    transform: translateY(-2px);
+    border-color: color-mix(in srgb, var(--accent) 45%, var(--glass-border));
+  }
+
+  .rail-order {
+    flex: none;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    min-width: 2.5rem;
+  }
+
+  .rail-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .rail-title {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .rail-summary {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+
+  .rail-status {
+    flex: none;
+  }
+
+  .rail-status-chip--complete {
+    border-color: var(--accent);
+    color: var(--accent-text, var(--accent));
+  }
+
+  .rail-status-chip--complete::before,
+  .rail-status-chip--complete::after {
+    color: var(--accent);
+  }
+
+  .rail-status-chip--next {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 12%, var(--bg-card));
+    color: var(--accent-text, var(--accent));
+  }
+
+  @media (max-width: 640px) {
+    .rail-card {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.75rem;
+    }
+  }
+</style>

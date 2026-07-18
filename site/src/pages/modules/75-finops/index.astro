@@ -1,0 +1,77 @@
+---
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import FlavorTabs from "../../../components/FlavorTabs.astro";
+import ModuleHero from "../../../components/module/ModuleHero.astro";
+import ModuleFooterNav from "../../../components/module/ModuleFooterNav.astro";
+import ModuleQuiz from "../../../components/module/ModuleQuiz.astro";
+import { flavor as gcp } from "../../../data/flavors/gcp";
+import { flavor as aws } from "../../../data/flavors/aws";
+import { flavor as azure } from "../../../data/flavors/azure";
+import { flavor as oss } from "../../../data/flavors/oss";
+
+const moduleId = "75-finops";
+const entries = {
+  gcp: gcp[moduleId],
+  aws: aws[moduleId],
+  azure: azure[moduleId],
+  oss: oss[moduleId],
+};
+---
+
+<BaseLayout title="75 · FinOps for GenAI">
+  <article>
+    <ModuleHero moduleId={moduleId}>
+      <p>
+        Module 55 gave every request a trace with token counts attached. FinOps is where that data finally earns its
+        keep: turning a monthly bill into $/query and $/tenant numbers you can act on, instead of a total that only
+        goes up.
+      </p>
+    </ModuleHero>
+
+    <h2>Unit economics: $/query and $/tenant</h2>
+    <p>
+      Joining the Module 55 event log against your cloud's billing export, per request, gets you real unit economics:
+      cost per query, and — grouped by tenant — cost per tenant. That second number is what lets you answer "is this
+      customer profitable at their usage volume" instead of just "did total spend go up this month."
+    </p>
+
+    <h2>Where the money actually goes</h2>
+    <p>
+      It's tempting to assume the vector index or the embedding calls are the expensive part, since they touch every
+      document. In practice, LLM <strong>output tokens</strong> usually dominate: embeddings are computed once per
+      chunk and priced far lower per token, while every generation call produces new output tokens priced at a
+      premium. Confirming this with your own event-log join, rather than assuming it, tells you where to actually
+      spend optimization effort.
+    </p>
+
+    <h2>Caching and model routing</h2>
+    <p>
+      Two changes move the needle without touching answer quality. <strong>Semantic caching</strong> matches a new
+      query against previously answered ones — not just exact repeats — so rephrased or repeated questions skip the
+      expensive generation call entirely. <strong>Model routing</strong> sends every query to a fast, cheap model
+      first, and escalates to a reasoning-tier model only when retrieval confidence is low or the fast model itself
+      signals uncertainty — the same fast-first pattern Module 25 introduced for serving, now applied deliberately for
+      cost.
+    </p>
+
+    <h2>Capacity planning</h2>
+    <p>
+      Once volume is predictable, pay-as-you-go pricing stops being the cheapest option — a provisioned or reserved
+      capacity commitment trades a fixed cost for a lower marginal rate. Capacity planning is the exercise of using
+      your unit-economics data to find the volume at which that trade starts to make sense, instead of guessing.
+    </p>
+
+    <h2>Try it in your flavor</h2>
+    <FlavorTabs moduleId={moduleId} entries={entries} />
+
+    <h2>Pitfalls</h2>
+    <ul>
+      <li>Optimizing embedding costs first because they "run for every document," when output tokens are usually the larger line item.</li>
+      <li>Adding a cache keyed on exact query text only, missing the much larger set of semantically repeated questions.</li>
+      <li>Routing every query to the reasoning-tier model "to be safe," which quietly multiplies cost for queries the fast tier would have handled fine.</li>
+      <li>Committing to reserved capacity before volume is predictable, locking in a fixed cost that ends up more expensive than pay-as-you-go.</li>
+    </ul>
+  </article>
+  <ModuleQuiz moduleId={moduleId} />
+  <ModuleFooterNav moduleId={moduleId} />
+</BaseLayout>

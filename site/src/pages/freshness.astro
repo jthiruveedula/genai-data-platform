@@ -1,0 +1,201 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { loadClaims, claimStatus, type Claim, type ClaimStatus } from "../lib/claims";
+
+const base = import.meta.env.BASE_URL;
+
+const claims: Claim[] = [...loadClaims()].sort((a, b) => a.id.localeCompare(b.id));
+const now = new Date();
+const statuses: ClaimStatus[] = claims.map((c) => claimStatus(c, now));
+
+const verifiedCount = statuses.filter((s) => s === "verified").length;
+const staleCount = statuses.filter((s) => s === "stale").length;
+const unverifiedCount = statuses.filter((s) => s === "unverified").length;
+const allUnverified = claims.length > 0 && unverifiedCount === claims.length;
+
+const MONTH_YEAR = new Intl.DateTimeFormat("en-US", { month: "short", year: "numeric" });
+
+function statusChipClass(status: ClaimStatus): string {
+  if (status === "verified") return "chip chip--verified mono";
+  if (status === "stale") return "chip chip--stale mono";
+  return "chip chip--pending chip--unverified mono";
+}
+
+function statusLabel(status: ClaimStatus, verifiedOn: string | null): string {
+  if (status === "verified" && verifiedOn) {
+    return `✓ VERIFIED ${MONTH_YEAR.format(new Date(verifiedOn)).toUpperCase()}`;
+  }
+  if (status === "stale" && verifiedOn) {
+    return `⚠ STALE · LAST ${MONTH_YEAR.format(new Date(verifiedOn)).toUpperCase()}`;
+  }
+  return "⚠ UNVERIFIED";
+}
+
+function moduleHref(usedBy: string): string | null {
+  const hashIndex = usedBy.indexOf("#");
+  if (hashIndex === -1) return null;
+  const moduleId = usedBy.slice(hashIndex + 1);
+  return `${base}modules/${moduleId}/`;
+}
+---
+
+<BaseLayout title="Content freshness" description="The claim registry behind every service and pricing claim on this site, and its current verification state.">
+  <article>
+    <h1>Content freshness</h1>
+    <p>
+      Every service and pricing claim made across this site's cloud flavors — "Bedrock's model catalog is where you
+      pick an LLM," "Gemini Flash costs $0.075/$0.30 per million tokens," and so on — is registered in a single claim
+      registry (<code class="mono">validation/sources.yaml</code>), tagged with a volatility rating, and is meant to
+      be re-checked against its sources on a schedule by an automated scrape pipeline. This page reads that registry
+      directly at build time, so what's below is the actual, current verification state — not a claim about it.
+    </p>
+    {
+      allUnverified && (
+        <p>
+          <strong>The first validation run hasn't executed yet.</strong> Every claim below is currently unverified —
+          that's expected for a freshly seeded registry, not a sign anything is broken. Once the scrape pipeline runs
+          for the first time, verified claims will show the date they were last checked, and this page will update on
+          the next build.
+        </p>
+      )
+    }
+
+    <div class="freshness-summary" role="list" aria-label="Claim registry summary">
+      <span class="chip mono" role="listitem">{claims.length} CLAIMS</span>
+      <span class="chip chip--verified mono" role="listitem">{verifiedCount} VERIFIED</span>
+      <span class="chip chip--pending chip--unverified mono" role="listitem">{unverifiedCount} UNVERIFIED</span>
+      <span class="chip chip--stale mono" role="listitem">{staleCount} STALE</span>
+    </div>
+
+    <div class="table-wrap">
+      <table class="freshness-table">
+        <thead>
+          <tr>
+            <th scope="col">Claim</th>
+            <th scope="col">Statement</th>
+            <th scope="col">Volatility</th>
+            <th scope="col">Status</th>
+            <th scope="col">Used by</th>
+          </tr>
+        </thead>
+        <tbody>
+          {
+            claims.map((c, i) => {
+              const status = statuses[i];
+              const href = moduleHref(c.usedBy);
+              return (
+                <tr>
+                  <td id={`claim-${c.id}`} class="mono claim-id">
+                    {c.id}
+                  </td>
+                  <td>{c.claim}</td>
+                  <td>
+                    <span class="chip mono">{c.volatility.toUpperCase()}</span>
+                  </td>
+                  <td>
+                    <span class={statusChipClass(status)}>{statusLabel(status, c.verifiedOn)}</span>
+                  </td>
+                  <td class="mono used-by">
+                    {href ? <a href={href}>{c.usedBy}</a> : c.usedBy}
+                  </td>
+                </tr>
+              );
+            })
+          }
+        </tbody>
+      </table>
+    </div>
+  </article>
+</BaseLayout>
+
+<style>
+  .freshness-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin: 1.5rem 0 2rem;
+  }
+
+  .table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+
+  .freshness-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+  }
+
+  .freshness-table th,
+  .freshness-table td {
+    padding: 0.75rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+
+  .freshness-table th {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    background: var(--bg-card);
+    white-space: nowrap;
+  }
+
+  .freshness-table tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  .claim-id {
+    white-space: nowrap;
+    color: var(--text-secondary);
+    scroll-margin-top: 5rem;
+  }
+
+  .used-by {
+    font-size: 0.78rem;
+    white-space: nowrap;
+    color: var(--text-secondary);
+  }
+
+  /* Status colors: mix a hue into --text (rather than hardcoding a fixed
+     color) so each status still tracks --text's per-theme lightness —
+     near-white in dark mode, near-black in light mode — which keeps the
+     result readable against --bg-card in both themes instead of only one.
+     55% keeps the hue clearly visible while the majority-share of --text
+     preserves most of --text's baseline contrast. */
+  .chip--verified {
+    border-color: color-mix(in srgb, #22c55e 55%, var(--border));
+    color: color-mix(in srgb, #22c55e 55%, var(--text));
+  }
+
+  .chip--verified::before,
+  .chip--verified::after {
+    color: color-mix(in srgb, #22c55e 55%, var(--text));
+  }
+
+  .chip--unverified {
+    border-color: color-mix(in srgb, #f59e0b 55%, var(--border));
+    color: color-mix(in srgb, #f59e0b 55%, var(--text));
+  }
+
+  .chip--unverified::before,
+  .chip--unverified::after {
+    color: color-mix(in srgb, #f59e0b 55%, var(--text));
+  }
+
+  .chip--stale {
+    border-style: dashed;
+    border-color: color-mix(in srgb, #ef4444 55%, var(--border));
+    color: color-mix(in srgb, #ef4444 55%, var(--text));
+  }
+
+  .chip--stale::before,
+  .chip--stale::after {
+    color: color-mix(in srgb, #ef4444 55%, var(--text));
+  }
+</style>
