@@ -99,6 +99,38 @@ const entries = {
       your unit-economics data to find the volume at which that trade starts to make sense, instead of guessing.
     </p>
 
+    <h2>Further reading: token economics and self-hosting in practice</h2>
+    <p>
+      This module's numbers come from published pricing and pure arithmetic; the links below are current (2026)
+      engineering writing on the same problems, for teams who want more depth than a curriculum module can carry:
+    </p>
+    <p>
+      <strong>Token-saving techniques.</strong>
+      <a href="https://projectdiscovery.io/blog/how-we-cut-llm-cost-with-prompt-caching" target="_blank" rel="noopener">ProjectDiscovery's engineering writeup on cutting LLM costs with prompt caching</a>
+      is a concrete before/after case study of the same prefix-ordering discipline covered above. Moonshot AI's
+      <a href="https://www.kimi.com/blog/kimi-k3" target="_blank" rel="noopener">Kimi K3 launch post</a> is worth
+      reading for a different angle on the same lever: an open-weight frontier-class model built around a
+      disaggregated-inference cache-hit rate above 90% on repeated context, priced roughly 10x cheaper per token on
+      a cache hit than a miss — the same order-of-magnitude discount this module describes for the closed-API
+      providers, from a model you could instead choose to self-host.
+    </p>
+    <p>
+      <strong>Enterprise employee-productivity use cases.</strong>
+      <a href="https://www.moveworks.com/us/en/resources/blog/agentic-ai-employee-productivity-impact-use-cases" target="_blank" rel="noopener">Moveworks on agentic AI's employee-productivity impact</a>
+      and <a href="https://aimonk.com/agentic-ai-examples-enterprise-roi-case-studies/" target="_blank" rel="noopener">a roundup of enterprise agentic-AI ROI case studies</a>
+      cover internal-assistant deployments (HR, IT support, engineering workflows) at the scale where the unit
+      economics in this module start to matter — a small per-query saving compounds fast across thousands of
+      employees.
+    </p>
+    <p>
+      <strong>Self-hosting and fine-tuning on company data.</strong> For teams evaluating the self-hosting path
+      from "Private inference" above,
+      <a href="https://www.digitalapplied.com/blog/self-hosting-open-weight-llms-2026-deployment-decision-guide" target="_blank" rel="noopener">this 2026 decision guide on self-hosting open-weight models</a>
+      and <a href="https://www.spheron.network/blog/how-to-fine-tune-llm-2026/" target="_blank" rel="noopener">a practical walkthrough of fine-tuning costs, GPUs, and tooling</a>
+      cover fine-tuning an open-weight model on internal/proprietary data and running it on rented or owned GPU
+      capacity — the same GPU-hour economics this module models, one level more concrete.
+    </p>
+
     <h2>Try it in your flavor</h2>
     <FlavorTabs moduleId={moduleId} entries={entries} />
 
