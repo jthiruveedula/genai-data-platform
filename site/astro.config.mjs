@@ -2,12 +2,22 @@
 import { defineConfig } from 'astro/config';
 import tailwindcss from '@tailwindcss/vite';
 import react from '@astrojs/react';
+import sitemap from '@astrojs/sitemap';
 
 // https://astro.build/config
 export default defineConfig({
   site: 'https://jthiruveedula.github.io',
   base: '/genai-data-platform/',
-  integrations: [react()],
+  integrations: [react(), sitemap()],
+  build: {
+    // Default ("auto") only inlines stylesheets <=4kB, so BaseLayout's
+    // page-wide CSS (~19kB) shipped as a render-blocking <link> on every
+    // page — Lighthouse measured ~550ms of blocking time from it alone,
+    // pushing the homepage's LCP past the 2.5s budget. Pages here are
+    // static output with no cross-page CSS reuse to lose by inlining, so
+    // there's no caching downside to trade away.
+    inlineStylesheets: 'always',
+  },
   vite: {
     plugins: [tailwindcss()],
     build: {

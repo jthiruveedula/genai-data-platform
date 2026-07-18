@@ -27,5 +27,64 @@ jobs:
       - name: Build
         working-directory: site
         run: npm run build
+      - name: Prepare link-check mirror
+        # Pages are built with base "/genai-data-platform/" baked into every
+        # internal href, but the on-disk dist/ layout has no such prefix
+        # directory. lychee's --remap flag doesn't apply to local root-dir
+        # resolution (verified against lychee 0.24.2), so instead mirror
+        # dist/ one level down under a symlink matching the deployed path —
+        # root-relative links then resolve exactly as they will in
+        # production, matching PLAN.md §9.4's "lychee in CI on every PR"
+        # link-check gate (previously undocumented-only).
+        run: |
+          mkdir -p "$RUNNER_TEMP/link-check-root"
+          ln -s "$GITHUB_WORKSPACE/site/dist" "$RUNNER_TEMP/link-check-root/genai-data-platform"
+      - name: Link check
+        uses: lycheeverse/lychee-action@v2
+        with:
+          args: >-
+            --root-dir ${{ runner.temp }}/link-check-root
+            --no-progress
+            '${{ runner.temp }}/link-check-root/genai-data-platform/**/*.html'
+          fail: true
+      - name: Install Playwright browsers
+        working-directory: site
+        run: npx playwright install --with-deps chromium
+      - name: e2e + accessibility tests
+        working-directory: site
+        run: npx playwright test
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: site/playwright-report/
+          retention-days: 14
       - name: Check claim registry coverage
         run: node validation/check-registry.mjs
+      - name: Lighthouse CI
+        working-directory: site
+        # .lighthouserc.json existed for a long time but was never wired into
+        # any workflow, and its config pointed a static-file server at dist/
+        # with no awareness of the site's "/genai-data-platform/" base path —
+        # every asset 404'd, so it was silently scoring an unstyled,
+        # non-interactive page as "100% performance". Fixed to boot the real
+        # `astro preview` server (base-path aware, same as Playwright's e2e
+        # config) so this actually measures the deployed page.
+        #
+        # categories:performance and largest-contentful-paint are `warn` in
+        # .lighthouserc.json, not `error`: the homepage's LCP (~2.7-2.8s vs a
+        # 2.5s budget) is bottlenecked by pre-existing GSAP/ScrollTrigger
+        # main-thread cost in HeroScene (Style & Layout ~800ms, likely from
+        # per-path getTotalLength() calls and ScrollTrigger's on-load
+        # position measurements), not by anything this change touched. That
+        # needs a dedicated animation-performance pass, scoped separately.
+        # Kept at `warn` so the run still surfaces the number every time
+        # instead of hiding it, without blocking unrelated PRs on debt this
+        # task didn't introduce and shouldn't fix blind.
+        run: npx lhci autorun
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lighthouse-report
+          path: site/.lighthouseci/
+          retention-days: 14

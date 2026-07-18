@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseClaims, claimStatus, type Claim } from "./claims";
+import { parseClaims, claimStatus, moduleHref, type Claim } from "./claims";
 
 const SAMPLE_YAML = `
 # Claim registry sample fixture (mirrors validation/sources.yaml's shape).
@@ -101,5 +101,32 @@ describe("claimStatus", () => {
   it("treats an unparseable verified_on as unverified", () => {
     const claim: Claim = { ...baseClaim, verifiedOn: "not-a-date" };
     expect(claimStatus(claim, new Date("2026-07-17"))).toBe("unverified");
+  });
+});
+
+// Regression test for a real bug caught by a lychee link-check pass: this
+// used to naively link every claim to `${base}modules/<whatever follows #>/`,
+// which is correct for flavors/*.ts claims but produced dead links like
+// /modules/aws/ for pricing.json claims (whose suffix is a cloud id, not a
+// module id).
+describe("moduleHref", () => {
+  const base = "/genai-data-platform/";
+
+  it("links a flavors/*.ts claim to its module page", () => {
+    expect(moduleHref("site/src/data/flavors/aws.ts#45-evaluation", base)).toBe(
+      "/genai-data-platform/modules/45-evaluation/",
+    );
+  });
+
+  it("links a pricing.json claim to the calculator, not a fake module page", () => {
+    expect(moduleHref("site/src/data/pricing.json#aws", base)).toBe("/genai-data-platform/calculator/");
+  });
+
+  it("returns null when there's no # suffix", () => {
+    expect(moduleHref("site/src/data/flavors/aws.ts", base)).toBeNull();
+  });
+
+  it("returns null for an unrecognized path shape", () => {
+    expect(moduleHref("some/other/file.ts#thing", base)).toBeNull();
   });
 });

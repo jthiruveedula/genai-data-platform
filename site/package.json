@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@astrojs/react": "^6.0.1",
+    "@astrojs/sitemap": "^3.7.3",
     "@fontsource/ibm-plex-sans": "^5.2.8",
     "@fontsource/inter": "^5.2.8",
     "@fontsource/jetbrains-mono": "^5.2.8",
@@ -35,6 +36,7 @@
     "three": "^0.185.1"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.12.1",
     "@lhci/cli": "^0.15.1",
     "@playwright/test": "^1.61.1",
     "@storybook-astro/framework": "^1.8.0",
