@@ -16,6 +16,7 @@ import "../styles/tokens/transitions.css";
 import Navbar from "../components/Navbar.astro";
 import CustomCursor from "../components/CustomCursor.astro";
 import { ClientRouter } from "astro:transitions";
+import { loadClaims, claimStatus } from "../lib/claims";
 
 interface Props {
   title: string;
@@ -30,6 +31,9 @@ const {
   description = "A multi-cloud & OSS learning suite for building GenAI data platforms.",
   fullBleed = false,
 } = Astro.props;
+
+const claims = loadClaims();
+const verifiedClaimCount = claims.filter((c) => claimStatus(c) === "verified").length;
 ---
 
 <!doctype html>
@@ -168,6 +172,10 @@ const {
         Not affiliated with Amazon Web Services, Microsoft Azure, or Google Cloud. Logos used for identification
         only — see <a href={`${import.meta.env.BASE_URL}logos/LICENSES.md`}>logo licenses</a>.
       </p>
+      <p class="site-footer__freshness">
+        Content freshness: {verifiedClaimCount} of {claims.length} claims verified ·{" "}
+        <a href={`${import.meta.env.BASE_URL}freshness/`}>view registry →</a>
+      </p>
     </footer>
     <style>
       .reading-progress {
@@ -197,6 +205,12 @@ const {
         margin-top: 4rem;
         padding: 1.5rem 2rem;
         font-size: 0.8rem;
+        color: var(--text-secondary);
+      }
+      .site-footer__freshness {
+        margin-top: 0.5rem;
+        font-size: 0.75rem;
+        font-family: var(--font-mono);
         color: var(--text-secondary);
       }
       main {
