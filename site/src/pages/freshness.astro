@@ -1,6 +1,6 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
-import { loadClaims, claimStatus, type Claim, type ClaimStatus } from "../lib/claims";
+import { loadClaims, claimStatus, moduleHref, type Claim, type ClaimStatus } from "../lib/claims";
 
 const base = import.meta.env.BASE_URL;
 
@@ -31,12 +31,6 @@ function statusLabel(status: ClaimStatus, verifiedOn: string | null): string {
   return "⚠ UNVERIFIED";
 }
 
-function moduleHref(usedBy: string): string | null {
-  const hashIndex = usedBy.indexOf("#");
-  if (hashIndex === -1) return null;
-  const moduleId = usedBy.slice(hashIndex + 1);
-  return `${base}modules/${moduleId}/`;
-}
 ---
 
 <BaseLayout title="Content freshness" description="The claim registry behind every service and pricing claim on this site, and its current verification state.">
@@ -82,7 +76,7 @@ function moduleHref(usedBy: string): string | null {
           {
             claims.map((c, i) => {
               const status = statuses[i];
-              const href = moduleHref(c.usedBy);
+              const href = moduleHref(c.usedBy, base);
               return (
                 <tr>
                   <td id={`claim-${c.id}`} class="mono claim-id">
@@ -134,6 +128,10 @@ function moduleHref(usedBy: string): string | null {
     text-align: left;
     border-bottom: 1px solid var(--border);
     vertical-align: top;
+    /* .chip's --text-secondary color is contrast-audited against --bg-card,
+       not the page's darker --bg — td cells need the same background as th
+       or the volatility chip drops under 4.5:1 in every dark cloud theme. */
+    background: var(--bg-card);
   }
 
   .freshness-table th {

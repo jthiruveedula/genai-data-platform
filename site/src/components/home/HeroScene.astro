@@ -37,7 +37,14 @@ const SERVICE_OVERLAYS = [
       <span class="h1-mask"><span class="h1-line">behind serious GenAI.</span></span>
     </h1>
 
-    <p class="lede" data-rise>
+    {
+      /* No data-rise here: this paragraph is the page's LCP candidate (largest
+         rendered text block above the fold). Gating it behind the entrance
+         timeline's fade-in pushed LCP past 2.5s in Lighthouse — a real cost
+         for a purely decorative flourish, not one of the pipeline-demonstrating
+         scenes this project's own motion budget reserves large animation for. */
+    }
+    <p class="lede">
       An interactive curriculum that takes one document from raw PDF to grounded, cited answer — on GCP, AWS, Azure,
       or pure open source. Pick your cloud; the whole platform re-maps live.
     </p>

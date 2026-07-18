@@ -203,3 +203,20 @@ export function claimStatus(claim: Claim, now: Date = new Date()): ClaimStatus {
   const ageDays = (now.getTime() - verifiedDate.getTime()) / MS_PER_DAY;
   return ageDays > STALE_AFTER_DAYS ? "stale" : "verified";
 }
+
+/**
+ * A claim's `usedBy` is either "site/src/data/flavors/<cloud>.ts#<module-id>"
+ * (the suffix is a module id — link to that module) or
+ * "site/src/data/pricing.json#<cloud>" (the suffix is a cloud id, not a
+ * module — those claims feed the calculator, not any one module page).
+ * Returns null when `usedBy` doesn't match either known shape.
+ */
+export function moduleHref(usedBy: string, base: string): string | null {
+  const hashIndex = usedBy.indexOf("#");
+  if (hashIndex === -1) return null;
+  const path = usedBy.slice(0, hashIndex);
+  const suffix = usedBy.slice(hashIndex + 1);
+  if (path.includes("/flavors/")) return `${base}modules/${suffix}/`;
+  if (path.endsWith("pricing.json")) return `${base}calculator/`;
+  return null;
+}
