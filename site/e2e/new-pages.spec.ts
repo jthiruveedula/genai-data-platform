@@ -106,3 +106,28 @@ test('the vector-space scene stays in normal flow after hydration and does not o
   await button.click();
   await expect(page.locator('.v3d-query-result')).toContainText('Nearest cluster:');
 });
+
+// Regression test: at 768px the navbar's un-wrapped content (brand + 3 links
+// + search + 4-cloud switcher + theme toggle) was already wider than the
+// viewport -- a real horizontal-scroll bug (846px of content in a 768px
+// viewport) that the old 720px wrap breakpoint didn't cover. A second bug at
+// 320px: the wrapped-to-its-own-row 4-cloud switcher didn't itself wrap,
+// so "OSS" ran 12px past the edge. Both are viewport-width bugs a desktop-only
+// test suite can't catch, so pin the widths Hallmark's own mobile floor
+// requires (320/375/414/768) rather than relying on the project default.
+const MOBILE_WIDTHS = [320, 375, 414, 768];
+const KEY_PAGES = ['', 'modules/00-foundations/', 'matrix/', 'calculator/', 'freshness/', 'paths/beginner/'];
+
+for (const width of MOBILE_WIDTHS) {
+  for (const path of KEY_PAGES) {
+    test(`${path || 'home'} has no horizontal overflow at ${width}px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto(path);
+      const { scrollWidth, clientWidth } = await page.evaluate(() => ({
+        scrollWidth: document.documentElement.scrollWidth,
+        clientWidth: document.documentElement.clientWidth,
+      }));
+      expect(scrollWidth).toBeLessThanOrEqual(clientWidth);
+    });
+  }
+}
