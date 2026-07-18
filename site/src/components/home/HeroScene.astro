@@ -242,7 +242,7 @@ const SERVICE_OVERLAYS = [
     const next = nextIncompleteModule(ORDERED_MODULES.map((m) => m.id));
 
     if (next === null) {
-      // Every module's quiz is passed — nothing left to "start" or "resume".
+      // Every module's recap has been seen — nothing left to "start" or "resume".
       link.href = `${base}#curriculum`;
       label.textContent = "Review the curriculum";
     } else if (next === ORDERED_MODULES[0].id) {

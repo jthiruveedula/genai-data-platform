@@ -1,0 +1,259 @@
+---
+/* Hallmark · pre-emit critique: P4 H4 E4 S4 R5 V4 */
+// The closing "what should stick" section of every module page — three
+// takeaways plus one visual (an ECharts chart where real data exists, a
+// flow/layer diagram where the idea is structural). Replaced the checkpoint
+// quizzes; seeing this section is what marks the module complete on the
+// home page's curriculum journey.
+import { RECAPS } from "../../data/recaps";
+
+interface Props {
+  moduleId: string;
+}
+
+const { moduleId } = Astro.props;
+const recap = RECAPS[moduleId];
+if (!recap) throw new Error(`ModuleRecap: no recap registered for module "${moduleId}"`);
+const headingId = `recap-heading-${moduleId}`;
+---
+
+<section class="module-recap glass-panel" data-module-recap data-module-id={moduleId} aria-labelledby={headingId}>
+  <header class="recap-head">
+    <p class="section-kicker">TAKEAWAY</p>
+    <h2 class="recap-title" id={headingId}>{recap.title}</h2>
+  </header>
+
+  <ol class="recap-takeaways">
+    {recap.takeaways.map((t) => <li>{t}</li>)}
+  </ol>
+
+  {
+    recap.visual.kind === "chart" && (
+      <figure class="recap-visual">
+        <div
+          class="recap-chart"
+          data-recap-chart={recap.visual.chart}
+          role="img"
+          aria-label={recap.visual.caption}
+        />
+        <figcaption class="recap-caption">{recap.visual.caption}</figcaption>
+      </figure>
+    )
+  }
+
+  {
+    recap.visual.kind === "flow" && (
+      <figure class="recap-visual">
+        <div class="recap-flow" role="img" aria-label={recap.visual.caption}>
+          {recap.visual.nodes.map((node, i) => (
+            <>
+              {i > 0 && (
+                <span class="recap-flow-arrow" aria-hidden="true">
+                  →
+                </span>
+              )}
+              <span class="recap-flow-node">
+                <span class="recap-flow-label">{node.label}</span>
+                {node.note && <span class="recap-flow-note mono">{node.note}</span>}
+              </span>
+            </>
+          ))}
+        </div>
+        <figcaption class="recap-caption">{recap.visual.caption}</figcaption>
+      </figure>
+    )
+  }
+
+  {
+    recap.visual.kind === "layers" && (
+      <figure class="recap-visual">
+        <div class="recap-layers" role="img" aria-label={recap.visual.caption}>
+          {recap.visual.layers.map((layer, i) => (
+            <span class="recap-layer" style={`--layer-index: ${i}`}>
+              <span class="recap-flow-label">{layer.label}</span>
+              {layer.note && <span class="recap-flow-note mono">{layer.note}</span>}
+            </span>
+          ))}
+        </div>
+        <figcaption class="recap-caption">{recap.visual.caption}</figcaption>
+      </figure>
+    )
+  }
+</section>
+
+<script>
+  import { markRecapViewed } from "../../lib/progress";
+  import type { RecapChartId } from "../../lib/recap-chart-options";
+
+  function setup() {
+    document.querySelectorAll<HTMLElement>("[data-module-recap]").forEach((root) => {
+      if (root.dataset.recapBound) return;
+      root.dataset.recapBound = "true";
+
+      const moduleId = root.dataset.moduleId!;
+      const chartEl = root.querySelector<HTMLElement>("[data-recap-chart]");
+
+      // Seeing the recap is what completes the module. Charts additionally
+      // lazy-load echarts here — its chunk is only fetched when a
+      // chart-bearing recap actually approaches the viewport.
+      const observer = new IntersectionObserver(
+        (entries) => {
+          if (!entries.some((e) => e.isIntersecting)) return;
+          observer.disconnect();
+          markRecapViewed(moduleId);
+          if (chartEl) {
+            import("../../lib/recap-chart-render").then(({ mountRecapChart }) => {
+              mountRecapChart(chartEl, chartEl.dataset.recapChart as RecapChartId);
+            });
+          }
+        },
+        { rootMargin: "200px" },
+      );
+      observer.observe(root);
+    });
+  }
+
+  setup();
+  document.addEventListener("astro:page-load", setup);
+</script>
+
+<style>
+  .module-recap {
+    margin-top: 3rem;
+    padding: 1.75rem 2rem 2rem;
+  }
+
+  .recap-head {
+    margin-bottom: 1.25rem;
+  }
+
+  .recap-title {
+    font-size: 1.4rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    margin: 0.5rem 0 0;
+  }
+
+  .recap-takeaways {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    margin: 0 0 1.75rem;
+    padding-left: 1.4rem;
+  }
+
+  .recap-takeaways li {
+    color: var(--text-secondary);
+    line-height: 1.55;
+  }
+
+  .recap-takeaways li::marker {
+    color: var(--accent-text, var(--accent));
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+  }
+
+  .recap-visual {
+    margin: 0;
+  }
+
+  .recap-chart {
+    width: 100%;
+    height: 280px;
+    min-width: 0;
+  }
+
+  .recap-caption {
+    margin-top: 0.85rem;
+    font-size: 0.82rem;
+    line-height: 1.5;
+    color: var(--text-secondary);
+  }
+
+  .recap-flow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+
+  .recap-flow-node {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    flex: 1 1 120px;
+    min-width: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.6rem 0.75rem;
+    background: var(--bg-raised);
+  }
+
+  .recap-flow-label {
+    font-weight: 600;
+    font-size: 0.88rem;
+    color: var(--text);
+    overflow-wrap: anywhere;
+  }
+
+  .recap-flow-note {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    overflow-wrap: anywhere;
+  }
+
+  .recap-flow-arrow {
+    align-self: center;
+    color: var(--accent-text, var(--accent));
+    flex: 0 0 auto;
+  }
+
+  .recap-layers {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .recap-layer {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.75rem;
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: var(--radius);
+    padding: 0.55rem 0.85rem;
+    background: var(--bg-raised);
+    /* Each layer steps slightly inward — reads as depth without fake 3D. */
+    margin-left: calc(var(--layer-index) * 0.9rem);
+  }
+
+  @media (max-width: 640px) {
+    .module-recap {
+      padding: 1.4rem 1.15rem 1.5rem;
+    }
+
+    .recap-flow {
+      flex-direction: column;
+    }
+
+    .recap-flow-node {
+      flex-basis: auto;
+    }
+
+    .recap-flow-arrow {
+      align-self: flex-start;
+      transform: rotate(90deg);
+      margin-left: 0.75rem;
+    }
+
+    .recap-layer {
+      margin-left: calc(var(--layer-index) * 0.45rem);
+      flex-wrap: wrap;
+    }
+
+    .recap-chart {
+      height: 240px;
+    }
+  }
+</style>

@@ -3,7 +3,7 @@ import BaseLayout from "../../../layouts/BaseLayout.astro";
 import FlavorTabs from "../../../components/FlavorTabs.astro";
 import ModuleHero from "../../../components/module/ModuleHero.astro";
 import ModuleFooterNav from "../../../components/module/ModuleFooterNav.astro";
-import ModuleQuiz from "../../../components/module/ModuleQuiz.astro";
+import ModuleRecap from "../../../components/module/ModuleRecap.astro";
 import { flavor as gcp } from "../../../data/flavors/gcp";
 import { flavor as aws } from "../../../data/flavors/aws";
 import { flavor as azure } from "../../../data/flavors/azure";
@@ -52,6 +52,6 @@ const entries = {
       <li>No idempotency check — re-running a job during development silently multiplies your document count.</li>
     </ul>
   </article>
-  <ModuleQuiz moduleId={moduleId} />
+  <ModuleRecap moduleId={moduleId} />
   <ModuleFooterNav moduleId={moduleId} />
 </BaseLayout>

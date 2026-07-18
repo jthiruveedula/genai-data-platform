@@ -109,8 +109,8 @@
    specificity as the UA stylesheet's `[hidden] { display: none }` and loads
    later, so it silently wins the cascade tie — `el.hidden = true` then does
    NOT visually hide an element that also carries a display-setting class.
-   Found via a real repro: ModuleQuiz's `chip`-classed result/last-score
-   elements stayed visible after being set `hidden`. `!important` here is
+   Found via a real repro: the since-retired checkpoint quiz's `chip`-classed
+   result/last-score elements stayed visible after being set `hidden`. `!important` here is
    deliberate and standard practice (e.g. normalize.css does the same) so
    `hidden` always wins regardless of what other classes an element has. */
 [hidden] {

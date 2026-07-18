@@ -61,7 +61,7 @@ const laneCounts = ordered.reduce(
                 <div class="mission-meta">
                   <span class="mission-number mono">{String(i + 1).padStart(2, "0")}</span>
                   <span class="chip chip--accent">{LANE_LABEL[m.path]}</span>
-                  <span class="chip quiz-complete-badge" data-quiz-complete-badge hidden>✓ COMPLETE</span>
+                  <span class="chip complete-badge" data-complete-badge hidden>✓ COMPLETE</span>
                 </div>
                 <div class="mission-body">
                   <h3 class="mission-title">
@@ -89,8 +89,8 @@ const laneCounts = ordered.reduce(
 
   gsap.registerPlugin(ScrollTrigger);
 
-  // Reads gdp.quiz.<id> localStorage entries written by ModuleQuiz.astro on
-  // a module page — separate from the GSAP entrance animation below since
+  // Reads recap-view progress written by ModuleRecap.astro on a module page
+  // (plus legacy quiz scores) — separate from the GSAP entrance animation below since
   // it's plain DOM/text state, not a tween, and needs to reflect whatever
   // progress exists on THIS load (a full navigation back from a module page
   // re-fires astro:page-load, which is the refresh point this relies on).
@@ -103,7 +103,7 @@ const laneCounts = ordered.reduce(
 
     missions.forEach((el) => {
       const moduleId = el.dataset.moduleId!;
-      const badge = el.querySelector<HTMLElement>("[data-quiz-complete-badge]");
+      const badge = el.querySelector<HTMLElement>("[data-complete-badge]");
       if (badge) badge.hidden = !isModuleComplete(moduleId);
     });
 
@@ -208,7 +208,7 @@ const laneCounts = ordered.reduce(
     color: var(--accent-text, var(--accent));
   }
 
-  .quiz-complete-badge {
+  .complete-badge {
     font-size: 0.65rem;
     color: var(--accent-text, var(--accent));
     border-color: var(--accent);
