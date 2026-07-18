@@ -63,6 +63,13 @@ function statusLabel(status: ClaimStatus, verifiedOn: string | null): string {
 
     <div class="table-wrap">
       <table class="freshness-table">
+        <colgroup>
+          <col style="width: 13%;" />
+          <col style="width: 37%;" />
+          <col style="width: 10%;" />
+          <col style="width: 15%;" />
+          <col style="width: 25%;" />
+        </colgroup>
         <thead>
           <tr>
             <th scope="col">Claim</th>
@@ -118,6 +125,8 @@ function statusLabel(status: ClaimStatus, verifiedOn: string | null): string {
 
   .freshness-table {
     width: 100%;
+    min-width: 52rem;
+    table-layout: fixed;
     border-collapse: collapse;
     font-size: 0.9rem;
   }
@@ -149,14 +158,14 @@ function statusLabel(status: ClaimStatus, verifiedOn: string | null): string {
   }
 
   .claim-id {
-    white-space: nowrap;
+    overflow-wrap: break-word;
     color: var(--text-secondary);
     scroll-margin-top: 5rem;
   }
 
   .used-by {
     font-size: 0.78rem;
-    white-space: nowrap;
+    overflow-wrap: break-word;
     color: var(--text-secondary);
   }
 
