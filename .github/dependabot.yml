@@ -1,0 +1,19 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /site
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10
+    groups:
+      # @lhci/cli's transitive deps (uuid/tmp/inquirer) are the only current
+      # npm-audit findings, all dev-only — group so a bump lands as one PR
+      # instead of a burst of one-liners.
+      lighthouse-ci:
+        patterns:
+          - "@lhci/*"
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

@@ -2,12 +2,13 @@
 import { defineConfig } from 'astro/config';
 import tailwindcss from '@tailwindcss/vite';
 import react from '@astrojs/react';
+import sitemap from '@astrojs/sitemap';
 
 // https://astro.build/config
 export default defineConfig({
   site: 'https://jthiruveedula.github.io',
   base: '/genai-data-platform/',
-  integrations: [react()],
+  integrations: [react(), sitemap()],
   build: {
     // Default ("auto") only inlines stylesheets <=4kB, so BaseLayout's
     // page-wide CSS (~19kB) shipped as a render-blocking <link> on every
