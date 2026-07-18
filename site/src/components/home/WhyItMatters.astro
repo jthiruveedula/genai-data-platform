@@ -1,10 +1,11 @@
 ---
 import { OUTCOMES } from "../../data/platform";
+import { MODULES } from "../../data/modules";
 
 const STATS = [
   { value: 4, suffix: "", label: "STACKS MAPPED" },
   { value: 10, suffix: "", label: "LIFECYCLE STAGES" },
-  { value: 6, suffix: "", label: "MISSIONS LIVE" },
+  { value: MODULES.length, suffix: "", label: "MISSIONS LIVE" },
   { value: 10, suffix: "", prefix: "<$", label: "TOTAL LAB SPEND" },
 ];
 

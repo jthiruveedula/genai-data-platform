@@ -69,3 +69,40 @@ test('navbar links to the matrix page', async ({ page }) => {
   await page.goto('');
   await expect(page.locator('header.navbar a[href*="matrix/"]')).toBeVisible();
 });
+
+test('the vector-space scene stays in normal flow after hydration and does not overlap the next section', async ({
+  page,
+}) => {
+  // Regression test: .v3d-mount used to stay `position: absolute; inset: 0`
+  // after hydration, sized to the tiny static-SVG placeholder instead of its
+  // own (much taller) canvas + query form + legend — so the real content
+  // overflowed past the scene's bottom edge and the FlavorTabs section
+  // rendered on top of it, intercepting clicks meant for the query input.
+  // The overlap only manifests at wider/taller viewports (confirmed via
+  // direct elementFromPoint reproduction at 1440x1100 — Playwright's default
+  // 1280x720 doesn't grow the canvas enough to overflow), so pin a viewport
+  // here rather than relying on whatever the project default happens to be.
+  await page.setViewportSize({ width: 1440, height: 1100 });
+  await page.goto('modules/20-embeddings/');
+  const input = page.locator('#v3d-query-input');
+  await input.waitFor({ state: 'attached', timeout: 10_000 });
+  // scrollIntoView({block:'center'}) specifically (not Playwright's own
+  // scrollIntoViewIfNeeded, which lands at a different offset that doesn't
+  // reproduce the bug) — this is the exact repro that originally proved the
+  // FlavorTabs panel was covering the input.
+  await input.evaluate((el) => el.scrollIntoView({ block: 'center' }));
+  await page.waitForTimeout(500);
+
+  const topElementIsInput = await input.evaluate((el) => {
+    const r = el.getBoundingClientRect();
+    const hit = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
+    return hit === el;
+  });
+  expect(topElementIsInput).toBe(true);
+
+  const button = page.getByRole('button', { name: 'Embed & search' });
+  await expect(button).toBeVisible();
+  await input.fill('how about the length of tokens');
+  await button.click();
+  await expect(page.locator('.v3d-query-result')).toContainText('Nearest cluster:');
+});

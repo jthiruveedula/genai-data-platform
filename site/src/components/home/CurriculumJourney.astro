@@ -27,11 +27,6 @@ const laneCounts = ordered.reduce(
   },
   {} as Record<string, number>,
 );
-
-const FUTURE = [
-  { title: "Evaluation & LLM-judge calibration", lane: "intermediate" },
-  { title: "Multi-tenant & eval-gated deploys", lane: "advanced" },
-];
 ---
 
 <section id="curriculum" class="journey" data-curriculum aria-labelledby="journey-heading">
@@ -40,8 +35,8 @@ const FUTURE = [
       <p class="section-kicker">THE JOURNEY</p>
       <h2 id="journey-heading" class="section-title">From first token to platform-grade.</h2>
       <p class="section-lede">
-        Six missions and counting — each one ends with something running: an API, an index, a dashboard. Beginner to
-        advanced, in order.
+        {ordered.length} missions, all live — each one ends with something running: an API, an index, a dashboard.
+        Beginner to advanced, in order.
       </p>
     </header>
 
@@ -76,30 +71,6 @@ const FUTURE = [
                   <div class="mission-status">
                     <span class="chip chip--accent">STATUS: LIVE</span>
                     <span class="chip mono">{STATUS_TAGS[m.id] ?? "LAB"}</span>
-                  </div>
-                </div>
-              </article>
-            </li>
-          ))
-        }
-
-        {
-          FUTURE.map((f) => (
-            <li class="mission mission--locked" data-mission>
-              <span class="mission-node mission-node--locked" aria-hidden="true" />
-              <article class="mission-card glass-panel mission-card--locked">
-                <div class="mission-meta">
-                  <span class="mission-number mono">--</span>
-                  <span class="chip">{LANE_LABEL[f.lane]}</span>
-                </div>
-                <div class="mission-body">
-                  <h3 class="mission-title mission-title--locked">{f.title}</h3>
-                  <div class="mission-status">
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-                      <rect x="3" y="6.5" width="8" height="6" rx="1" stroke="currentColor" stroke-width="1.3" />
-                      <path d="M4.5 6.5V4.75a2.5 2.5 0 0 1 5 0V6.5" stroke="currentColor" stroke-width="1.3" />
-                    </svg>
-                    <span class="chip chip--pending">STATUS: IN DEVELOPMENT</span>
                   </div>
                 </div>
               </article>
@@ -361,19 +332,6 @@ const FUTURE = [
     gap: 0.5rem;
     flex-wrap: wrap;
     margin-top: 0.25rem;
-  }
-
-  .mission-status svg {
-    color: var(--text-secondary);
-  }
-
-  .mission--locked .mission-card--locked {
-    opacity: 0.55;
-    border-style: dashed;
-  }
-
-  .mission-title--locked {
-    color: var(--text-secondary);
   }
 
   @media (max-width: 720px) {
