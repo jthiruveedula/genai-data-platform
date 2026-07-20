@@ -27,6 +27,11 @@ const laneCounts = ordered.reduce(
   },
   {} as Record<string, number>,
 );
+
+const totalMinutes = ordered.reduce((sum, m) => sum + m.estimatedMinutes, 0);
+const totalHours = Math.floor(totalMinutes / 60);
+const totalRemainderMinutes = totalMinutes % 60;
+const totalTimeLabel = totalRemainderMinutes === 0 ? `${totalHours}H` : `${totalHours}H ${totalRemainderMinutes}M`;
 ---
 
 <section id="curriculum" class="journey" data-curriculum aria-labelledby="journey-heading">
@@ -36,7 +41,7 @@ const laneCounts = ordered.reduce(
       <h2 id="journey-heading" class="section-title">From first token to platform-grade.</h2>
       <p class="section-lede">
         {ordered.length} missions, all live — each one ends with something running: an API, an index, a dashboard.
-        Beginner to advanced, in order.
+        Beginner to advanced, in order. <span class="lede-estimate">~{totalTimeLabel} total, reading + labs — see each mission for its own estimate.</span>
       </p>
     </header>
 
@@ -71,6 +76,7 @@ const laneCounts = ordered.reduce(
                   <div class="mission-status">
                     <span class="chip chip--accent">STATUS: LIVE</span>
                     <span class="chip mono">{STATUS_TAGS[m.id] ?? "LAB"}</span>
+                    <span class="chip mono">~{m.estimatedMinutes} MIN</span>
                   </div>
                 </div>
               </article>
