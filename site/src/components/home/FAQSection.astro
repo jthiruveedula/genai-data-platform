@@ -1,0 +1,166 @@
+---
+// Friction-reducer scene: sits between WhyItMatters (proof) and FinalCTA
+// (close), per DESIGN.md's story arc. Native <details>/<summary> — no JS
+// needed for the disclosure itself, keyboard/screen-reader behavior comes
+// free. A FAQPage JSON-LD block gives the same content a shot at rich
+// search results, at zero runtime cost.
+import { FAQ } from "../../data/faq";
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: FAQ.map((item) => ({
+    "@type": "Question",
+    name: item.question,
+    acceptedAnswer: { "@type": "Answer", text: item.answer },
+  })),
+};
+---
+
+<section id="faq" class="faq" data-faq aria-labelledby="faq-heading">
+  <div class="scene-inner">
+    <header class="faq-head">
+      <p class="section-kicker">BEFORE YOU START</p>
+      <h2 id="faq-heading" class="section-title">Questions worth asking before you commit a weekend.</h2>
+    </header>
+
+    <div class="faq-list">
+      {
+        FAQ.map((item, i) => (
+          <details class="faq-item" data-faq-item>
+            <summary class="faq-question">
+              <span class="faq-index mono">0{i + 1}</span>
+              <span class="faq-question-text">{item.question}</span>
+              <span class="faq-chevron" aria-hidden="true">
+                ›
+              </span>
+            </summary>
+            <p class="faq-answer">{item.answer}</p>
+          </details>
+        ))
+      }
+    </div>
+  </div>
+</section>
+
+<script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+
+<script>
+  import { gsap } from "gsap";
+  import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+  gsap.registerPlugin(ScrollTrigger);
+
+  let ctx: gsap.Context | undefined;
+
+  function setup() {
+    const rootEl = document.querySelector<HTMLElement>("[data-faq]");
+    if (!rootEl) return;
+    ctx?.revert();
+    ctx = gsap.context(() => {
+      const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const items = gsap.utils.toArray<HTMLElement>("[data-faq-item]", rootEl);
+
+      if (reduced) {
+        gsap.set(items, { autoAlpha: 1, y: 0 });
+        return;
+      }
+
+      gsap.from(items, {
+        autoAlpha: 0,
+        y: 20,
+        duration: 0.5,
+        ease: "power2.out",
+        stagger: 0.08,
+        scrollTrigger: { trigger: rootEl.querySelector(".faq-list"), start: "top 85%", once: true },
+      });
+    }, rootEl);
+  }
+
+  setup();
+  document.addEventListener("astro:page-load", setup);
+  document.addEventListener("astro:after-swap", () => ctx?.revert());
+</script>
+
+<style>
+  .faq {
+    padding-block: clamp(3.5rem, 7vw, 5.5rem);
+    background: var(--bg);
+  }
+
+  .faq-head {
+    max-width: 46rem;
+    margin-bottom: 2rem;
+  }
+
+  .faq-list {
+    display: flex;
+    flex-direction: column;
+    max-width: 52rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .faq-item {
+    border-bottom: 1px solid var(--border);
+  }
+
+  .faq-question {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    padding: 1.1rem 0.25rem;
+    cursor: pointer;
+    list-style: none;
+    font-weight: 600;
+    color: var(--text);
+    transition: color var(--duration-micro) var(--ease-out);
+  }
+
+  .faq-question::-webkit-details-marker {
+    display: none;
+  }
+
+  .faq-question:hover {
+    color: var(--accent-text, var(--accent));
+  }
+
+  .faq-index {
+    flex: none;
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+  }
+
+  .faq-question-text {
+    flex: 1;
+  }
+
+  .faq-chevron {
+    flex: none;
+    display: inline-flex;
+    color: var(--text-secondary);
+    transform: rotate(90deg);
+    transition: transform var(--duration-micro) var(--ease-out);
+  }
+
+  .faq-item[open] .faq-chevron {
+    transform: rotate(270deg);
+  }
+
+  .faq-answer {
+    margin: 0 0 1.25rem;
+    padding: 0 0.25rem 0 2.05rem;
+    max-width: 42rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+  }
+
+  @media (max-width: 640px) {
+    .faq-question {
+      gap: 0.6rem;
+    }
+
+    .faq-answer {
+      padding-left: 1.5rem;
+    }
+  }
+</style>
