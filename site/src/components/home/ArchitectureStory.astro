@@ -1,17 +1,14 @@
 ---
+// Redesign: a horizontal, scroll-scrubbed "coverflow" of the 10 lifecycle
+// stages, driven by vertical scroll (pin the section, translate the card
+// track horizontally). Replaces the previous vertical S-curve rail, whose
+// label-alignment bug (see git history) was the trigger to rebuild this
+// scene with a simpler, more robust coordinate model: cards are plain flow
+// layout (no SVG viewBox math to get wrong), and the HUD progress rail is a
+// single flat percentage-positioned bar instead of a separately-scaled SVG.
 import { LIFECYCLE } from "../../data/platform";
 
 const STAGE_COUNT = LIFECYCLE.length;
-
-/** Evenly spaced station positions along a gentle S-curve, viewBox 0 0 480 640. */
-const STATIONS = LIFECYCLE.map((stage, i) => {
-  const t = i / (STAGE_COUNT - 1);
-  const y = 40 + t * 560;
-  const x = 240 + Math.sin(t * Math.PI * 2.1) * 130;
-  return { stage, x, y };
-});
-
-const railPath = STATIONS.map((s, i) => `${i === 0 ? "M" : "L"}${s.x.toFixed(1)} ${s.y.toFixed(1)}`).join(" ");
 ---
 
 <section id="architecture" class="arch-story" data-arch-story aria-labelledby="arch-heading">
@@ -25,83 +22,50 @@ const railPath = STATIONS.map((s, i) => `${i === 0 ? "M" : "L"}${s.x.toFixed(1)}
   </div>
 
   <div class="arch-pin" data-arch-pin>
-    <div class="arch-progress" aria-hidden="true"><span class="arch-progress-fill" data-arch-progress></span></div>
-
-    <div class="arch-readouts" data-arch-readouts>
-      {
-        LIFECYCLE.map((stage, i) => (
-          <div class="readout" data-readout-index={i}>
-            <span class="readout-count mono">
-              {String(i + 1).padStart(2, "0")} / {String(STAGE_COUNT).padStart(2, "0")}
-            </span>
-            <span class="chip chip--accent readout-chip">{stage.label}</span>
-            <p class="readout-narration">{stage.narration}</p>
-            <p class="readout-service mono">
-              <span class="readout-service-label">ON YOUR STACK →</span>
-              <span class="cloud-swap">
-                <span data-for="neutral">{stage.services.neutral}</span>
-                <span data-for="gcp">{stage.services.gcp}</span>
-                <span data-for="aws">{stage.services.aws}</span>
-                <span data-for="azure">{stage.services.azure}</span>
-                <span data-for="oss">{stage.services.oss}</span>
-              </span>
-            </p>
-          </div>
-        ))
-      }
+    <div class="arch-hud">
+      <span class="arch-hud-count mono" data-arch-count aria-live="off">01 / {String(STAGE_COUNT).padStart(2, "0")}</span>
+      <div class="arch-hud-rail" data-arch-hud-rail>
+        <span class="hud-rail-fill" data-arch-fill></span>
+        {
+          LIFECYCLE.map((_, i) => (
+            <span class="hud-tick" data-hud-tick={i} style={`left:${(i / (STAGE_COUNT - 1)) * 100}%`} />
+          ))
+        }
+        <span class="hud-token" data-arch-token aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M5 2h10l4 4v16H5Z" fill="var(--bg-card)" stroke="var(--accent)" stroke-width="1.4" stroke-linejoin="round"></path>
+            <path d="M15 2v4h4Z" fill="var(--accent)" opacity="0.55"></path>
+            <path d="M8 12h8M8 15.5h5" stroke="var(--text-secondary)" stroke-width="1.3" stroke-linecap="round"></path>
+          </svg>
+        </span>
+      </div>
+      <span class="chip chip--accent arch-hud-chip" data-arch-hud-chip>{LIFECYCLE[0].label}</span>
     </div>
 
-    <div class="arch-rail" aria-hidden="true">
-      <svg viewBox="0 0 480 640" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path class="rail-path-base" d={railPath} stroke="var(--border)" stroke-width="1.5"></path>
-        <path class="rail-path-draw" d={railPath} stroke="var(--accent)" stroke-width="2"></path>
+    <div class="arch-track-viewport">
+      <div class="arch-track" data-arch-track>
         {
-          STATIONS.map((s, i) => (
-            <g class="rail-station" data-station-index={i}>
-              <circle class="station-glow" cx={s.x} cy={s.y} r="14" fill="var(--accent)" opacity="0" />
-              <circle class="station-dot" cx={s.x} cy={s.y} r="7" fill="var(--bg-card)" stroke="var(--border)" stroke-width="1.5" />
-            </g>
+          LIFECYCLE.map((stage, i) => (
+            <article class="arch-card glass-panel" data-arch-card>
+              <span class="arch-card-ghost mono" aria-hidden="true">
+                {String(i + 1).padStart(2, "0")}
+              </span>
+              <span class="chip chip--accent">{stage.label}</span>
+              <p class="arch-card-narration">{stage.narration}</p>
+              <p class="arch-card-service mono">
+                <span class="arch-card-service-label">ON YOUR STACK →</span>
+                <span class="cloud-swap">
+                  <span data-for="neutral">{stage.services.neutral}</span>
+                  <span data-for="gcp">{stage.services.gcp}</span>
+                  <span data-for="aws">{stage.services.aws}</span>
+                  <span data-for="azure">{stage.services.azure}</span>
+                  <span data-for="oss">{stage.services.oss}</span>
+                </span>
+              </p>
+            </article>
           ))
         }
-        {
-          /* Native SVG text, positioned from the exact same STATIONS
-             coordinates as the dots above — sharing one coordinate space
-             guarantees the label always sits next to its station. The
-             previous version rendered these as HTML <span>s positioned by
-             percentage against .arch-rail's own box, which is only 90% the
-             SVG's height (see `.arch-rail svg { height: 90% }` below) and
-             centers it besides — a mismatch that grew linearly toward the
-             ends of the rail, landing over 120px off at both extremes and
-             hiding stage 1's "SOURCES" label entirely behind the sticky
-             navbar. */
-          STATIONS.map((s, i) => (
-            <text
-              class="rail-label mono"
-              data-rail-label-index={i}
-              x={s.x + 20}
-              y={s.y}
-              dominant-baseline="middle"
-            >
-              {LIFECYCLE[i].label}
-            </text>
-          ))
-        }
-        <g class="rail-token" data-rail-token opacity="0">
-          <circle class="token-halo" r="20" fill="var(--accent)" opacity="0.16" />
-          <path
-            class="token-body"
-            d="M-16 -18 L7 -18 L16 -9 L16 18 L-16 18 Z"
-            fill="var(--bg-raised)"
-            stroke="var(--accent)"
-            stroke-width="1.25"
-            stroke-linejoin="round"
-          />
-          <path class="token-fold" d="M7 -18 L7 -9 L16 -9 Z" fill="var(--accent)" opacity="0.55"></path>
-          <line x1="-9" y1="-3" x2="10" y2="-3" stroke="var(--text-secondary)" stroke-width="1.5" stroke-linecap="round"></line>
-          <line x1="-9" y1="3" x2="5" y2="3" stroke="var(--text-secondary)" stroke-width="1.5" stroke-linecap="round"></line>
-          <line x1="-9" y1="9" x2="2" y2="9" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" class="rail-token-citation" opacity="0"></line>
-        </g>
-      </svg>
+      </div>
     </div>
   </div>
 
@@ -133,11 +97,9 @@ const railPath = STATIONS.map((s, i) => `${i === 0 ? "M" : "L"}${s.x.toFixed(1)}
 <script>
   import { gsap } from "gsap";
   import { ScrollTrigger } from "gsap/ScrollTrigger";
-  import { MotionPathPlugin } from "gsap/MotionPathPlugin";
+  import { LIFECYCLE } from "../../data/platform";
 
-  gsap.registerPlugin(ScrollTrigger, MotionPathPlugin);
-
-  const STAGE_COUNT_ATTR = "data-readout-index";
+  gsap.registerPlugin(ScrollTrigger);
 
   let ctx: gsap.Context | undefined;
   let resizeTimer: ReturnType<typeof setTimeout> | undefined;
@@ -180,102 +142,85 @@ const railPath = STATIONS.map((s, i) => `${i === 0 ? "M" : "L"}${s.x.toFixed(1)}
       if (list) list.style.display = "none";
       if (pin) pin.style.display = "";
 
-      const readouts = gsap.utils.toArray<HTMLElement>("[data-readout-index]", rootEl);
-      const stations = gsap.utils.toArray<SVGGElement>(".rail-station", rootEl);
-      const labels = gsap.utils.toArray<SVGTextElement>("[data-rail-label-index]", rootEl);
-      const progressFill = rootEl.querySelector<HTMLElement>("[data-arch-progress]");
-      const railPath = rootEl.querySelector<SVGPathElement>(".rail-path-draw");
-      const railBase = rootEl.querySelector<SVGPathElement>(".rail-path-base");
-      const token = rootEl.querySelector<SVGGElement>("[data-rail-token]");
-      const stageCount = readouts.length;
-      const segment = 1 / stageCount;
+      const cards = gsap.utils.toArray<HTMLElement>("[data-arch-card]", rootEl);
+      const track = rootEl.querySelector<HTMLElement>("[data-arch-track]");
+      const viewport = rootEl.querySelector<HTMLElement>(".arch-track-viewport");
+      const hudCount = rootEl.querySelector<HTMLElement>("[data-arch-count]");
+      const hudChip = rootEl.querySelector<HTMLElement>("[data-arch-hud-chip]");
+      const hudFill = rootEl.querySelector<HTMLElement>("[data-arch-fill]");
+      const hudToken = rootEl.querySelector<HTMLElement>("[data-arch-token]");
+      const ticks = gsap.utils.toArray<HTMLElement>("[data-hud-tick]", rootEl);
+      if (!track || !viewport || !cards.length) return;
 
-      gsap.set(readouts, { autoAlpha: 0 });
-      gsap.set(readouts[0], { autoAlpha: 1 });
-      gsap.set(labels, { autoAlpha: 0.35 });
-      gsap.set(progressFill, { scaleY: 0, transformOrigin: "top" });
+      const n = cards.length;
+      const labels = LIFECYCLE.map((s) => s.label);
+      let lastActive = -1;
 
-      let railLen = 0;
-      if (railPath) {
-        railLen = railPath.getTotalLength();
-        gsap.set(railPath, { strokeDasharray: railLen, strokeDashoffset: railLen });
+      // Measured, not hardcoded: the previous version's bug came from
+      // assuming a fixed coordinate mapping between two boxes that could
+      // drift out of sync. Reading real rendered dimensions means there is
+      // nothing to drift — a resize just re-measures.
+      function measure() {
+        const cardRect = cards[0].getBoundingClientRect();
+        const trackStyle = getComputedStyle(track!);
+        const gap = parseFloat(trackStyle.columnGap || trackStyle.gap || "0") || 0;
+        const viewportWidth = viewport!.getBoundingClientRect().width;
+        return { cardWidth: cardRect.width, gap, viewportWidth };
       }
-      if (token && railBase) gsap.set(token, { autoAlpha: 0 });
 
-      const tl = gsap.timeline({
-        scrollTrigger: {
-          trigger: pin,
-          start: "top top",
-          end: "+=450%",
-          scrub: 1,
-          pin: true,
+      let dims = measure();
+
+      function render(progress: number) {
+        const t = progress * (n - 1);
+        const step = dims.cardWidth + dims.gap;
+        const x = (dims.viewportWidth - dims.cardWidth) / 2 - t * step;
+        gsap.set(track, { x });
+
+        cards.forEach((card, i) => {
+          const d = i - t;
+          const ad = Math.min(Math.abs(d), 2);
+          gsap.set(card, {
+            scale: 1 - ad * 0.12,
+            autoAlpha: 1 - ad * 0.32,
+            rotationY: gsap.utils.clamp(-34, 34, d * -17),
+            zIndex: Math.round(10 - ad),
+          });
+        });
+
+        const activeIndex = Math.round(gsap.utils.clamp(0, n - 1, t));
+        if (hudFill) gsap.set(hudFill, { width: `${progress * 100}%` });
+        if (hudToken) gsap.set(hudToken, { left: `${progress * 100}%` });
+        ticks.forEach((tick, i) => tick.classList.toggle("is-active", i <= activeIndex));
+
+        if (activeIndex !== lastActive) {
+          lastActive = activeIndex;
+          if (hudCount) hudCount.textContent = `${String(activeIndex + 1).padStart(2, "0")} / ${String(n).padStart(2, "0")}`;
+          if (hudChip) hudChip.textContent = labels[activeIndex];
+        }
+      }
+
+      if (reduced) {
+        // Unreachable in practice (reduced-motion takes the !pinned branch
+        // above), kept only as a defensive fallback if this ever runs.
+        render(0);
+        return;
+      }
+
+      gsap.set(cards, { transformOrigin: "50% 50%" });
+      render(0);
+
+      ScrollTrigger.create({
+        trigger: pin,
+        start: "top top",
+        end: "+=450%",
+        scrub: 1,
+        pin: true,
+        onRefresh: (self) => {
+          dims = measure();
+          render(self.progress);
         },
+        onUpdate: (self) => render(self.progress),
       });
-
-      tl.to(progressFill, { scaleY: 1, ease: "none" }, 0);
-      if (railPath) tl.to(railPath, { strokeDashoffset: 0, ease: "none" }, 0);
-      if (token && railBase) {
-        tl.to(
-          token,
-          {
-            autoAlpha: 1,
-            duration: 0.001,
-          },
-          0,
-        );
-        tl.to(
-          token,
-          {
-            motionPath: { path: railBase, align: railBase, alignOrigin: [0.5, 0.5] },
-            ease: "none",
-            // Without an explicit duration this defaults to GSAP's global
-            // 0.5s default — which, on a scrubbed timeline whose authored
-            // span is 0-1 (stageCount * segment), meant the token raced
-            // along the ENTIRE rail in just the first half of the scroll
-            // range, then sat idle at the end for the second half —
-            // visibly desynced from the readout text (e.g. text showing
-            // stage 4/10 while the token sat at stage 8's position).
-            // Matching the full authored span keeps it in lockstep with
-            // the per-stage readouts below.
-            duration: stageCount * segment,
-          },
-          0,
-        );
-      }
-
-      readouts.forEach((readout, i) => {
-        const start = i * segment;
-        if (i > 0) {
-          tl.to(readouts[i - 1], { autoAlpha: 0, duration: segment * 0.25 }, start - segment * 0.25);
-          tl.to(readout, { autoAlpha: 1, duration: segment * 0.25 }, start);
-        }
-        tl.call(
-          () => {
-            stations.forEach((st, si) => st.classList.toggle("is-active", si === i));
-            labels.forEach((lb, li) => gsap.to(lb, { autoAlpha: li === i ? 1 : 0.35, duration: 0.25, overwrite: "auto" }));
-            const glow = stations[i]?.querySelector<SVGCircleElement>(".station-glow");
-            if (glow) gsap.to(glow, { opacity: 1, duration: 0.25 });
-          },
-          undefined,
-          start,
-        );
-        if (i > 0) {
-          const prevGlow = stations[i - 1]?.querySelector<SVGCircleElement>(".station-glow");
-          if (prevGlow) tl.to(prevGlow, { opacity: 0, duration: 0.2 }, start - 0.02);
-        }
-        // Document token morphs: shrinks after EMBED, expands + citation highlight at ANSWER.
-        if (stations[i]?.getAttribute("data-station-index") === String(stageCount - 1) && token) {
-          tl.to(token, { scale: 1, duration: segment * 0.3 }, start);
-          const citation = token.querySelector<SVGLineElement>(".rail-token-citation");
-          if (citation) tl.to(citation, { opacity: 1, stroke: "var(--accent)", duration: segment * 0.3 }, start);
-        }
-      });
-
-      // Shrink into a glowing dot right after the EMBED stage.
-      const embedIdx = readouts.findIndex((el) => el.getAttribute(STAGE_COUNT_ATTR) === "3");
-      if (embedIdx >= 0 && token) {
-        tl.to(token, { scale: 0.4, transformOrigin: "50% 50%", duration: segment * 0.3 }, (embedIdx + 0.5) * segment);
-      }
     }, rootEl);
   }
 
@@ -323,136 +268,147 @@ const railPath = STATIONS.map((s, i) => `${i === 0 ? "M" : "L"}${s.x.toFixed(1)}
   .arch-pin {
     position: relative;
     height: 100vh;
-    display: grid;
-    grid-template-columns: minmax(0, 40fr) minmax(0, 60fr);
-    gap: 2rem;
-    align-items: center;
-    max-width: 72rem;
-    margin: 0 auto;
-    padding: 0 1.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: clamp(1.5rem, 4vw, 3rem);
     overflow: hidden;
   }
 
-  .arch-progress {
-    position: absolute;
-    left: 0.5rem;
-    top: 8%;
-    bottom: 8%;
-    width: 2px;
-    background: var(--border);
-  }
-
-  .arch-progress-fill {
-    display: block;
-    width: 100%;
-    height: 100%;
-    background: var(--accent);
-    box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 60%, transparent);
-  }
-
-  .arch-readouts {
-    position: relative;
-    min-height: 16rem;
-    padding-left: 1.5rem;
-  }
-
-  .readout {
-    position: absolute;
-    inset: 0 auto 0 1.5rem;
+  /* ---- HUD: stage counter, segmented progress rail, active-stage chip ---- */
+  .arch-hud {
     display: flex;
-    flex-direction: column;
-    gap: 0.85rem;
-    max-width: 26rem;
+    align-items: center;
+    gap: 1.25rem;
+    max-width: 60rem;
+    margin: 0 auto;
+    width: 100%;
+    padding: 0 1.5rem;
   }
 
-  .readout-count {
+  .arch-hud-count {
+    flex: none;
     font-size: 0.85rem;
     letter-spacing: 0.1em;
     color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
   }
 
-  .readout-chip {
-    width: fit-content;
+  .arch-hud-rail {
+    position: relative;
+    flex: 1;
+    height: 2px;
+    background: var(--border);
+    border-radius: 2px;
   }
 
-  .readout-narration {
-    margin: 0;
-    font-size: 1.05rem;
-    line-height: 1.6;
+  .hud-rail-fill {
+    display: block;
+    height: 100%;
+    width: 0%;
+    background: var(--accent);
+    box-shadow: 0 0 8px color-mix(in srgb, var(--accent) 60%, transparent);
+    border-radius: 2px;
+  }
+
+  .hud-tick {
+    position: absolute;
+    top: 50%;
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    background: var(--bg-card);
+    border: 1.5px solid var(--border);
+    transform: translate(-50%, -50%);
+    transition: border-color var(--duration-theme) var(--ease-out), background-color var(--duration-theme) var(--ease-out);
+  }
+
+  .hud-tick.is-active {
+    border-color: var(--accent);
+    background: var(--accent);
+  }
+
+  .hud-token {
+    position: absolute;
+    top: 50%;
+    left: 0%;
+    width: 22px;
+    height: 22px;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+  }
+
+  .hud-token svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  .arch-hud-chip {
+    flex: none;
+    min-width: 8rem;
+    text-align: center;
+    justify-content: center;
+  }
+
+  /* ---- Horizontal card track ---- */
+  .arch-track-viewport {
+    position: relative;
+    overflow: hidden;
+    perspective: 1600px;
+    padding: 1rem 0 2rem;
+  }
+
+  .arch-track {
+    display: flex;
+    gap: 2rem;
+    width: max-content;
+    will-change: transform;
+  }
+
+  .arch-card {
+    position: relative;
+    flex: 0 0 min(30rem, 82vw);
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+    padding: 2rem 2.25rem;
+    transform-style: preserve-3d;
+    backface-visibility: hidden;
+  }
+
+  .arch-card-ghost {
+    position: absolute;
+    top: 0.5rem;
+    right: 1.25rem;
+    font-size: 4rem;
+    font-weight: 700;
+    line-height: 1;
     color: var(--text);
+    opacity: 0.06;
+    pointer-events: none;
   }
 
-  .readout-service {
+  .arch-card-narration {
     margin: 0;
-    font-size: 0.82rem;
+    font-size: 1.15rem;
+    line-height: 1.55;
+    color: var(--text);
+    max-width: 26rem;
+  }
+
+  .arch-card-service {
+    margin: 0.25rem 0 0;
+    font-size: 0.85rem;
     color: var(--accent-text, var(--accent));
     display: flex;
     flex-direction: column;
-    gap: 0.15rem;
+    gap: 0.2rem;
   }
 
-  .readout-service-label {
+  .arch-card-service-label {
     color: var(--text-secondary);
     letter-spacing: 0.08em;
     font-size: 0.65rem;
-  }
-
-  .arch-rail {
-    position: relative;
-    height: 100%;
-    display: flex;
-    align-items: center;
-  }
-
-  .arch-rail svg {
-    width: 100%;
-    height: 90%;
-    max-height: 620px;
-  }
-
-  .station-dot {
-    transition: stroke var(--duration-theme) var(--ease-out);
-  }
-
-  .rail-station.is-active .station-dot {
-    stroke: var(--accent);
-    fill: var(--bg-raised);
-  }
-
-  .rail-label {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    letter-spacing: 0.05em;
-    fill: var(--text-secondary);
-    transition: fill var(--duration-theme) var(--ease-out);
-  }
-
-  .token-halo {
-    transform-box: fill-box;
-    transform-origin: center;
-  }
-
-  .token-body,
-  .token-fold {
-    transition: stroke var(--duration-theme) var(--ease-out), fill var(--duration-theme) var(--ease-out);
-  }
-
-  @media (prefers-reduced-motion: no-preference) {
-    .token-halo {
-      animation: token-halo-pulse 2.2s ease-in-out infinite;
-    }
-  }
-
-  @keyframes token-halo-pulse {
-    0%,
-    100% {
-      transform: scale(1);
-      opacity: 0.16;
-    }
-    50% {
-      transform: scale(1.25);
-      opacity: 0.3;
-    }
   }
 
   /* ---- Mobile / reduced-motion fallback list ---- */
@@ -513,6 +469,12 @@ const railPath = STATIONS.map((s, i) => `${i === 0 ? "M" : "L"}${s.x.toFixed(1)}
     display: flex;
     flex-direction: column;
     gap: 0.15rem;
+  }
+
+  .readout-service-label {
+    color: var(--text-secondary);
+    letter-spacing: 0.08em;
+    font-size: 0.65rem;
   }
 
   @media (max-width: 767px) {
