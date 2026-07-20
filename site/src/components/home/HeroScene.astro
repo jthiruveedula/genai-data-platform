@@ -44,10 +44,7 @@ const SERVICE_OVERLAYS = [
          for a purely decorative flourish, not one of the pipeline-demonstrating
          scenes this project's own motion budget reserves large animation for. */
     }
-    <p class="lede">
-      An interactive curriculum that takes one document from raw PDF to grounded, cited answer — on GCP, AWS, Azure,
-      or pure open source. Pick your cloud; the whole platform re-maps live.
-    </p>
+    <p class="lede">Raw PDF to grounded, cited answer — watch it happen on your cloud, live.</p>
 
     <div class="cta-row" data-rise>
       <a class="btn btn-primary" href={`${base}modules/00-foundations/`} data-primary-cta data-base={base}>
@@ -71,7 +68,7 @@ const SERVICE_OVERLAYS = [
           ))
         }
       </div>
-      <p class="switch-caption">The entire site — services, code, costs — re-maps to your stack.</p>
+      <p class="switch-caption">Click one — the diagram re-maps live.</p>
     </div>
 
     <div class="concepts" data-rise>
@@ -423,6 +420,26 @@ const SERVICE_OVERLAYS = [
         entrance.call(() => tickerTl?.play(0));
       }
 
+      // ---- 1c. Switcher spotlight: a motion nudge instead of more copy ----
+      // The caption used to spell out "the whole platform re-maps to your
+      // stack" in a full sentence; a brief highlight sweep across the four
+      // buttons shows "these are the control" without more reading, right
+      // as the guided journey above finishes. Purely visual (a class toggle
+      // matching the existing pressed-state style) — never touches
+      // aria-pressed or the real selected cloud, so it can't desync from
+      // whatever the visitor has actually chosen.
+      const switchBtns = gsap.utils.toArray<HTMLElement>(".switch-btn", rootEl);
+      if (switchBtns.length) {
+        entrance.call(() => {
+          const sweep = gsap.timeline();
+          switchBtns.forEach((btn, i) => {
+            sweep
+              .call(() => btn.classList.add("is-spotlit"), undefined, i * 0.16)
+              .call(() => btn.classList.remove("is-spotlit"), undefined, i * 0.16 + 0.45);
+          });
+        }, undefined, "-=0.3");
+      }
+
       // ---- 2. Ambient loop ---------------------------------------------
       const routes = [
         { selector: "#hs-flow-a", duration: 7, delay: 0.9 },
@@ -696,6 +713,13 @@ const SERVICE_OVERLAYS = [
   .switch-btn[aria-pressed="true"] {
     background: var(--bg-raised);
     box-shadow: inset 0 0 0 1.5px var(--accent);
+  }
+
+  .switch-btn.is-spotlit {
+    background: var(--bg-raised);
+    box-shadow:
+      inset 0 0 0 1.5px var(--accent),
+      0 0 16px color-mix(in srgb, var(--accent) 45%, transparent);
   }
 
   .switch-label {
