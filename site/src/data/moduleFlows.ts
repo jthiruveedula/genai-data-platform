@@ -4,6 +4,7 @@
  * 10-stage lifecycle schematic, which is the whole-platform view).
  * Rendered by ModuleFlowDiagram.astro, one static diagram per module page.
  */
+import type { CloudLabelMap } from "./platform";
 
 export interface FlowStep {
   label: string;
@@ -119,5 +120,94 @@ export const MODULE_FLOWS: Record<string, ModuleFlow> = {
       { label: "Observe", detail: "The result feeds back into the loop" },
       { label: "Answer or escalate", detail: "Done, or handed to a human approval step" },
     ],
+  },
+};
+
+/**
+ * The one real service each module actually runs on, per cloud — reused by
+ * ModuleFlowDiagram (a "RUNS ON" line) and ModuleScenario (a "ON THIS CLOUD"
+ * line) so both stop reading identically regardless of which cloud is
+ * selected. Values are pulled from the same source as the "Try it in your
+ * flavor" code walkthroughs (site/src/data/flavors/*.ts) and the homepage's
+ * LIFECYCLE stage data — nothing invented here, just surfaced in one more
+ * place.
+ */
+export const MODULE_CLOUD_SERVICE: Record<string, CloudLabelMap> = {
+  "00-foundations": {
+    neutral: "Embedding model",
+    gcp: "Vertex AI gemini-embedding-001",
+    aws: "Bedrock Titan Embeddings v2",
+    azure: "Azure OpenAI embeddings",
+    oss: "BGE via TEI (Text Embeddings Inference)",
+  },
+  "10-ingestion": {
+    neutral: "Ingestion pipeline → object storage",
+    gcp: "Dataflow → Cloud Storage + BigQuery",
+    aws: "Glue → S3 + Athena catalog",
+    azure: "Data Factory → ADLS Gen2",
+    oss: "Airflow → MinIO + Postgres",
+  },
+  "15-chunking": {
+    neutral: "Parser + recursive chunker",
+    gcp: "Document AI → chunk rows in BigQuery",
+    aws: "Textract → chunk JSON in S3",
+    azure: "AI Document Intelligence → chunks",
+    oss: "Docling / unstructured.io → chunks",
+  },
+  "20-embeddings": {
+    neutral: "Embedding model",
+    gcp: "Vertex AI gemini-embedding-001",
+    aws: "Bedrock Titan Embeddings v2",
+    azure: "Azure OpenAI embeddings",
+    oss: "BGE via TEI (Text Embeddings Inference)",
+  },
+  "25-serving": {
+    neutral: "Fast LLM (+ reasoning escalation)",
+    gcp: "Gemini 3 Flash on Vertex AI",
+    aws: "Claude Haiku 4.5 on Bedrock",
+    azure: "Azure OpenAI fast tier",
+    oss: "Llama / Qwen on vLLM",
+  },
+  "35-retrieval": {
+    neutral: "Hybrid search (dense + keyword)",
+    gcp: "Vector Search hybrid (dense + sparse)",
+    aws: "OpenSearch hybrid (BM25 + k-NN)",
+    azure: "AI Search hybrid + semantic ranking",
+    oss: "Qdrant dense + BM25 fusion",
+  },
+  "45-evaluation": {
+    neutral: "Evaluation suite",
+    gcp: "Vertex AI evaluation",
+    aws: "Bedrock evaluations",
+    azure: "Microsoft Foundry evaluations",
+    oss: "RAGAS + Langfuse",
+  },
+  "55-observability": {
+    neutral: "Tracing + observability",
+    gcp: "Cloud Trace",
+    aws: "CloudWatch",
+    azure: "Application Insights",
+    oss: "Langfuse",
+  },
+  "65-security": {
+    neutral: "Injection + PII guardrails",
+    gcp: "Model Armor",
+    aws: "Bedrock Guardrails",
+    azure: "Azure AI Content Safety",
+    oss: "Llama Guard",
+  },
+  "75-finops": {
+    neutral: "Cost + usage export",
+    gcp: "Cloud Billing export",
+    aws: "Cost & Usage Report (CUR)",
+    azure: "Microsoft Cost Management",
+    oss: "OpenCost",
+  },
+  "85-agents": {
+    neutral: "Agent orchestration",
+    gcp: "Vertex AI Agent Builder",
+    aws: "Bedrock Agents",
+    azure: "Microsoft Foundry Agent Service",
+    oss: "LiteLLM + MCP servers",
   },
 };
