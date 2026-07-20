@@ -48,8 +48,47 @@ if (!flow) throw new Error(`ModuleFlowDiagram: no flow registered for module "${
 
 <style>
   .module-flow {
+    position: relative;
     margin: 2rem 0 2.5rem;
     padding: 0;
+    /* Clips the glow pseudo-element below, which deliberately bleeds past
+       its own box — contains it within this component instead of risking
+       page-level horizontal overflow. The child .flow-track keeps its own
+       independent overflow-x:auto for horizontal scroll on narrow widths;
+       clipping here doesn't affect that. */
+    overflow: hidden;
+  }
+
+  /* A quiet ambient glow behind the track — the same "still flowing" cue
+     the homepage's Architecture Story uses, toned way down since this sits
+     between paragraphs on a reading-focused page, not a cinematic scene.
+     On .module-flow (not .flow-track) so it isn't clipped by the track's
+     own horizontal scroll overflow. */
+  .module-flow::before {
+    content: "";
+    position: absolute;
+    inset: -15% 10%;
+    background: radial-gradient(closest-side, color-mix(in srgb, var(--accent) 7%, transparent), transparent 72%);
+    pointer-events: none;
+    z-index: -1;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .module-flow::before {
+      animation: flow-bg-breathe 7s ease-in-out infinite;
+    }
+  }
+
+  @keyframes flow-bg-breathe {
+    0%,
+    100% {
+      opacity: 0.7;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1.05);
+    }
   }
 
   .flow-kicker {
