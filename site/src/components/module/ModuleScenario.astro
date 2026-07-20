@@ -6,6 +6,7 @@
 // module hero, before the conceptual sections, so the story frames what
 // follows rather than summarizing it.
 import { SCENARIOS } from "../../data/scenarios";
+import { MODULE_CLOUD_SERVICE } from "../../data/moduleFlows";
 
 interface Props {
   moduleId: string;
@@ -14,10 +15,25 @@ interface Props {
 const { moduleId } = Astro.props;
 const content = SCENARIOS[moduleId];
 if (!content) throw new Error(`ModuleScenario: no scenario registered for module "${moduleId}"`);
+const cloudService = MODULE_CLOUD_SERVICE[moduleId];
 ---
 
 <aside class="module-scenario" aria-label="In the field: composite scenario examples">
   <p class="scenario-kicker">IN THE FIELD <span class="scenario-disclaimer">— composite, illustrative examples, not real companies</span></p>
+  {
+    cloudService && (
+      <p class="scenario-cloud-line mono">
+        BOTH STORIES BELOW, ON THIS CLOUD:{" "}
+        <span class="cloud-swap">
+          <span data-for="neutral">{cloudService.neutral}</span>
+          <span data-for="gcp">{cloudService.gcp}</span>
+          <span data-for="aws">{cloudService.aws}</span>
+          <span data-for="azure">{cloudService.azure}</span>
+          <span data-for="oss">{cloudService.oss}</span>
+        </span>
+      </p>
+    )
+  }
   <div class="scenario-beats">
     {
       content.beats.map((beat) => (
@@ -62,6 +78,18 @@ if (!content) throw new Error(`ModuleScenario: no scenario registered for module
     color: var(--text-secondary);
     letter-spacing: normal;
     text-transform: none;
+  }
+
+  .scenario-cloud-line {
+    margin: 0 0 1.1rem;
+    font-size: 0.68rem;
+    letter-spacing: 0.04em;
+    color: var(--text-secondary);
+  }
+
+  .scenario-cloud-line .cloud-swap {
+    color: var(--accent-text, var(--accent));
+    font-weight: 600;
   }
 
   .scenario-beats {

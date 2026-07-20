@@ -7,7 +7,7 @@
 // without a second animation system to maintain across 11 module pages.
 // The connector's traveling dot is a plain CSS keyframe, gated behind
 // `prefers-reduced-motion: no-preference` — no JS involved.
-import { MODULE_FLOWS } from "../../data/moduleFlows";
+import { MODULE_FLOWS, MODULE_CLOUD_SERVICE } from "../../data/moduleFlows";
 
 interface Props {
   moduleId: string;
@@ -16,11 +16,26 @@ interface Props {
 const { moduleId } = Astro.props;
 const flow = MODULE_FLOWS[moduleId];
 if (!flow) throw new Error(`ModuleFlowDiagram: no flow registered for module "${moduleId}"`);
+const cloudService = MODULE_CLOUD_SERVICE[moduleId];
 ---
 
 <figure class="module-flow" aria-label={`${flow.kicker}: step-by-step diagram`}>
   <figcaption class="flow-kicker">
     <span class="chip chip--accent">{flow.kicker}</span>
+    {
+      cloudService && (
+        <span class="flow-runs-on mono">
+          RUNS ON:{" "}
+          <span class="cloud-swap">
+            <span data-for="neutral">{cloudService.neutral}</span>
+            <span data-for="gcp">{cloudService.gcp}</span>
+            <span data-for="aws">{cloudService.aws}</span>
+            <span data-for="azure">{cloudService.azure}</span>
+            <span data-for="oss">{cloudService.oss}</span>
+          </span>
+        </span>
+      )
+    }
   </figcaption>
   <div class="flow-track">
     {
@@ -92,11 +107,26 @@ if (!flow) throw new Error(`ModuleFlowDiagram: no flow registered for module "${
   }
 
   .flow-kicker {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.6rem;
     margin: 0 0 1rem;
   }
 
   .flow-kicker .chip {
     font-size: 0.68rem;
+  }
+
+  .flow-runs-on {
+    font-size: 0.68rem;
+    letter-spacing: 0.04em;
+    color: var(--text-secondary);
+  }
+
+  .flow-runs-on .cloud-swap {
+    color: var(--accent-text, var(--accent));
+    font-weight: 600;
   }
 
   .flow-track {
