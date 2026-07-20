@@ -1,0 +1,223 @@
+---
+// Per-module "micro-pipeline" diagram: the mechanism specific to this
+// module, distinct from the homepage's whole-platform 10-stage schematic.
+// A static component (no GSAP of its own) — as a direct <article> child it
+// already gets BaseLayout's generic `article > *` scroll-reveal for free,
+// so it stays visually consistent with every other block on the page
+// without a second animation system to maintain across 11 module pages.
+// The connector's traveling dot is a plain CSS keyframe, gated behind
+// `prefers-reduced-motion: no-preference` — no JS involved.
+import { MODULE_FLOWS } from "../../data/moduleFlows";
+
+interface Props {
+  moduleId: string;
+}
+
+const { moduleId } = Astro.props;
+const flow = MODULE_FLOWS[moduleId];
+if (!flow) throw new Error(`ModuleFlowDiagram: no flow registered for module "${moduleId}"`);
+---
+
+<figure class="module-flow" aria-label={`${flow.kicker}: step-by-step diagram`}>
+  <figcaption class="flow-kicker">
+    <span class="chip chip--accent">{flow.kicker}</span>
+  </figcaption>
+  <div class="flow-track">
+    {
+      flow.steps.map((step, i) => (
+        <>
+          <div class="flow-node">
+            <span class="flow-index" aria-hidden="true">
+              0{i + 1}
+            </span>
+            <span class="flow-label">{step.label}</span>
+            <span class="flow-detail">{step.detail}</span>
+          </div>
+          {i < flow.steps.length - 1 && (
+            <div class="flow-connector" aria-hidden="true">
+              <span class="flow-connector-line"></span>
+              <span class="flow-connector-dot"></span>
+              <span class="flow-connector-arrow">›</span>
+            </div>
+          )}
+        </>
+      ))
+    }
+  </div>
+</figure>
+
+<style>
+  .module-flow {
+    margin: 2rem 0 2.5rem;
+    padding: 0;
+  }
+
+  .flow-kicker {
+    margin: 0 0 1rem;
+  }
+
+  .flow-kicker .chip {
+    font-size: 0.68rem;
+  }
+
+  .flow-track {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-raised);
+    padding: 1.1rem 1rem;
+    overflow-x: auto;
+  }
+
+  .flow-node {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    flex: 1 1 0;
+    min-width: 9.5rem;
+    padding: 0.15rem 0.6rem;
+  }
+
+  .flow-index {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    color: var(--accent-text, var(--accent));
+  }
+
+  .flow-label {
+    font-weight: 700;
+    font-size: 0.92rem;
+    color: var(--text);
+  }
+
+  .flow-detail {
+    font-size: 0.78rem;
+    line-height: 1.4;
+    color: var(--text-secondary);
+  }
+
+  /* ---- Connector: a dashed line, a chevron, and a looping accent dot ---- */
+  .flow-connector {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 2.75rem;
+    min-width: 2.75rem;
+  }
+
+  .flow-connector-line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    border-top: 1px dashed var(--border);
+  }
+
+  .flow-connector-arrow {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.1rem;
+    height: 1.1rem;
+    border-radius: 999px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    line-height: 1;
+  }
+
+  .flow-connector-dot {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    width: 4px;
+    height: 4px;
+    margin-top: -2px;
+    border-radius: 999px;
+    background: var(--accent);
+    box-shadow: 0 0 6px var(--accent);
+    opacity: 0;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .flow-connector-dot {
+      animation: flow-dot-travel 2.6s ease-in-out infinite;
+    }
+  }
+
+  @keyframes flow-dot-travel {
+    0% {
+      left: 0;
+      opacity: 0;
+    }
+    12% {
+      opacity: 1;
+    }
+    88% {
+      opacity: 1;
+    }
+    100% {
+      left: calc(100% - 4px);
+      opacity: 0;
+    }
+  }
+
+  /* ---- Mobile: stack vertically, connector rotates 90deg ---- */
+  @media (max-width: 640px) {
+    .flow-track {
+      flex-direction: column;
+      overflow-x: visible;
+    }
+
+    .flow-node {
+      min-width: 0;
+    }
+
+    .flow-connector {
+      flex: 0 0 2rem;
+      min-width: 0;
+      width: 100%;
+    }
+
+    .flow-connector-arrow {
+      transform: rotate(90deg);
+    }
+
+    .flow-connector-line {
+      left: 50%;
+      right: auto;
+      top: 0;
+      bottom: 0;
+      height: 100%;
+      border-top: 0;
+      border-left: 1px dashed var(--border);
+      width: 0;
+    }
+
+    @keyframes flow-dot-travel {
+      0% {
+        top: 0;
+        left: 50%;
+        opacity: 0;
+      }
+      12% {
+        opacity: 1;
+      }
+      88% {
+        opacity: 1;
+      }
+      100% {
+        top: calc(100% - 4px);
+        left: 50%;
+        opacity: 0;
+      }
+    }
+  }
+</style>
