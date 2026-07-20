@@ -22,6 +22,14 @@ const STAGE_COUNT = LIFECYCLE.length;
   </div>
 
   <div class="arch-pin" data-arch-pin>
+    <div class="arch-bg" aria-hidden="true">
+      <span class="bg-glow" data-arch-bg-glow></span>
+      <span class="bg-streak" style="top:22%; animation-delay: 0s;"></span>
+      <span class="bg-streak" style="top:46%; animation-delay: -3.5s;"></span>
+      <span class="bg-streak" style="top:68%; animation-delay: -7s;"></span>
+      <span class="bg-streak" style="top:84%; animation-delay: -1.8s;"></span>
+    </div>
+
     <div class="arch-hud">
       <span class="arch-hud-count mono" data-arch-count aria-live="off">01 / {String(STAGE_COUNT).padStart(2, "0")}</span>
       <div class="arch-hud-rail" data-arch-hud-rail>
@@ -149,6 +157,7 @@ const STAGE_COUNT = LIFECYCLE.length;
       const hudChip = rootEl.querySelector<HTMLElement>("[data-arch-hud-chip]");
       const hudFill = rootEl.querySelector<HTMLElement>("[data-arch-fill]");
       const hudToken = rootEl.querySelector<HTMLElement>("[data-arch-token]");
+      const bgGlow = rootEl.querySelector<HTMLElement>("[data-arch-bg-glow]");
       const ticks = gsap.utils.toArray<HTMLElement>("[data-hud-tick]", rootEl);
       if (!track || !viewport || !cards.length) return;
 
@@ -175,6 +184,12 @@ const STAGE_COUNT = LIFECYCLE.length;
         const step = dims.cardWidth + dims.gap;
         const x = (dims.viewportWidth - dims.cardWidth) / 2 - t * step;
         gsap.set(track, { x });
+
+        // Background glow follows the story, not just the cards — it drifts
+        // from left to right across the whole scene as progress advances,
+        // so the backdrop reads as "the same journey," not a static plate
+        // sitting behind an otherwise self-contained carousel.
+        if (bgGlow) gsap.set(bgGlow, { left: `${progress * 100}%` });
 
         cards.forEach((card, i) => {
           const d = i - t;
@@ -273,6 +288,54 @@ const STAGE_COUNT = LIFECYCLE.length;
     justify-content: center;
     gap: clamp(1.5rem, 4vw, 3rem);
     overflow: hidden;
+  }
+
+  /* ---- Background: a glow that tracks scroll progress, plus drifting
+     data-flow streaks — the empty space behind the cards reads as part of
+     the same journey instead of a static backdrop. First in DOM so it
+     paints behind the HUD/track without any z-index bookkeeping. ---- */
+  .arch-bg {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .bg-glow {
+    position: absolute;
+    top: 50%;
+    left: 0%;
+    width: 42rem;
+    height: 42rem;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    background: radial-gradient(closest-side, color-mix(in srgb, var(--accent) 16%, transparent), transparent 70%);
+  }
+
+  .bg-streak {
+    position: absolute;
+    left: 0;
+    width: 34%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--accent) 70%, transparent), transparent);
+    opacity: 0.3;
+    filter: blur(0.5px);
+    transform: translateX(-40%);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .bg-streak {
+      animation: bg-streak-drift 9s linear infinite;
+    }
+  }
+
+  @keyframes bg-streak-drift {
+    from {
+      transform: translateX(-40%);
+    }
+    to {
+      transform: translateX(340%);
+    }
   }
 
   /* ---- HUD: stage counter, segmented progress rail, active-stage chip ---- */
