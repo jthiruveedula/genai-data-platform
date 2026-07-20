@@ -30,6 +30,7 @@ const orderLabel = String(mod.order).padStart(2, "0");
   <div class="hero-meta">
     <span class="chip chip--accent">{LANE_LABEL[mod.path]}</span>
     <span class="chip mono">MODULE {orderLabel}</span>
+    <span class="chip mono">~{mod.estimatedMinutes} MIN</span>
   </div>
 
   <h1 class="module-title">{mod.title}</h1>
@@ -79,6 +80,7 @@ const orderLabel = String(mod.order).padStart(2, "0");
 
   .hero-meta {
     display: flex;
+    flex-wrap: wrap;
     gap: 0.5rem;
   }
 
