@@ -3,6 +3,7 @@ import BaseLayout from "../../../layouts/BaseLayout.astro";
 import FlavorTabs from "../../../components/FlavorTabs.astro";
 import ModuleHero from "../../../components/module/ModuleHero.astro";
 import ModuleScenario from "../../../components/module/ModuleScenario.astro";
+import ModuleFlowDiagram from "../../../components/module/ModuleFlowDiagram.astro";
 import ModuleFooterNav from "../../../components/module/ModuleFooterNav.astro";
 import ModuleRecap from "../../../components/module/ModuleRecap.astro";
 import { flavor as gcp } from "../../../data/flavors/gcp";
@@ -30,6 +31,8 @@ const entries = {
     </ModuleHero>
 
     <ModuleScenario moduleId={moduleId} />
+
+    <ModuleFlowDiagram moduleId={moduleId} />
 
     <h2>Function calling</h2>
     <p>

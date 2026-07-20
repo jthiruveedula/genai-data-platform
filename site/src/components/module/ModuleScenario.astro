@@ -28,6 +28,11 @@ if (!content) throw new Error(`ModuleScenario: no scenario registered for module
             <span class="scenario-context">— {beat.company.context}</span>
           </p>
           <p class="scenario-vignette">{beat.vignette}</p>
+          <p class="scenario-impact">
+            <span class="scenario-impact-problem">{beat.impact.problem}</span>
+            <span class="scenario-impact-arrow" aria-hidden="true">→</span>
+            <span class="scenario-impact-fix">{beat.impact.fix}</span>
+          </p>
         </div>
       ))
     }
@@ -80,10 +85,36 @@ if (!content) throw new Error(`ModuleScenario: no scenario registered for module
   }
 
   .scenario-vignette {
-    margin: 0;
+    margin: 0 0 0.75rem;
     color: var(--text-secondary);
     line-height: 1.55;
     font-size: 0.92rem;
+  }
+
+  .scenario-impact {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.4rem;
+    margin: 0;
+    padding-top: 0.6rem;
+    border-top: 1px dashed var(--border);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.01em;
+  }
+
+  .scenario-impact-problem {
+    color: var(--text-secondary);
+  }
+
+  .scenario-impact-arrow {
+    color: var(--accent);
+  }
+
+  .scenario-impact-fix {
+    color: var(--text);
+    font-weight: 600;
   }
 
   @media (max-width: 640px) {
