@@ -63,20 +63,45 @@ const railPath = STATIONS.map((s, i) => `${i === 0 ? "M" : "L"}${s.x.toFixed(1)}
             </g>
           ))
         }
+        {
+          /* Native SVG text, positioned from the exact same STATIONS
+             coordinates as the dots above — sharing one coordinate space
+             guarantees the label always sits next to its station. The
+             previous version rendered these as HTML <span>s positioned by
+             percentage against .arch-rail's own box, which is only 90% the
+             SVG's height (see `.arch-rail svg { height: 90% }` below) and
+             centers it besides — a mismatch that grew linearly toward the
+             ends of the rail, landing over 120px off at both extremes and
+             hiding stage 1's "SOURCES" label entirely behind the sticky
+             navbar. */
+          STATIONS.map((s, i) => (
+            <text
+              class="rail-label mono"
+              data-rail-label-index={i}
+              x={s.x + 20}
+              y={s.y}
+              dominant-baseline="middle"
+            >
+              {LIFECYCLE[i].label}
+            </text>
+          ))
+        }
         <g class="rail-token" data-rail-token opacity="0">
-          <rect x="-22" y="-15" width="44" height="30" rx="4" fill="var(--bg-raised)" stroke="var(--accent)" stroke-width="1.25" />
-          <line x1="-14" y1="-6" x2="14" y2="-6" stroke="var(--text-secondary)" stroke-width="1.5" />
-          <line x1="-14" y1="0" x2="10" y2="0" stroke="var(--text-secondary)" stroke-width="1.5" />
-          <line x1="-14" y1="6" x2="6" y2="6" stroke="var(--accent)" stroke-width="1.5" class="rail-token-citation" />
+          <circle class="token-halo" r="20" fill="var(--accent)" opacity="0.16" />
+          <path
+            class="token-body"
+            d="M-16 -18 L7 -18 L16 -9 L16 18 L-16 18 Z"
+            fill="var(--bg-raised)"
+            stroke="var(--accent)"
+            stroke-width="1.25"
+            stroke-linejoin="round"
+          />
+          <path class="token-fold" d="M7 -18 L7 -9 L16 -9 Z" fill="var(--accent)" opacity="0.55"></path>
+          <line x1="-9" y1="-3" x2="10" y2="-3" stroke="var(--text-secondary)" stroke-width="1.5" stroke-linecap="round"></line>
+          <line x1="-9" y1="3" x2="5" y2="3" stroke="var(--text-secondary)" stroke-width="1.5" stroke-linecap="round"></line>
+          <line x1="-9" y1="9" x2="2" y2="9" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" class="rail-token-citation" opacity="0"></line>
         </g>
       </svg>
-      {
-        LIFECYCLE.map((stage, i) => (
-          <span class="rail-label mono" data-rail-label-index={i} style={`left:${(STATIONS[i].x / 480) * 100}%; top:${(STATIONS[i].y / 640) * 100}%;`}>
-            {stage.label}
-          </span>
-        ))
-      }
     </div>
   </div>
 
@@ -157,7 +182,7 @@ const railPath = STATIONS.map((s, i) => `${i === 0 ? "M" : "L"}${s.x.toFixed(1)}
 
       const readouts = gsap.utils.toArray<HTMLElement>("[data-readout-index]", rootEl);
       const stations = gsap.utils.toArray<SVGGElement>(".rail-station", rootEl);
-      const labels = gsap.utils.toArray<HTMLElement>("[data-rail-label-index]", rootEl);
+      const labels = gsap.utils.toArray<SVGTextElement>("[data-rail-label-index]", rootEl);
       const progressFill = rootEl.querySelector<HTMLElement>("[data-arch-progress]");
       const railPath = rootEl.querySelector<SVGPathElement>(".rail-path-draw");
       const railBase = rootEl.querySelector<SVGPathElement>(".rail-path-base");
@@ -395,13 +420,39 @@ const railPath = STATIONS.map((s, i) => `${i === 0 ? "M" : "L"}${s.x.toFixed(1)}
   }
 
   .rail-label {
-    position: absolute;
-    transform: translate(1.1rem, -50%);
-    font-size: 0.62rem;
-    letter-spacing: 0.08em;
-    color: var(--text-secondary);
-    white-space: nowrap;
-    pointer-events: none;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    fill: var(--text-secondary);
+    transition: fill var(--duration-theme) var(--ease-out);
+  }
+
+  .token-halo {
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+
+  .token-body,
+  .token-fold {
+    transition: stroke var(--duration-theme) var(--ease-out), fill var(--duration-theme) var(--ease-out);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .token-halo {
+      animation: token-halo-pulse 2.2s ease-in-out infinite;
+    }
+  }
+
+  @keyframes token-halo-pulse {
+    0%,
+    100% {
+      transform: scale(1);
+      opacity: 0.16;
+    }
+    50% {
+      transform: scale(1.25);
+      opacity: 0.3;
+    }
   }
 
   /* ---- Mobile / reduced-motion fallback list ---- */
