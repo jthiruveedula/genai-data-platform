@@ -6,6 +6,18 @@ import "@fontsource/inter/700.css";
 import "@fontsource/inter/800.css";
 import "@fontsource/jetbrains-mono/400.css";
 import "@fontsource/jetbrains-mono/500.css";
+// Preloaded below: the latin subsets actually visible above the fold on
+// first paint (body text, the hero h1's 800 weight, and mono chips like the
+// hero ticker/section kickers). All @fontsource CSS ships font-display:
+// swap with no preload, so text painted in the system-ui fallback reflows
+// once each woff2 arrives — measured as ~0.117 CLS on the homepage (over
+// the 0.1 budget). Preloading these three so they're ready by first paint
+// removes the swap-triggered reflow for the fonts visitors actually see
+// immediately; the CSS imports above still register every other weight
+// normally, just without a preload hint.
+import ibmPlexSans400 from "@fontsource/ibm-plex-sans/files/ibm-plex-sans-latin-400-normal.woff2?url";
+import inter800 from "@fontsource/inter/files/inter-latin-800-normal.woff2?url";
+import jetbrainsMono400 from "@fontsource/jetbrains-mono/files/jetbrains-mono-latin-400-normal.woff2?url";
 import "../styles/tokens/base.css";
 import "../styles/tokens/component.css";
 import "../styles/tokens/aws.css";
@@ -43,6 +55,9 @@ const verifiedClaimCount = claims.filter((c) => claimStatus(c) === "verified").l
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
     <link rel="icon" type="image/svg+xml" href={`${import.meta.env.BASE_URL}favicon.svg`} />
+    <link rel="preload" href={ibmPlexSans400} as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href={inter800} as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href={jetbrainsMono400} as="font" type="font/woff2" crossorigin />
     <ClientRouter />
     <title>{title} · GenAI Data Platform</title>
     <script is:inline>
