@@ -4,6 +4,7 @@ import FlavorTabs from "../../../components/FlavorTabs.astro";
 import ModuleHero from "../../../components/module/ModuleHero.astro";
 import ModuleScenario from "../../../components/module/ModuleScenario.astro";
 import ModuleFlowDiagram from "../../../components/module/ModuleFlowDiagram.astro";
+import CostBreakdownDemo from "../../../components/module/demos/CostBreakdownDemo.astro";
 import ModuleFooterNav from "../../../components/module/ModuleFooterNav.astro";
 import ModuleRecap from "../../../components/module/ModuleRecap.astro";
 import { flavor as gcp } from "../../../data/flavors/gcp";
@@ -49,6 +50,8 @@ const entries = {
       premium. Confirming this with your own event-log join, rather than assuming it, tells you where to actually
       spend optimization effort.
     </p>
+
+    <CostBreakdownDemo />
 
     <h2>Semantic caching and model routing</h2>
     <p>

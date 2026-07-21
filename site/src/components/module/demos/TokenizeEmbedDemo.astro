@@ -1,0 +1,191 @@
+---
+// Bespoke concept demo for Module 00 (Foundations) — tokenize a sentence,
+// then show where it and two comparison sentences land in vector space.
+// Makes "similar meaning lands close together" visible instead of asserted.
+const TOKENS = ["Cover", "age", " renew", "s", " annual", "ly"];
+
+const POINTS = [
+  { label: "Coverage renews annually", x: 62, y: 48, kind: "target" },
+  { label: "Policy auto-renews each year", x: 71, y: 40, kind: "near" },
+  { label: "Claims must be filed in 30 days", x: 18, y: 78, kind: "far" },
+];
+---
+
+<figure class="concept-demo tokenize-demo" data-tokenize-demo aria-label="A sentence tokenized, then embedded near a paraphrase and far from an unrelated sentence">
+  <figcaption class="concept-demo-label mono">[ SEE IT: SIMILAR MEANING, NEARBY VECTORS ]</figcaption>
+
+  <p class="tokenize-input mono">"Coverage renews annually"</p>
+
+  <div class="tokenize-tokens" data-tokenize-item>
+    {TOKENS.map((t) => <span class="tokenize-token mono">{t}</span>)}
+  </div>
+
+  <div class="tokenize-arrow mono" data-tokenize-item>↓ embedding model</div>
+
+  <div class="tokenize-space">
+    {
+      POINTS.map((p) => (
+        <div class={`tokenize-point tokenize-point--${p.kind}`} style={`left:${p.x}%; top:${p.y}%;`}>
+          <span class="tokenize-dot" />
+          <span class="tokenize-point-label">{p.label}</span>
+        </div>
+      ))
+    }
+    <svg class="tokenize-link" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+      <line x1={POINTS[0].x} y1={POINTS[0].y} x2={POINTS[1].x} y2={POINTS[1].y} stroke="var(--accent)" stroke-width="0.6" stroke-dasharray="2 2"></line>
+    </svg>
+  </div>
+</figure>
+
+<script>
+  import { gsap } from "gsap";
+  import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+  gsap.registerPlugin(ScrollTrigger);
+
+  let ctx: gsap.Context | undefined;
+
+  function setup() {
+    const rootEl = document.querySelector<HTMLElement>("[data-tokenize-demo]");
+    if (!rootEl) return;
+    ctx?.revert();
+    ctx = gsap.context(() => {
+      const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const tokens = gsap.utils.toArray<HTMLElement>(".tokenize-token", rootEl);
+      const items = gsap.utils.toArray<HTMLElement>("[data-tokenize-item]", rootEl);
+      const points = gsap.utils.toArray<HTMLElement>(".tokenize-point", rootEl);
+
+      if (reduced) {
+        gsap.set([tokens, items, points], { autoAlpha: 1 });
+        return;
+      }
+
+      gsap.set(tokens, { autoAlpha: 0, y: 6 });
+      gsap.set(items, { autoAlpha: 0, y: 10 });
+      gsap.set(points, { autoAlpha: 0, scale: 0.5 });
+
+      const tl = gsap.timeline({ scrollTrigger: { trigger: rootEl, start: "top 85%", once: true } });
+      tl.to(tokens, { autoAlpha: 1, y: 0, duration: 0.3, ease: "power2.out", stagger: 0.08 })
+        .to(items[0], { autoAlpha: 1, y: 0, duration: 0.3 }, "+=0.1")
+        .to(items[1], { autoAlpha: 1, y: 0, duration: 0.4 }, "+=0.1")
+        .to(points, {
+          autoAlpha: 1,
+          scale: 1,
+          duration: 0.4,
+          ease: "back.out(1.6)",
+          stagger: 0.15,
+        });
+    }, rootEl);
+  }
+
+  setup();
+  document.addEventListener("astro:page-load", setup);
+  document.addEventListener("astro:after-swap", () => ctx?.revert());
+</script>
+
+<style>
+  .concept-demo {
+    margin: 1.75rem 0 2rem;
+    padding: 1.4rem 1.6rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-raised);
+  }
+
+  .concept-demo-label {
+    margin: 0 0 1.1rem;
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    color: var(--accent-text, var(--accent));
+  }
+
+  .tokenize-input {
+    margin: 0 0 1rem;
+    font-size: 0.95rem;
+    color: var(--text);
+  }
+
+  .tokenize-tokens {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-bottom: 1rem;
+  }
+
+  .tokenize-token {
+    padding: 0.3rem 0.5rem;
+    font-size: 0.78rem;
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--accent) 18%, transparent);
+    color: var(--text);
+  }
+
+  .tokenize-arrow {
+    margin: 0 0 1.25rem;
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+  }
+
+  .tokenize-space {
+    position: relative;
+    height: 180px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-card);
+    overflow: hidden;
+  }
+
+  .tokenize-link {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .tokenize-point {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .tokenize-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    flex: none;
+  }
+
+  .tokenize-point--target .tokenize-dot {
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+  }
+
+  .tokenize-point--near .tokenize-dot {
+    background: color-mix(in srgb, var(--accent) 60%, var(--bg-card));
+  }
+
+  .tokenize-point--far .tokenize-dot {
+    background: var(--text-secondary);
+  }
+
+  .tokenize-point-label {
+    font-size: 0.68rem;
+    white-space: nowrap;
+    color: var(--text-secondary);
+  }
+
+  .tokenize-point--target .tokenize-point-label,
+  .tokenize-point--near .tokenize-point-label {
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  @media (max-width: 640px) {
+    .tokenize-point-label {
+      white-space: normal;
+      max-width: 8rem;
+    }
+  }
+</style>

@@ -1,0 +1,181 @@
+---
+// Bespoke concept demo for Module 20 (Embeddings) — the same query, embedded
+// with the matching model vs. a different one, shown as two mini vector
+// spaces. Makes "similarity breaks silently, not loudly" a visible miss
+// instead of an assertion.
+---
+
+<figure class="concept-demo mismatch-demo" data-mismatch-demo aria-label="The same query embedded with a matching model versus a mismatched one">
+  <figcaption class="concept-demo-label mono">[ SEE IT: SAME QUERY, WRONG MODEL ]</figcaption>
+
+  <div class="mismatch-cols">
+    <div class="mismatch-col">
+      <span class="mismatch-col-label mono mismatch-col-label--good">SAME MODEL FOR INDEX + QUERY</span>
+      <div class="mismatch-space">
+        <div class="mismatch-point mismatch-point--chunk" style="left:58%; top:55%;" data-mismatch-item="a-chunk">
+          <span class="mismatch-dot"></span>
+          <span class="mismatch-point-label">indexed chunk</span>
+        </div>
+        <div class="mismatch-point mismatch-point--query mismatch-point--hit" style="left:64%; top:46%;" data-mismatch-item="a-query">
+          <span class="mismatch-dot"></span>
+          <span class="mismatch-point-label">query</span>
+        </div>
+      </div>
+      <p class="mismatch-verdict mismatch-verdict--good" data-mismatch-item="a-verdict">✓ nearest neighbor found</p>
+    </div>
+    <div class="mismatch-col">
+      <span class="mismatch-col-label mono mismatch-col-label--bad">QUERY EMBEDDED WITH A DIFFERENT MODEL</span>
+      <div class="mismatch-space">
+        <div class="mismatch-point mismatch-point--chunk" style="left:58%; top:55%;" data-mismatch-item="b-chunk">
+          <span class="mismatch-dot"></span>
+          <span class="mismatch-point-label">indexed chunk</span>
+        </div>
+        <div class="mismatch-point mismatch-point--query mismatch-point--miss" style="left:15%; top:20%;" data-mismatch-item="b-query">
+          <span class="mismatch-dot"></span>
+          <span class="mismatch-point-label">query</span>
+        </div>
+      </div>
+      <p class="mismatch-verdict mismatch-verdict--bad" data-mismatch-item="b-verdict">✗ nearest neighbor is unrelated</p>
+    </div>
+  </div>
+</figure>
+
+<script>
+  import { gsap } from "gsap";
+  import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+  gsap.registerPlugin(ScrollTrigger);
+
+  let ctx: gsap.Context | undefined;
+
+  function setup() {
+    const rootEl = document.querySelector<HTMLElement>("[data-mismatch-demo]");
+    if (!rootEl) return;
+    ctx?.revert();
+    ctx = gsap.context(() => {
+      const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const items = gsap.utils.toArray<HTMLElement>("[data-mismatch-item]", rootEl);
+
+      if (reduced) {
+        gsap.set(items, { autoAlpha: 1, scale: 1 });
+        return;
+      }
+
+      gsap.set(items, { autoAlpha: 0, scale: 0.6 });
+      gsap.to(items, {
+        autoAlpha: 1,
+        scale: 1,
+        duration: 0.4,
+        ease: "back.out(1.6)",
+        stagger: 0.15,
+        scrollTrigger: { trigger: rootEl, start: "top 85%", once: true },
+      });
+    }, rootEl);
+  }
+
+  setup();
+  document.addEventListener("astro:page-load", setup);
+  document.addEventListener("astro:after-swap", () => ctx?.revert());
+</script>
+
+<style>
+  .concept-demo {
+    margin: 1.75rem 0 2rem;
+    padding: 1.4rem 1.6rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-raised);
+  }
+
+  .concept-demo-label {
+    margin: 0 0 1.1rem;
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    color: var(--accent-text, var(--accent));
+  }
+
+  .mismatch-cols {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+  }
+
+  .mismatch-col-label {
+    display: block;
+    margin-bottom: 0.75rem;
+    font-size: 0.65rem;
+    letter-spacing: 0.03em;
+  }
+
+  .mismatch-col-label--good {
+    color: var(--accent-text, var(--accent));
+  }
+
+  .mismatch-col-label--bad {
+    color: var(--text-secondary);
+  }
+
+  .mismatch-space {
+    position: relative;
+    height: 140px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-card);
+  }
+
+  .mismatch-point {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  .mismatch-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    flex: none;
+  }
+
+  .mismatch-point--chunk .mismatch-dot {
+    background: var(--text-secondary);
+  }
+
+  .mismatch-point--hit .mismatch-dot {
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+  }
+
+  .mismatch-point--miss .mismatch-dot {
+    background: var(--text-secondary);
+    box-shadow: 0 0 6px color-mix(in srgb, var(--text-secondary) 60%, transparent);
+  }
+
+  .mismatch-point-label {
+    font-size: 0.65rem;
+    white-space: nowrap;
+    color: var(--text-secondary);
+  }
+
+  .mismatch-verdict {
+    margin: 0.6rem 0 0;
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+
+  .mismatch-verdict--good {
+    color: var(--accent-text, var(--accent));
+  }
+
+  .mismatch-verdict--bad {
+    color: var(--text-secondary);
+  }
+
+  @media (max-width: 640px) {
+    .mismatch-cols {
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+  }
+</style>

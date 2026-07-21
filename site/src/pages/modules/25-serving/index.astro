@@ -4,6 +4,7 @@ import FlavorTabs from "../../../components/FlavorTabs.astro";
 import ModuleHero from "../../../components/module/ModuleHero.astro";
 import ModuleScenario from "../../../components/module/ModuleScenario.astro";
 import ModuleFlowDiagram from "../../../components/module/ModuleFlowDiagram.astro";
+import CitationTraceDemo from "../../../components/module/demos/CitationTraceDemo.astro";
 import ModuleFooterNav from "../../../components/module/ModuleFooterNav.astro";
 import ModuleRecap from "../../../components/module/ModuleRecap.astro";
 import { flavor as gcp } from "../../../data/flavors/gcp";
@@ -50,6 +51,8 @@ const entries = {
       already has that metadata, and it's the difference between "an AI said so" and "here's the paragraph it came
       from."
     </p>
+
+    <CitationTraceDemo />
 
     <h2>Handling "I don't know"</h2>
     <p>

@@ -4,6 +4,7 @@ import FlavorTabs from "../../../components/FlavorTabs.astro";
 import ModuleHero from "../../../components/module/ModuleHero.astro";
 import ModuleScenario from "../../../components/module/ModuleScenario.astro";
 import ModuleFlowDiagram from "../../../components/module/ModuleFlowDiagram.astro";
+import TraceWaterfallDemo from "../../../components/module/demos/TraceWaterfallDemo.astro";
 import ModuleFooterNav from "../../../components/module/ModuleFooterNav.astro";
 import ModuleRecap from "../../../components/module/ModuleRecap.astro";
 import { flavor as gcp } from "../../../data/flavors/gcp";
@@ -43,6 +44,8 @@ const entries = {
       When a user reports a bad answer, you open one trace and see exactly which stage went wrong — instead of
       grepping four different logs and hoping the timestamps line up.
     </p>
+
+    <TraceWaterfallDemo />
 
     <h2>Token accounting per request</h2>
     <p>

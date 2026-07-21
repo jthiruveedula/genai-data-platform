@@ -1,0 +1,162 @@
+---
+// Bespoke concept demo for Module 75 (FinOps) — where the money actually
+// goes, as a stacked bar built from real proportions instead of a claim.
+// Matches the module's own point: output tokens dominate, not embeddings.
+const SEGMENTS = [
+  { label: "Embeddings", pct: 4 },
+  { label: "Storage", pct: 3 },
+  { label: "Input tokens", pct: 15 },
+  { label: "Output tokens", pct: 78 },
+];
+---
+
+<figure class="concept-demo cost-demo" data-cost-demo aria-label="Where the monthly bill actually goes, as a proportional stacked bar">
+  <figcaption class="concept-demo-label mono">[ SEE IT: WHERE THE BILL ACTUALLY GOES ]</figcaption>
+
+  <div class="cost-bar" data-cost-bar>
+    {
+      SEGMENTS.map((s, i) => (
+        <span class={`cost-segment cost-segment--${i}`} data-cost-item style={`width:${s.pct}%;`} title={`${s.label}: ${s.pct}%`} />
+      ))
+    }
+  </div>
+
+  <ul class="cost-legend">
+    {
+      SEGMENTS.map((s, i) => (
+        <li class="cost-legend-item">
+          <span class={`cost-swatch cost-swatch--${i}`} />
+          <span class="cost-legend-label mono">
+            {s.label} — {s.pct}%
+          </span>
+        </li>
+      ))
+    }
+  </ul>
+</figure>
+
+<script>
+  import { gsap } from "gsap";
+  import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+  gsap.registerPlugin(ScrollTrigger);
+
+  let ctx: gsap.Context | undefined;
+
+  function setup() {
+    const rootEl = document.querySelector<HTMLElement>("[data-cost-demo]");
+    if (!rootEl) return;
+    ctx?.revert();
+    ctx = gsap.context(() => {
+      const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const segments = gsap.utils.toArray<HTMLElement>("[data-cost-item]", rootEl);
+
+      if (reduced) {
+        gsap.set(segments, { scaleX: 1 });
+        return;
+      }
+
+      gsap.set(segments, { scaleX: 0, transformOrigin: "left center" });
+      gsap.to(segments, {
+        scaleX: 1,
+        duration: 0.5,
+        ease: "power2.out",
+        stagger: 0.15,
+        scrollTrigger: { trigger: rootEl, start: "top 85%", once: true },
+      });
+    }, rootEl);
+  }
+
+  setup();
+  document.addEventListener("astro:page-load", setup);
+  document.addEventListener("astro:after-swap", () => ctx?.revert());
+</script>
+
+<style>
+  .concept-demo {
+    margin: 1.75rem 0 2rem;
+    padding: 1.4rem 1.6rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-raised);
+  }
+
+  .concept-demo-label {
+    margin: 0 0 1.1rem;
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    color: var(--accent-text, var(--accent));
+  }
+
+  .cost-bar {
+    display: flex;
+    height: 28px;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    margin-bottom: 1rem;
+  }
+
+  .cost-segment {
+    display: block;
+    height: 100%;
+  }
+
+  .cost-segment--0 {
+    background: color-mix(in srgb, var(--accent) 15%, var(--bg-card));
+  }
+
+  .cost-segment--1 {
+    background: color-mix(in srgb, var(--accent) 28%, var(--bg-card));
+  }
+
+  .cost-segment--2 {
+    background: color-mix(in srgb, var(--accent) 55%, var(--bg-card));
+  }
+
+  .cost-segment--3 {
+    background: var(--accent);
+  }
+
+  .cost-legend {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.1rem;
+  }
+
+  .cost-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .cost-swatch {
+    width: 0.65rem;
+    height: 0.65rem;
+    border-radius: 2px;
+  }
+
+  .cost-swatch--0 {
+    background: color-mix(in srgb, var(--accent) 15%, var(--bg-card));
+  }
+
+  .cost-swatch--1 {
+    background: color-mix(in srgb, var(--accent) 28%, var(--bg-card));
+  }
+
+  .cost-swatch--2 {
+    background: color-mix(in srgb, var(--accent) 55%, var(--bg-card));
+  }
+
+  .cost-swatch--3 {
+    background: var(--accent);
+  }
+
+  .cost-legend-label {
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+  }
+</style>

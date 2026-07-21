@@ -4,6 +4,7 @@ import FlavorTabs from "../../../components/FlavorTabs.astro";
 import ModuleHero from "../../../components/module/ModuleHero.astro";
 import ModuleScenario from "../../../components/module/ModuleScenario.astro";
 import ModuleFlowDiagram from "../../../components/module/ModuleFlowDiagram.astro";
+import IdempotentIngestDemo from "../../../components/module/demos/IdempotentIngestDemo.astro";
 import ModuleFooterNav from "../../../components/module/ModuleFooterNav.astro";
 import ModuleRecap from "../../../components/module/ModuleRecap.astro";
 import { flavor as gcp } from "../../../data/flavors/gcp";
@@ -47,6 +48,8 @@ const entries = {
       raw file, use the hash (or a stable source ID) as part of the storage key, and let a duplicate write short-circuit
       with a "already ingested" outcome rather than silently doubling your document count.
     </p>
+
+    <IdempotentIngestDemo />
 
     <h2>Try it in your flavor</h2>
     <FlavorTabs moduleId={moduleId} entries={entries} />
