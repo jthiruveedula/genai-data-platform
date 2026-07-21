@@ -4,6 +4,7 @@ import FlavorTabs from "../../../components/FlavorTabs.astro";
 import ModuleHero from "../../../components/module/ModuleHero.astro";
 import ModuleScenario from "../../../components/module/ModuleScenario.astro";
 import ModuleFlowDiagram from "../../../components/module/ModuleFlowDiagram.astro";
+import InjectionBlockedDemo from "../../../components/module/demos/InjectionBlockedDemo.astro";
 import ModuleFooterNav from "../../../components/module/ModuleFooterNav.astro";
 import ModuleRecap from "../../../components/module/ModuleRecap.astro";
 import { flavor as gcp } from "../../../data/flavors/gcp";
@@ -43,6 +44,8 @@ const entries = {
       poisoned document in the index attacks every future query that retrieves it — not just its author's own
       questions.
     </p>
+
+    <InjectionBlockedDemo />
 
     <h2>Data exfiltration via retrieval</h2>
     <p>

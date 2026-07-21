@@ -1,0 +1,143 @@
+---
+// Bespoke concept demo for Module 10 (Ingestion) — the same retry, with and
+// without idempotency, side by side. Makes "duplicate rows" a visible count
+// instead of an abstract warning.
+---
+
+<figure class="concept-demo idempotent-demo" data-idempotent-demo aria-label="A retried ingestion job, with and without idempotency">
+  <figcaption class="concept-demo-label mono">[ SEE IT: THE SAME RETRY, TWICE ]</figcaption>
+
+  <div class="idempotent-cols">
+    <div class="idempotent-col">
+      <span class="idempotent-col-label mono idempotent-col-label--bad">WITHOUT IDEMPOTENCY</span>
+      <ol class="idempotent-steps">
+        <li data-idem-item="a0">Upload catalog.pdf → ingest job starts</li>
+        <li data-idem-item="a1">Job crashes halfway (network blip)</li>
+        <li data-idem-item="a2">Retry re-runs from the start</li>
+        <li data-idem-item="a3" class="idempotent-bad">Result: <strong data-idem-count="a">1</strong> → <strong data-idem-count="a-final">2</strong> rows for one document</li>
+      </ol>
+    </div>
+    <div class="idempotent-col">
+      <span class="idempotent-col-label mono idempotent-col-label--good">WITH IDEMPOTENCY</span>
+      <ol class="idempotent-steps">
+        <li data-idem-item="b0">Upload catalog.pdf → hash computed, job starts</li>
+        <li data-idem-item="b1">Job crashes halfway (same network blip)</li>
+        <li data-idem-item="b2">Retry checks the hash first</li>
+        <li data-idem-item="b3" class="idempotent-good">Result: hash exists → skipped, <strong data-idem-count="b">1</strong> row, stable</li>
+      </ol>
+    </div>
+  </div>
+</figure>
+
+<script>
+  import { gsap } from "gsap";
+  import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+  gsap.registerPlugin(ScrollTrigger);
+
+  let ctx: gsap.Context | undefined;
+
+  function setup() {
+    const rootEl = document.querySelector<HTMLElement>("[data-idempotent-demo]");
+    if (!rootEl) return;
+    ctx?.revert();
+    ctx = gsap.context(() => {
+      const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const items = gsap.utils.toArray<HTMLElement>("[data-idem-item]", rootEl);
+
+      if (reduced) {
+        gsap.set(items, { autoAlpha: 1, x: 0 });
+        return;
+      }
+
+      gsap.set(items, { autoAlpha: 0, x: -8 });
+      const tl = gsap.timeline({ scrollTrigger: { trigger: rootEl, start: "top 85%", once: true } });
+      for (let i = 0; i < 4; i++) {
+        tl.to([`[data-idem-item="a${i}"]`, `[data-idem-item="b${i}"]`], {
+          autoAlpha: 1,
+          x: 0,
+          duration: 0.35,
+          ease: "power2.out",
+        }, "+=0.12");
+      }
+    }, rootEl);
+  }
+
+  setup();
+  document.addEventListener("astro:page-load", setup);
+  document.addEventListener("astro:after-swap", () => ctx?.revert());
+</script>
+
+<style>
+  .concept-demo {
+    margin: 1.75rem 0 2rem;
+    padding: 1.4rem 1.6rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-raised);
+  }
+
+  .concept-demo-label {
+    margin: 0 0 1.1rem;
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    color: var(--accent-text, var(--accent));
+  }
+
+  .idempotent-cols {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+  }
+
+  .idempotent-col-label {
+    display: block;
+    margin-bottom: 0.75rem;
+    font-size: 0.68rem;
+    letter-spacing: 0.04em;
+  }
+
+  .idempotent-col-label--bad {
+    color: var(--text-secondary);
+  }
+
+  .idempotent-col-label--good {
+    color: var(--accent-text, var(--accent));
+  }
+
+  .idempotent-steps {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  .idempotent-steps li {
+    font-size: 0.85rem;
+    line-height: 1.45;
+    color: var(--text-secondary);
+    padding-left: 0.9rem;
+    border-left: 2px solid var(--border);
+  }
+
+  .idempotent-bad {
+    color: var(--text);
+    border-left-color: var(--text-secondary) !important;
+    font-weight: 600;
+  }
+
+  .idempotent-good {
+    color: var(--text);
+    border-left-color: var(--accent) !important;
+    font-weight: 600;
+  }
+
+  @media (max-width: 640px) {
+    .idempotent-cols {
+      grid-template-columns: 1fr;
+      gap: 1.25rem;
+    }
+  }
+</style>

@@ -4,6 +4,7 @@ import FlavorTabs from "../../../components/FlavorTabs.astro";
 import ModuleHero from "../../../components/module/ModuleHero.astro";
 import ModuleScenario from "../../../components/module/ModuleScenario.astro";
 import ModuleFlowDiagram from "../../../components/module/ModuleFlowDiagram.astro";
+import TokenizeEmbedDemo from "../../../components/module/demos/TokenizeEmbedDemo.astro";
 import ModuleFooterNav from "../../../components/module/ModuleFooterNav.astro";
 import ModuleRecap from "../../../components/module/ModuleRecap.astro";
 import { flavor as gcp } from "../../../data/flavors/gcp";
@@ -47,6 +48,8 @@ const entries = {
       or dot product. This is the mechanism that lets retrieval find "the docs about X" without exact keyword
       matches.
     </p>
+
+    <TokenizeEmbedDemo />
 
     <h2>Context windows</h2>
     <p>

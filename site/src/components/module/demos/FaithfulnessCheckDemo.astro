@@ -1,0 +1,141 @@
+---
+// Bespoke concept demo for Module 45 (Evaluation) — a generated answer's
+// claims checked one by one against the retrieved context, with one
+// unsupported claim caught. Makes "faithfulness" a per-claim audit instead
+// of one blended verdict.
+const CLAIMS = [
+  { text: "Coverage renews automatically each year", supported: true },
+  { text: "Written notice must be given within thirty days to opt out", supported: true },
+  { text: "Late renewals incur a 15% penalty fee", supported: false },
+];
+---
+
+<figure class="concept-demo faithfulness-demo" data-faithfulness-demo aria-label="Each claim in a generated answer checked against retrieved context">
+  <figcaption class="concept-demo-label mono">[ SEE IT: FAITHFULNESS, CLAIM BY CLAIM ]</figcaption>
+
+  <p class="faithfulness-context mono">CONTEXT: policy_HO3, chunk 12 — renewal + notice terms only, no penalty terms.</p>
+
+  <ol class="faithfulness-claims">
+    {
+      CLAIMS.map((c, i) => (
+        <li class="faithfulness-claim" data-faithfulness-item={i}>
+          <span class={`faithfulness-verdict ${c.supported ? "faithfulness-verdict--ok" : "faithfulness-verdict--bad"}`}>
+            {c.supported ? "✓" : "✗"}
+          </span>
+          <span class="faithfulness-claim-text">{c.text}</span>
+        </li>
+      ))
+    }
+  </ol>
+
+  <p class="faithfulness-score mono" data-faithfulness-item="score">FAITHFULNESS: 2 / 3 claims supported — flagged for review</p>
+</figure>
+
+<script>
+  import { gsap } from "gsap";
+  import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+  gsap.registerPlugin(ScrollTrigger);
+
+  let ctx: gsap.Context | undefined;
+
+  function setup() {
+    const rootEl = document.querySelector<HTMLElement>("[data-faithfulness-demo]");
+    if (!rootEl) return;
+    ctx?.revert();
+    ctx = gsap.context(() => {
+      const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const claims = gsap.utils.toArray<HTMLElement>("[data-faithfulness-item]", rootEl);
+
+      if (reduced) {
+        gsap.set(claims, { autoAlpha: 1, x: 0 });
+        return;
+      }
+
+      gsap.set(claims, { autoAlpha: 0, x: -10 });
+      gsap.to(claims, {
+        autoAlpha: 1,
+        x: 0,
+        duration: 0.35,
+        ease: "power2.out",
+        stagger: 0.25,
+        scrollTrigger: { trigger: rootEl, start: "top 85%", once: true },
+      });
+    }, rootEl);
+  }
+
+  setup();
+  document.addEventListener("astro:page-load", setup);
+  document.addEventListener("astro:after-swap", () => ctx?.revert());
+</script>
+
+<style>
+  .concept-demo {
+    margin: 1.75rem 0 2rem;
+    padding: 1.4rem 1.6rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-raised);
+  }
+
+  .concept-demo-label {
+    margin: 0 0 1.1rem;
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    color: var(--accent-text, var(--accent));
+  }
+
+  .faithfulness-context {
+    margin: 0 0 1.1rem;
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+  }
+
+  .faithfulness-claims {
+    margin: 0 0 1rem;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .faithfulness-claim {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    padding: 0.55rem 0.8rem;
+    border-radius: var(--radius);
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+  }
+
+  .faithfulness-verdict {
+    flex: none;
+    font-weight: 700;
+  }
+
+  .faithfulness-verdict--ok {
+    color: var(--accent-text, var(--accent));
+  }
+
+  .faithfulness-verdict--bad {
+    color: var(--text);
+    background: color-mix(in srgb, var(--text) 12%, transparent);
+    border-radius: 3px;
+    padding: 0 0.3rem;
+  }
+
+  .faithfulness-claim-text {
+    font-size: 0.85rem;
+    color: var(--text);
+  }
+
+  .faithfulness-score {
+    margin: 0;
+    padding-top: 0.8rem;
+    border-top: 1px dashed var(--border);
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+  }
+</style>

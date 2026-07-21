@@ -5,6 +5,7 @@ import VectorSpaceScene from "../../../components/VectorSpaceScene3D.astro";
 import ModuleHero from "../../../components/module/ModuleHero.astro";
 import ModuleScenario from "../../../components/module/ModuleScenario.astro";
 import ModuleFlowDiagram from "../../../components/module/ModuleFlowDiagram.astro";
+import ModelMismatchDemo from "../../../components/module/demos/ModelMismatchDemo.astro";
 import ModuleFooterNav from "../../../components/module/ModuleFooterNav.astro";
 import ModuleRecap from "../../../components/module/ModuleRecap.astro";
 import { flavor as gcp } from "../../../data/flavors/gcp";
@@ -44,6 +45,8 @@ const entries = {
       the geometry the whole index depends on — and prefer a model your cloud's retrieval service integrates with
       natively, since that keeps the embed → store → search path in one system instead of three.
     </p>
+
+    <ModelMismatchDemo />
 
     <h2>What the vector index actually stores</h2>
     <p>

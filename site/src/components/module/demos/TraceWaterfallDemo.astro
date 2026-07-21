@@ -1,0 +1,146 @@
+---
+// Bespoke concept demo for Module 55 (Observability) — one request's spans
+// as a waterfall, so "where did the latency go" is a bar you can compare,
+// not a number in a log line.
+const SPANS = [
+  { label: "Embed query", ms: 22, start: 0 },
+  { label: "Retrieve", ms: 48, start: 22 },
+  { label: "Assemble prompt", ms: 6, start: 70 },
+  { label: "Generate", ms: 312, start: 76 },
+];
+const TOTAL = 388;
+---
+
+<figure class="concept-demo trace-demo" data-trace-demo aria-label="One request's spans, shown as a latency waterfall">
+  <figcaption class="concept-demo-label mono">[ SEE IT: ONE REQUEST, ONE WATERFALL ]</figcaption>
+
+  <div class="trace-rows">
+    {
+      SPANS.map((s) => (
+        <div class="trace-row">
+          <span class="trace-row-label mono">{s.label}</span>
+          <div class="trace-row-track">
+            <span
+              class="trace-row-bar"
+              data-trace-item
+              style={`left:${(s.start / TOTAL) * 100}%; width:${(s.ms / TOTAL) * 100}%;`}
+            />
+          </div>
+          <span class="trace-row-ms mono">{s.ms}ms</span>
+        </div>
+      ))
+    }
+  </div>
+
+  <p class="trace-total mono">TOTAL: {TOTAL}ms — generation is 80% of it, not retrieval</p>
+</figure>
+
+<script>
+  import { gsap } from "gsap";
+  import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+  gsap.registerPlugin(ScrollTrigger);
+
+  let ctx: gsap.Context | undefined;
+
+  function setup() {
+    const rootEl = document.querySelector<HTMLElement>("[data-trace-demo]");
+    if (!rootEl) return;
+    ctx?.revert();
+    ctx = gsap.context(() => {
+      const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const bars = gsap.utils.toArray<HTMLElement>("[data-trace-item]", rootEl);
+
+      if (reduced) {
+        gsap.set(bars, { scaleX: 1 });
+        return;
+      }
+
+      gsap.set(bars, { scaleX: 0, transformOrigin: "left center" });
+      gsap.to(bars, {
+        scaleX: 1,
+        duration: 0.5,
+        ease: "power2.out",
+        stagger: 0.15,
+        scrollTrigger: { trigger: rootEl, start: "top 85%", once: true },
+      });
+    }, rootEl);
+  }
+
+  setup();
+  document.addEventListener("astro:page-load", setup);
+  document.addEventListener("astro:after-swap", () => ctx?.revert());
+</script>
+
+<style>
+  .concept-demo {
+    margin: 1.75rem 0 2rem;
+    padding: 1.4rem 1.6rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-raised);
+  }
+
+  .concept-demo-label {
+    margin: 0 0 1.1rem;
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    color: var(--accent-text, var(--accent));
+  }
+
+  .trace-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+    margin-bottom: 1.1rem;
+  }
+
+  .trace-row {
+    display: grid;
+    grid-template-columns: 8rem 1fr 3.5rem;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .trace-row-label {
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+  }
+
+  .trace-row-track {
+    position: relative;
+    height: 20px;
+    background: var(--bg-card);
+    border-radius: 4px;
+    border: 1px solid var(--border);
+  }
+
+  .trace-row-bar {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    border-radius: 3px;
+    background: var(--accent);
+  }
+
+  .trace-row-ms {
+    font-size: 0.72rem;
+    text-align: right;
+    color: var(--text-secondary);
+  }
+
+  .trace-total {
+    margin: 0;
+    padding-top: 0.8rem;
+    border-top: 1px dashed var(--border);
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+  }
+
+  @media (max-width: 640px) {
+    .trace-row {
+      grid-template-columns: 5.5rem 1fr 3rem;
+      gap: 0.5rem;
+    }
+  }
+</style>
