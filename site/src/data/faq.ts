@@ -33,7 +33,7 @@ export const FAQ: FaqItem[] = [
   {
     question: "How much will I actually spend running the labs?",
     answer:
-      "Under $10 total across all 11 modules at the fast-tier pricing verified on the freshness page — most modules cost a few cents each, and Module 00 costs nothing since it's concepts only. The cost console shows exact per-query numbers before you run anything.",
+      "Under $10 total across every module at the fast-tier pricing verified on the freshness page — most modules cost a few cents each, and Module 00 costs nothing since it's concepts only. The cost console shows exact per-query numbers before you run anything.",
   },
   {
     question: "Won't this be outdated by the time I finish it?",

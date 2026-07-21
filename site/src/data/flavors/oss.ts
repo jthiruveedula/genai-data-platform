@@ -80,6 +80,19 @@ export const flavor: Record<string, FlavorEntry> = {
     costNote: "$0 on a local kind cluster; negligible CPU for a handful of queries.",
     claimId: "oss-qdrant-hybrid",
   },
+  "38-multimodal": {
+    services: ["whisper.cpp", "CLIP", "BGE-M3"],
+    storage: "Qdrant (unified collection, modality-tagged payload)",
+    snippet: `# Transcribe audio with whisper.cpp, embed keyframes with CLIP, text with BGE-M3\ntranscript = whisper_model.transcribe("claim_video.mp4")\nframe_vec = clip_model.encode_image(keyframe)\ntext_vec = bge_model.encode(transcript["text"])\n\nclient.upsert(collection_name="gdp_docs", points=[\n    {"vector": frame_vec, "payload": {"modality": "video_frame", "doc_id": doc_id}},\n    {"vector": text_vec, "payload": {"modality": "video_transcript", "doc_id": doc_id}},\n])`,
+    labSteps: [
+      "Run whisper.cpp on a sample claims video to get a transcript.",
+      "Sample 3 keyframes and embed them with CLIP.",
+      "Embed the transcript with BGE-M3 (same model as the Module 20 OSS text index).",
+      "Upsert all vectors into the same Qdrant collection, tagged by modality, and confirm a text query surfaces the video frames.",
+    ],
+    costNote: "$0 beyond existing GPU — all three models run on the same self-hosted stack.",
+    claimId: "oss-clip-whisper-multimodal",
+  },
   "45-evaluation": {
     services: ["RAGAS", "Langfuse"],
     storage: "Langfuse (datasets + experiment runs)",

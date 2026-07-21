@@ -88,6 +88,19 @@ export const flavor: Record<string, FlavorEntry> = {
     costNote: "~$0.03 for a handful of hybrid queries + rerank calls on a small index.",
     claimId: "gcp-vector-search-hybrid",
   },
+  "38-multimodal": {
+    services: ["Vertex AI (Gemini Embedding 2)", "Document AI"],
+    storage: "Vertex AI Vector Search (unified index, modality-tagged)",
+    snippet: `from vertexai.vision_models import MultiModalEmbeddingModel\nfrom vertexai.vision_models import Video, Image\n\nmodel = MultiModalEmbeddingModel.from_pretrained("gemini-embedding-2-preview")\n\n# One model, three modalities -- same call shape for each\nvideo_emb = model.get_embeddings(video=Video.load_from_file("claim_walkthrough.mp4"))\nimage_emb = model.get_embeddings(image=Image.load_from_file("keyframe_04.jpg"))\ntext_emb = model.get_embeddings(contextual_text="roof damage, missing shingles")`,
+    labSteps: [
+      "Take a sample claims video and its adjuster notes (text).",
+      "Embed the video directly, plus the notes as text, with gemini-embedding-2-preview.",
+      "Upsert both into the Module 20 Vertex AI Vector Search index, tagged modality=video / modality=text.",
+      "Query with text only and confirm the video result ranks alongside the text chunks.",
+    ],
+    costNote: "~$0.04 for embedding one short claims video plus its notes.",
+    claimId: "gcp-gemini-embedding-2-multimodal",
+  },
   "45-evaluation": {
     services: ["Vertex AI evaluation", "BigQuery"],
     storage: "BigQuery (golden dataset + eval run results)",

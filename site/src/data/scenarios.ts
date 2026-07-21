@@ -140,6 +140,22 @@ export const SCENARIOS: Record<string, ModuleScenarioContent> = {
       },
     ],
   },
+  "38-multimodal": {
+    beats: [
+      {
+        company: ENTERPRISE,
+        vignette:
+          "Northbridge's claims adjusters attach phone videos of storm damage to every claim file, but the RAG assistant only ever searched the typed adjuster notes — a claim citing 'roof damage visible in the walkthrough video' came back with no supporting evidence because the video itself was never indexed.",
+        impact: { problem: "Claims videos existed but weren't searchable", fix: "Keyframes + transcript embedded alongside the text index" },
+      },
+      {
+        company: STARTUP,
+        vignette:
+          "Fernlight's merchants upload product manuals as scanned PDFs full of wiring diagrams, plus a linked how-to video — the assistant answered from the manual's few sentences of body text and missed both the diagram-only spec page and the video's actual install steps.",
+        impact: { problem: "Diagram pages and video steps invisible to text search", fix: "Layout-aware PDF + video transcript/frames, one index" },
+      },
+    ],
+  },
   "45-evaluation": {
     beats: [
       {

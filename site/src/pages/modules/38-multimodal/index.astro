@@ -1,0 +1,55 @@
+---
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import FlavorTabs from "../../../components/FlavorTabs.astro";
+import ModuleHero from "../../../components/module/ModuleHero.astro";
+import ModuleScenario from "../../../components/module/ModuleScenario.astro";
+import ModuleFlowDiagram from "../../../components/module/ModuleFlowDiagram.astro";
+import MultiModalConvergeDemo from "../../../components/module/demos/MultiModalConvergeDemo.astro";
+import ModuleFooterNav from "../../../components/module/ModuleFooterNav.astro";
+import ModuleRecap from "../../../components/module/ModuleRecap.astro";
+import { flavor as gcp } from "../../../data/flavors/gcp";
+import { flavor as aws } from "../../../data/flavors/aws";
+import { flavor as azure } from "../../../data/flavors/azure";
+import { flavor as oss } from "../../../data/flavors/oss";
+
+const moduleId = "38-multimodal";
+const entries = {
+  gcp: gcp[moduleId],
+  aws: aws[moduleId],
+  azure: azure[moduleId],
+  oss: oss[moduleId],
+};
+---
+
+<BaseLayout title="38 · Multi-modal ingestion & search">
+  <article>
+    <ModuleHero moduleId={moduleId}>
+      <p>Not every file is clean text. HTML has boilerplate, PDFs have layout, video isn't text at all — until it is.</p>
+    </ModuleHero>
+
+    <ModuleScenario moduleId={moduleId} />
+
+    <ModuleFlowDiagram moduleId={moduleId} />
+
+    <MultiModalConvergeDemo />
+
+    <h2>One index, whatever it started as</h2>
+    <p>
+      A multimodal embedding model puts text, images, and video in the same vector space directly. Where your cloud
+      doesn't offer that, extract first — transcript, keyframes, captions — then embed each piece with the model
+      built for it.
+    </p>
+
+    <h2>Try it in your flavor</h2>
+    <FlavorTabs moduleId={moduleId} entries={entries} />
+
+    <h2>Pitfalls</h2>
+    <ul>
+      <li>Treating video as "just audio" — a transcript alone misses what a keyframe shows (a damaged roof, a wiring diagram).</li>
+      <li>Mixing text-only and multimodal embeddings in one index without a modality tag — nearest-neighbor search can't tell them apart.</li>
+      <li>Assuming layout-aware PDF parsing (Module 15) is enough for scanned diagrams — a diagram needs an image embedding, not better OCR.</li>
+    </ul>
+  </article>
+  <ModuleRecap moduleId={moduleId} />
+  <ModuleFooterNav moduleId={moduleId} />
+</BaseLayout>

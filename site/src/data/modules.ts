@@ -74,6 +74,15 @@ export const MODULES: Module[] = [
     estimatedMinutes: 35,
   },
   {
+    id: "38-multimodal",
+    order: 38,
+    title: "Multi-modal ingestion & search",
+    path: "intermediate",
+    summary:
+      "HTML, PDF, and video don't reduce to clean text the same way — each needs its own extraction path, and video or images need an embedding space built for them, not a text model bolted on.",
+    estimatedMinutes: 35,
+  },
+  {
     id: "45-evaluation",
     order: 45,
     title: "Evaluation",
