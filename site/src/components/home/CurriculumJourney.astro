@@ -166,7 +166,19 @@ const totalTimeLabel = totalRemainderMinutes === 0 ? `${totalHours}H` : `${total
     }, rootEl);
   }
 
-  setup();
+  // Below-fold, scroll-revealed (once: true) — one ScrollTrigger per module
+  // card (18 of them), the heaviest single setup() among the homepage's
+  // scroll-reveal components. Deferring the *first* setup to idle time keeps
+  // that creation cost off the initial page-load main-thread task (measured
+  // as part of Lighthouse's TBT budget) with no visible effect, since none
+  // of this is reachable before the visitor scrolls. renderProgress() is
+  // plain DOM/text, not GSAP, so it stays immediate. Later astro:page-load
+  // re-setups stay immediate too.
+  if (typeof window.requestIdleCallback === "function") {
+    window.requestIdleCallback(setup, { timeout: 1000 });
+  } else {
+    setTimeout(setup, 200);
+  }
   renderProgress();
   document.addEventListener("astro:page-load", () => {
     setup();

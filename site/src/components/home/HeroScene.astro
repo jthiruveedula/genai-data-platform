@@ -274,9 +274,23 @@ const SERVICE_OVERLAYS = [
     const rootEl = document.querySelector<HTMLElement>("[data-hero-scene]");
     if (!rootEl) return;
     ctx?.revert();
-    ctx = gsap.context(() => {
+    ctx = gsap.context((self) => {
       const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       const cleanups: Array<() => void> = [];
+
+      // Schedules non-critical setup (infinite ambient loops, pointer
+      // parallax — nothing the visitor needs for first paint or the guided
+      // entrance) off the initial task, instead of adding straight to it.
+      // `self.add()` keeps whatever GSAP animations `fn` creates tracked by
+      // this context, even though `fn` itself runs later, async — so
+      // `ctx.revert()` on cleanup still reverts them correctly.
+      const deferIdle = (fn: () => void) => {
+        if (typeof window.requestIdleCallback === "function") {
+          window.requestIdleCallback(() => self.add(fn), { timeout: 1000 });
+        } else {
+          setTimeout(() => self.add(fn), 200);
+        }
+      };
 
       const ticker = rootEl.querySelector<HTMLElement>("[data-hero-ticker]");
       const stage = rootEl.querySelector<HTMLElement>("[data-canvas-stage]");
@@ -317,9 +331,12 @@ const SERVICE_OVERLAYS = [
 
       // ---- 1. Entrance -------------------------------------------------
       gsap.set(flows, { autoAlpha: 0 });
-      wires.forEach((p) => {
-        const len = p.getTotalLength();
-        gsap.set(p, { strokeDasharray: len, strokeDashoffset: len });
+      // Reads (getTotalLength forces layout) batched before writes — doing
+      // both per-element in one pass forces a synchronous reflow on every
+      // iteration (write invalidates the layout the next read needs).
+      const wireLengths = wires.map((p) => p.getTotalLength());
+      wires.forEach((p, i) => {
+        gsap.set(p, { strokeDasharray: wireLengths[i], strokeDashoffset: wireLengths[i] });
       });
 
       // Brief accent flash on a node (and a matching stroke-color transition
@@ -440,57 +457,63 @@ const SERVICE_OVERLAYS = [
         }, undefined, "-=0.3");
       }
 
-      // ---- 2. Ambient loop ---------------------------------------------
-      const routes = [
-        { selector: "#hs-flow-a", duration: 7, delay: 0.9 },
-        { selector: "#hs-flow-b", duration: 4, delay: 2.2 },
-        { selector: "#hs-flow-c", duration: 5.5, delay: 1.5 },
-      ];
-      packets.forEach((packet, i) => {
-        const route = routes[i];
-        const pathEl = route ? rootEl.querySelector<SVGPathElement>(route.selector) : null;
-        if (!route || !pathEl) return;
-        gsap.to(packet, {
-          motionPath: { path: pathEl, align: pathEl, alignOrigin: [0.5, 0.5] },
-          duration: route.duration,
-          delay: route.delay,
-          repeat: -1,
-          ease: "none",
+      // ---- 2. Ambient loop (deferred: infinite background loops, nothing
+      // the visitor needs before first paint or the guided entrance above)
+      deferIdle(() => {
+        const routes = [
+          { selector: "#hs-flow-a", duration: 7, delay: 0.9 },
+          { selector: "#hs-flow-b", duration: 4, delay: 2.2 },
+          { selector: "#hs-flow-c", duration: 5.5, delay: 1.5 },
+        ];
+        packets.forEach((packet, i) => {
+          const route = routes[i];
+          const pathEl = route ? rootEl.querySelector<SVGPathElement>(route.selector) : null;
+          if (!route || !pathEl) return;
+          gsap.to(packet, {
+            motionPath: { path: pathEl, align: pathEl, alignOrigin: [0.5, 0.5] },
+            duration: route.duration,
+            delay: route.delay,
+            repeat: -1,
+            ease: "none",
+          });
         });
+
+        // Dash period is 16px (6 + 10) — a multiple keeps the loop seamless.
+        gsap.to(flows, { strokeDashoffset: "-=96", duration: 6, repeat: -1, ease: "none" });
+
+        const scan = rootEl.querySelector<SVGRectElement>(".hs-scan");
+        if (scan) {
+          gsap.fromTo(
+            scan,
+            { y: 0 },
+            { y: 640, duration: 3.4, repeat: -1, repeatDelay: 4.6, ease: "power1.inOut", delay: 1.4 },
+          );
+        }
       });
 
-      // Dash period is 16px (6 + 10) — a multiple keeps the loop seamless.
-      gsap.to(flows, { strokeDashoffset: "-=96", duration: 6, repeat: -1, ease: "none" });
-
-      const scan = rootEl.querySelector<SVGRectElement>(".hs-scan");
-      if (scan) {
-        gsap.fromTo(
-          scan,
-          { y: 0 },
-          { y: 640, duration: 3.4, repeat: -1, repeatDelay: 4.6, ease: "power1.inOut", delay: 1.4 },
-        );
-      }
-
-      // ---- 4. Pointer parallax (desktop only) ---------------------------
-      const desktop = window.matchMedia("(min-width: 768px)").matches;
-      if (desktop && stage && glow) {
-        const stageX = gsap.quickTo(stage, "x", { duration: 0.7, ease: "power3.out" });
-        const stageY = gsap.quickTo(stage, "y", { duration: 0.7, ease: "power3.out" });
-        const glowX = gsap.quickTo(glow, "x", { duration: 0.9, ease: "power3.out" });
-        const glowY = gsap.quickTo(glow, "y", { duration: 0.9, ease: "power3.out" });
-        const clamp = gsap.utils.clamp(-0.5, 0.5);
-        const onMove = (e: PointerEvent) => {
-          const r = rootEl.getBoundingClientRect();
-          const nx = clamp((e.clientX - r.left) / r.width - 0.5);
-          const ny = clamp((e.clientY - r.top) / r.height - 0.5);
-          stageX(nx * 20); // max 10px either way
-          stageY(ny * 20);
-          glowX(nx * -20); // opposite direction for depth
-          glowY(ny * -20);
-        };
-        rootEl.addEventListener("pointermove", onMove);
-        cleanups.push(() => rootEl.removeEventListener("pointermove", onMove));
-      }
+      // ---- 4. Pointer parallax (desktop only, deferred: not needed until
+      // the visitor actually moves the pointer) ---------------------------
+      deferIdle(() => {
+        const desktop = window.matchMedia("(min-width: 768px)").matches;
+        if (desktop && stage && glow) {
+          const stageX = gsap.quickTo(stage, "x", { duration: 0.7, ease: "power3.out" });
+          const stageY = gsap.quickTo(stage, "y", { duration: 0.7, ease: "power3.out" });
+          const glowX = gsap.quickTo(glow, "x", { duration: 0.9, ease: "power3.out" });
+          const glowY = gsap.quickTo(glow, "y", { duration: 0.9, ease: "power3.out" });
+          const clamp = gsap.utils.clamp(-0.5, 0.5);
+          const onMove = (e: PointerEvent) => {
+            const r = rootEl.getBoundingClientRect();
+            const nx = clamp((e.clientX - r.left) / r.width - 0.5);
+            const ny = clamp((e.clientY - r.top) / r.height - 0.5);
+            stageX(nx * 20); // max 10px either way
+            stageY(ny * 20);
+            glowX(nx * -20); // opposite direction for depth
+            glowY(ny * -20);
+          };
+          rootEl.addEventListener("pointermove", onMove);
+          cleanups.push(() => rootEl.removeEventListener("pointermove", onMove));
+        }
+      });
 
       // ---- 5. Cloud change pulse ----------------------------------------
       // Accent-stroked SVG recolors itself via CSS var + transition; this

@@ -91,7 +91,16 @@ const STATEMENT_LINES = [
     }, rootEl);
   }
 
-  setup();
+  // Below-fold, scroll-revealed (once: true) — deferring the *first* setup
+  // to idle time keeps its ScrollTrigger.create() cost off the initial
+  // page-load main-thread task (measured as part of Lighthouse's TBT budget)
+  // without any visible effect, since nothing here is reachable before the
+  // visitor scrolls anyway. Later astro:page-load re-setups stay immediate.
+  if (typeof window.requestIdleCallback === "function") {
+    window.requestIdleCallback(setup, { timeout: 1000 });
+  } else {
+    setTimeout(setup, 200);
+  }
   document.addEventListener("astro:page-load", setup);
   document.addEventListener("astro:after-swap", () => ctx?.revert());
 </script>
