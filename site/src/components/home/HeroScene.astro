@@ -537,9 +537,13 @@ const SERVICE_OVERLAYS = [
     position: relative;
     min-height: calc(100dvh - 60px);
     display: grid;
-    grid-template-columns: minmax(0, 45fr) minmax(0, 55fr);
+    /* Was 45/55 — the animated schematic is the "wow" moment this scene
+       exists to show off, and a bulkier headline column was crowding it.
+       Shifting the ratio (plus the smaller title size below) gives it
+       noticeably more room without the content column feeling cramped. */
+    grid-template-columns: minmax(0, 38fr) minmax(0, 62fr);
     align-items: center;
-    gap: clamp(2rem, 5vw, 4rem);
+    gap: clamp(1.5rem, 4vw, 3rem);
     /* Homepage <main> is full-bleed (see BaseLayout.astro's
        main.main--full-bleed) so every section supplies its own horizontal
        gutter — this one never did, leaving the H1 flush against the
@@ -553,7 +557,7 @@ const SERVICE_OVERLAYS = [
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: 1.4rem;
+    gap: 1.1rem;
   }
 
   .kicker-row {
@@ -575,9 +579,13 @@ const SERVICE_OVERLAYS = [
     margin: 0;
     font-family: var(--font-heading);
     font-weight: 800;
-    font-size: clamp(2.6rem, 7vw, 5.25rem);
-    letter-spacing: -0.035em;
-    line-height: 1.02;
+    /* Was clamp(2.6rem, 7vw, 5.25rem) — four lines at that size pushed the
+       headline block past 700px tall, dominating the fold and crowding the
+       schematic it's supposed to introduce. Compact by design now: the
+       animation is the payoff, the headline is the setup. */
+    font-size: clamp(2.1rem, 4.4vw, 3.6rem);
+    letter-spacing: -0.03em;
+    line-height: 1.05;
     color: var(--text);
   }
 
