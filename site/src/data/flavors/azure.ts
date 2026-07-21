@@ -80,6 +80,19 @@ export const flavor: Record<string, FlavorEntry> = {
     costNote: "~$0.03 for a handful of hybrid + semantic queries on a small Search index.",
     claimId: "azure-ai-search-hybrid",
   },
+  "38-multimodal": {
+    services: ["Azure AI Video Indexer", "Azure AI Vision (multimodal embeddings)"],
+    storage: "Azure AI Search (unified index, modality-tagged)",
+    snippet: `// Video Indexer extracts transcript + scene/keyframe metadata\nconst indexed = await videoIndexerClient.uploadVideo(videoPath);\n\n// Azure AI Vision multimodal embeddings skill -- no model deployment needed\nconst frameVec = await visionClient.vectorizeImage(keyframe);\nconst textVec = await visionClient.vectorizeText(indexed.transcript);`,
+    labSteps: [
+      "Upload a sample claims video to Azure AI Video Indexer.",
+      "Pull its transcript and top keyframes from the indexing result.",
+      "Vectorize the transcript and keyframes with Azure AI Vision's multimodal embeddings skill.",
+      "Index alongside the Module 20 text chunks in Azure AI Search, tagged modality=video.",
+    ],
+    costNote: "~$0.05 for indexing and embedding one short video.",
+    claimId: "azure-video-indexer-vision-embeddings",
+  },
   "45-evaluation": {
     services: ["Microsoft Foundry evaluations"],
     storage: "Azure Blob Storage (golden dataset + evaluation results)",

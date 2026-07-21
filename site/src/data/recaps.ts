@@ -126,6 +126,24 @@ export const RECAPS: Record<string, RecapContent> = {
       caption: "The hybrid retrieval path — every flavor implements it with its own search service.",
     },
   },
+  "38-multimodal": {
+    title: "One index, whatever format it started as.",
+    takeaways: [
+      "HTML, PDF, and video each need their own extraction path before anything can be embedded.",
+      "Video and images need an embedding space built for them — a text embedder can't see a keyframe.",
+      "Tag every vector by modality and source; a unified index only works if you can still tell what you're looking at.",
+    ],
+    visual: {
+      kind: "flow",
+      nodes: [
+        { label: "HTML / PDF / TXT / video" },
+        { label: "Extract", note: "per-format" },
+        { label: "Embed", note: "text vs. multimodal model" },
+        { label: "One index", note: "tagged by modality" },
+      ],
+      caption: "Different formats in, one searchable index out — every flavor implements it with its own multimodal model.",
+    },
+  },
   "45-evaluation": {
     title: "Eval is a regression suite for answers.",
     takeaways: [

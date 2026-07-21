@@ -437,3 +437,41 @@ claims:
       - https://www.anthropic.com/news/model-context-protocol
     volatility: medium
     verified_on: "2026-07-18"
+
+  - id: gcp-gemini-embedding-2-multimodal
+    used_by: site/src/data/flavors/gcp.ts#38-multimodal
+    claim: "Gemini Embedding 2 (gemini-embedding-2-preview) embeds text, images, video, audio, and PDF into one shared vector space on Vertex AI"
+    sources:
+      - https://blog.google/innovation-and-ai/models-and-research/gemini-models/gemini-embedding-2/
+      - https://docs.cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-multimodal-embeddings
+    volatility: high
+    verified_on: "2026-07-20"
+
+  - id: aws-bedrock-multimodal-embeddings
+    used_by: site/src/data/flavors/aws.ts#38-multimodal
+    claim: "Bedrock's Titan/Nova multimodal embedding models embed image + text into one vector space; video needs Transcribe (audio) and Rekognition Video (keyframes/objects) to extract content first"
+    sources:
+      - https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-amazon-titan-multimodal-embeddings-g1.html
+      - https://docs.aws.amazon.com/transcribe/latest/dg/what-is-transcribe.html
+      - https://docs.aws.amazon.com/rekognition/latest/dg/video.html
+    volatility: high
+    verified_on: "2026-07-20"
+
+  - id: azure-video-indexer-vision-embeddings
+    used_by: site/src/data/flavors/azure.ts#38-multimodal
+    claim: "Azure AI Video Indexer extracts transcripts and scene/keyframe metadata from video, and the Azure AI Vision multimodal embeddings skill vectorizes image + text without a separate model deployment"
+    sources:
+      - https://learn.microsoft.com/en-us/azure/azure-video-indexer/video-indexer-overview
+      - https://learn.microsoft.com/en-us/azure/search/cognitive-search-skill-vision-vectorize
+    volatility: high
+    verified_on: "2026-07-20"
+
+  - id: oss-clip-whisper-multimodal
+    used_by: site/src/data/flavors/oss.ts#38-multimodal
+    claim: "Whisper transcribes audio/video to text, CLIP embeds images into a joint text-image space, and BGE-M3 embeds text -- run together as a self-hosted multimodal stack"
+    sources:
+      - https://github.com/openai/whisper
+      - https://github.com/openai/CLIP
+      - https://huggingface.co/BAAI/bge-m3
+    volatility: medium
+    verified_on: "2026-07-20"

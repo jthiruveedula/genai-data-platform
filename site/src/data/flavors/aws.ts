@@ -80,6 +80,19 @@ export const flavor: Record<string, FlavorEntry> = {
     costNote: "~$0.03 for a handful of hybrid queries + rerank calls on a small OpenSearch domain.",
     claimId: "aws-opensearch-hybrid",
   },
+  "38-multimodal": {
+    services: ["Transcribe", "Rekognition Video", "Bedrock (Titan/Nova multimodal)"],
+    storage: "OpenSearch Serverless (unified index, modality-tagged)",
+    snippet: `// 1. Extract: Transcribe for audio, Rekognition for keyframes\nconst transcript = await transcribe.startTranscriptionJob({...}).promise();\nconst frames = await rekognition.getSegmentDetection({...}).promise();\n\n// 2. Embed each modality with Bedrock's multimodal embedding model\nconst res = await bedrock.invokeModel({\n  modelId: "amazon.titan-embed-image-v1",\n  body: JSON.stringify({ inputText: transcript.text, inputImage: frameBase64 }),\n});`,
+    labSteps: [
+      "Run Transcribe on a sample claims video's audio track.",
+      "Run Rekognition Video to pull 3 representative keyframes.",
+      "Embed the transcript and keyframes with Bedrock's multimodal embedding model.",
+      "Index alongside the Module 20 text chunks in the same OpenSearch collection, tagged modality=video.",
+    ],
+    costNote: "~$0.06 for one short video (Transcribe + Rekognition + embedding calls).",
+    claimId: "aws-bedrock-multimodal-embeddings",
+  },
   "45-evaluation": {
     services: ["Bedrock evaluations", "S3"],
     storage: "S3 (golden dataset + evaluation job output)",

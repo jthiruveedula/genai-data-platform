@@ -74,6 +74,15 @@ export const MODULE_FLOWS: Record<string, ModuleFlow> = {
       { label: "Top-k", detail: "The chunks that actually survive scrutiny" },
     ],
   },
+  "38-multimodal": {
+    kicker: "MANY FORMATS, ONE INDEX",
+    steps: [
+      { label: "Detect format", detail: "HTML, PDF, TXT, video — routed by type" },
+      { label: "Extract per type", detail: "Strip boilerplate, layout-aware OCR, transcript + keyframes" },
+      { label: "Embed per modality", detail: "Text via a text embedder, frames via a multimodal one" },
+      { label: "Unified index", detail: "One schema, one index — tagged by modality" },
+    ],
+  },
   "45-evaluation": {
     kicker: "OPINION TO NUMBER",
     steps: [
@@ -174,6 +183,13 @@ export const MODULE_CLOUD_SERVICE: Record<string, CloudLabelMap> = {
     aws: "OpenSearch hybrid (BM25 + k-NN)",
     azure: "AI Search hybrid + semantic ranking",
     oss: "Qdrant dense + BM25 fusion",
+  },
+  "38-multimodal": {
+    neutral: "Multimodal embedding model",
+    gcp: "Gemini Embedding 2 (multimodal)",
+    aws: "Nova/Titan multimodal embeddings + Rekognition/Transcribe",
+    azure: "Azure AI Vision embeddings + Video Indexer",
+    oss: "CLIP + Whisper + BGE-M3",
   },
   "45-evaluation": {
     neutral: "Evaluation suite",

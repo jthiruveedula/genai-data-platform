@@ -34,7 +34,7 @@ test('matrix page lists every module as a row and supports sorting', async ({ pa
   await page.goto('matrix/');
   await expect(page).toHaveTitle(/Service equivalence matrix/);
   const rows = page.locator('table tbody tr');
-  await expect(rows).toHaveCount(11); // 00-foundations through 85-agents
+  await expect(rows).toHaveCount(12); // 00-foundations through 85-agents, plus 38-multimodal
 
   const stageHeaderButton = page.getByRole('button', { name: /stage/i });
   await expect(stageHeaderButton).toBeVisible();
