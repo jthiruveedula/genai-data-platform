@@ -26,7 +26,18 @@ describe('SCENARIOS registry', () => {
   it('gives every vignette real substance, not a placeholder stub', () => {
     for (const content of Object.values(SCENARIOS)) {
       for (const beat of content.beats) {
-        expect(beat.vignette.length).toBeGreaterThan(60);
+        for (const variant of Object.values(beat.vignette)) {
+          expect(variant.length).toBeGreaterThan(60);
+        }
+      }
+    }
+  });
+
+  it('makes every cloud vignette distinct from the others (not just a tagline swap)', () => {
+    for (const [id, content] of Object.entries(SCENARIOS)) {
+      for (const beat of content.beats) {
+        const variants = [beat.vignette.gcp, beat.vignette.aws, beat.vignette.azure, beat.vignette.oss];
+        expect(new Set(variants).size, id).toBe(variants.length);
       }
     }
   });

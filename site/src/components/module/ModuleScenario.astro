@@ -43,7 +43,13 @@ const cloudService = MODULE_CLOUD_SERVICE[moduleId];
             <strong>{beat.company.name}</strong>
             <span class="scenario-context">— {beat.company.context}</span>
           </p>
-          <p class="scenario-vignette">{beat.vignette}</p>
+          <p class="scenario-vignette cloud-swap">
+            <span data-for="neutral">{beat.vignette.neutral}</span>
+            <span data-for="gcp">{beat.vignette.gcp}</span>
+            <span data-for="aws">{beat.vignette.aws}</span>
+            <span data-for="azure">{beat.vignette.azure}</span>
+            <span data-for="oss">{beat.vignette.oss}</span>
+          </p>
           <p class="scenario-impact">
             <span class="scenario-impact-problem">{beat.impact.problem}</span>
             <span class="scenario-impact-arrow" aria-hidden="true">→</span>
