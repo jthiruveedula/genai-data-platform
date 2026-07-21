@@ -117,13 +117,12 @@ export const RECAPS: Record<string, RecapContent> = {
     visual: {
       kind: "flow",
       nodes: [
-        { label: "Query" },
-        { label: "Dense + sparse", note: "run in parallel" },
-        { label: "Fusion", note: "RRF" },
-        { label: "Rerank", note: "optional precision pass" },
-        { label: "Top-k context" },
+        { label: "Vector-only", note: "misses exact codes, SKUs, names" },
+        { label: "+ Keyword search", note: "BM25 catches what embeddings miss" },
+        { label: "+ Rerank", note: "precision pass on the survivors" },
+        { label: "Actually relevant", note: "not just similar" },
       ],
-      caption: "The hybrid retrieval path — every flavor implements it with its own search service.",
+      caption: "What each layer buys you — the mechanism itself is diagrammed above.",
     },
   },
   "38-multimodal": {
@@ -154,13 +153,12 @@ export const RECAPS: Record<string, RecapContent> = {
     visual: {
       kind: "flow",
       nodes: [
-        { label: "Golden set", note: "Q&A pairs" },
-        { label: "Run pipeline" },
-        { label: "Score", note: "recall + faithfulness" },
-        { label: "Gate deploy", note: "block on regression" },
-        { label: "Grow the set", note: "from real failures" },
+        { label: "Retrieval score", note: "recall — right chunks came back?" },
+        { label: "Generation score", note: "faithfulness — grounded in them?" },
+        { label: "One blended number", note: "the trap: hides which stage broke" },
+        { label: "Scored separately", note: "pinpoints retrieval vs. generation" },
       ],
-      caption: "The eval loop — failures feed back into the golden set, so the suite gets harder over time.",
+      caption: "Why the scores stay separate — the run-and-gate mechanism is diagrammed above.",
     },
   },
   "55-observability": {
@@ -173,13 +171,12 @@ export const RECAPS: Record<string, RecapContent> = {
     visual: {
       kind: "flow",
       nodes: [
-        { label: "Request", note: "trace ID minted" },
-        { label: "Retrieve span", note: "chunks + latency" },
-        { label: "Generate span", note: "token counts" },
-        { label: "Event log", note: "one row per request" },
-        { label: "Dashboards + alerts" },
+        { label: "One trace ID", note: "per request, end to end" },
+        { label: "Debugging", note: "replay exactly what happened" },
+        { label: "Eval sampling", note: "Module 45 reads from here" },
+        { label: "Cost join", note: "Module 75 reads from here" },
       ],
-      caption: "The trace anatomy every flavor builds — the event log it produces powers both debugging and FinOps.",
+      caption: "Who actually reads the trace — the span anatomy itself is diagrammed above.",
     },
   },
   "65-security": {
@@ -225,13 +222,13 @@ export const RECAPS: Record<string, RecapContent> = {
     visual: {
       kind: "flow",
       nodes: [
-        { label: "Goal" },
-        { label: "Plan", note: "model decides next step" },
-        { label: "Tool call", note: "retrieval, APIs, code" },
-        { label: "Observe", note: "result feeds the loop" },
-        { label: "Answer", note: "budget + timeout bound" },
+        { label: "Unbounded loop", note: "a cost and safety incident at once" },
+        { label: "+ Iteration budget", note: "hard cap, forces a stop" },
+        { label: "+ Least privilege", note: "only the tools the task needs" },
+        { label: "+ Human gate", note: "on any side-effecting call" },
+        { label: "Bounded agent", note: "safe to actually run" },
       ],
-      caption: "The agent loop — steps two through four repeat until the goal is met or the budget runs out.",
+      caption: "What makes a loop safe to ship — the plan/act/observe mechanism is diagrammed above.",
     },
   },
 };
