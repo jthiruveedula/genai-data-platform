@@ -4,6 +4,7 @@ import FlavorTabs from "../../../components/FlavorTabs.astro";
 import ModuleHero from "../../../components/module/ModuleHero.astro";
 import ModuleScenario from "../../../components/module/ModuleScenario.astro";
 import ModuleFlowDiagram from "../../../components/module/ModuleFlowDiagram.astro";
+import AgentLoopDemo from "../../../components/module/demos/AgentLoopDemo.astro";
 import ModuleFooterNav from "../../../components/module/ModuleFooterNav.astro";
 import ModuleRecap from "../../../components/module/ModuleRecap.astro";
 import { flavor as gcp } from "../../../data/flavors/gcp";
@@ -49,6 +50,8 @@ const entries = {
       unbounded, a loop stuck on an unsolvable task will keep planning and acting forever — so every agent needs a
       hard iteration or token budget that forces it to stop and report failure instead of spinning.
     </p>
+
+    <AgentLoopDemo />
 
     <h2>MCP as a standard interface</h2>
     <p>

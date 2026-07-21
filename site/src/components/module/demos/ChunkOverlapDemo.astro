@@ -1,0 +1,185 @@
+---
+// Bespoke concept demo for Module 15 (Chunking) — makes "overlap" concrete
+// with real sample text instead of abstract boxes: three chunks over one
+// paragraph, with the shared boundary phrases visibly highlighted as
+// belonging to both chunks. Same insurance-policy domain as this module's
+// Northbridge Mutual scenario, so the example isn't generic filler.
+interface Segment {
+  text: string;
+  chunks: number[];
+}
+
+const SEGMENTS: Segment[] = [
+  { text: "Coverage continues at the renewed premium rate", chunks: [1] },
+  { text: "unless the policyholder submits written notice", chunks: [1, 2] },
+  { text: "within thirty days of the renewal date,", chunks: [2] },
+  { text: "after which the standard rate schedule applies", chunks: [2, 3] },
+  { text: "for the remainder of the policy term.", chunks: [3] },
+];
+---
+
+<figure class="concept-demo chunk-overlap-demo" data-chunk-demo aria-label="Chunking with overlap, shown on sample policy text">
+  <figcaption class="concept-demo-label mono">[ SEE IT: THE SAME SENTENCE, SPLIT WITH OVERLAP ]</figcaption>
+
+  <p class="chunk-sentence mono">
+    {
+      SEGMENTS.map((seg) => (
+        <span
+          class={`chunk-word ${seg.chunks.length > 1 ? "chunk-word--overlap" : ""}`}
+          data-chunk-word
+          data-chunks={seg.chunks.join(",")}
+        >
+          {seg.text}{" "}
+        </span>
+      ))
+    }
+  </p>
+
+  <div class="chunk-legend">
+    <span class="chunk-swatch" data-chunk-swatch="1">CHUNK 1</span>
+    <span class="chunk-swatch" data-chunk-swatch="2">CHUNK 2</span>
+    <span class="chunk-swatch" data-chunk-swatch="3">CHUNK 3</span>
+    <span class="chunk-swatch chunk-swatch--overlap">OVERLAP — kept in both chunks</span>
+  </div>
+</figure>
+
+<script>
+  import { gsap } from "gsap";
+  import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+  gsap.registerPlugin(ScrollTrigger);
+
+  let ctx: gsap.Context | undefined;
+
+  function setup() {
+    const rootEl = document.querySelector<HTMLElement>("[data-chunk-demo]");
+    if (!rootEl) return;
+    ctx?.revert();
+    ctx = gsap.context(() => {
+      const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const words = gsap.utils.toArray<HTMLElement>("[data-chunk-word]", rootEl);
+      const overlaps = gsap.utils.toArray<HTMLElement>(".chunk-word--overlap", rootEl);
+
+      if (reduced) {
+        gsap.set(words, { autoAlpha: 1 });
+        return;
+      }
+
+      gsap.set(words, { autoAlpha: 0, y: 6 });
+      gsap.to(words, {
+        autoAlpha: 1,
+        y: 0,
+        duration: 0.4,
+        ease: "power2.out",
+        stagger: 0.12,
+        scrollTrigger: { trigger: rootEl, start: "top 85%", once: true },
+        onComplete: () => {
+          gsap.to(overlaps, {
+            scale: 1.04,
+            duration: 0.5,
+            ease: "power1.inOut",
+            yoyo: true,
+            repeat: 3,
+            transformOrigin: "50% 50%",
+          });
+        },
+      });
+    }, rootEl);
+  }
+
+  setup();
+  document.addEventListener("astro:page-load", setup);
+  document.addEventListener("astro:after-swap", () => ctx?.revert());
+</script>
+
+<style>
+  .concept-demo {
+    margin: 1.75rem 0 2rem;
+    padding: 1.4rem 1.6rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-raised);
+  }
+
+  .concept-demo-label {
+    margin: 0 0 1.1rem;
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    color: var(--accent-text, var(--accent));
+  }
+
+  .chunk-sentence {
+    margin: 0 0 1.25rem;
+    font-size: 0.98rem;
+    line-height: 2.1;
+    color: var(--text);
+  }
+
+  .chunk-word {
+    display: inline;
+    padding: 0.3rem 0.15rem;
+    border-radius: 3px;
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+  }
+
+  .chunk-word[data-chunks="1"] {
+    background: color-mix(in srgb, var(--accent) 14%, transparent);
+  }
+
+  .chunk-word[data-chunks="2"] {
+    background: color-mix(in srgb, var(--accent) 22%, transparent);
+  }
+
+  .chunk-word[data-chunks="3"] {
+    background: color-mix(in srgb, var(--accent) 30%, transparent);
+  }
+
+  .chunk-word--overlap {
+    background: color-mix(in srgb, var(--accent) 48%, transparent) !important;
+    box-shadow: inset 0 0 0 1px var(--accent);
+    font-weight: 600;
+  }
+
+  .chunk-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .chunk-swatch {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.04em;
+    padding: 0.25rem 0.55rem;
+    border-radius: var(--radius);
+    color: var(--text-secondary);
+  }
+
+  .chunk-swatch::before {
+    content: "";
+    width: 0.6rem;
+    height: 0.6rem;
+    border-radius: 2px;
+  }
+
+  .chunk-swatch[data-chunk-swatch="1"]::before {
+    background: color-mix(in srgb, var(--accent) 14%, var(--bg-card));
+  }
+
+  .chunk-swatch[data-chunk-swatch="2"]::before {
+    background: color-mix(in srgb, var(--accent) 22%, var(--bg-card));
+  }
+
+  .chunk-swatch[data-chunk-swatch="3"]::before {
+    background: color-mix(in srgb, var(--accent) 30%, var(--bg-card));
+  }
+
+  .chunk-swatch--overlap::before {
+    background: color-mix(in srgb, var(--accent) 48%, var(--bg-card));
+    box-shadow: 0 0 0 1px var(--accent);
+  }
+</style>
