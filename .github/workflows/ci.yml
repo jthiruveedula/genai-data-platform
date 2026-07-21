@@ -42,9 +42,20 @@ jobs:
       - name: Link check
         uses: lycheeverse/lychee-action@v2
         with:
+          # qdrant.tech, developers.redhat.com, and medium.com all block
+          # requests from the GitHub Actions runner's IP/user-agent (bot
+          # protection) — connection-refused or 403, even though the pages
+          # are live and were confirmed reachable via a real browser when
+          # added as scenario case-study sources (validation/sources.yaml,
+          # id prefix `scenario-`). Excluded from the crawl rather than
+          # accepting 403 globally, so an actually-dead link elsewhere that
+          # happens to 403 still fails the check.
           args: >-
             --root-dir ${{ runner.temp }}/link-check-root
             --no-progress
+            --exclude 'qdrant\.tech'
+            --exclude 'developers\.redhat\.com'
+            --exclude 'medium\.com'
             '${{ runner.temp }}/link-check-root/genai-data-platform/**/*.html'
           fail: true
       - name: Install Playwright browsers
