@@ -1,11 +1,11 @@
 ---
 /* Hallmark · pre-emit critique: P4 H4 E4 S4 R5 V4 */
-// "In the field" aside — a beat from each of the two recurring composite
-// companies (an enterprise and a startup) showing how this module's idea
-// shows up in a realistic-but-invented deployment. Sits right after the
+// "In the field" aside — one real, publicly cited customer case study per
+// module, swapped by cloud (company, story, and source all change with the
+// selection, not just an accent color or tagline). Sits right after the
 // module hero, before the conceptual sections, so the story frames what
 // follows rather than summarizing it.
-import { SCENARIOS } from "../../data/scenarios";
+import { CASE_STUDIES, neutralCaseStudySummary } from "../../data/scenarios";
 import { MODULE_CLOUD_SERVICE } from "../../data/moduleFlows";
 
 interface Props {
@@ -13,17 +13,19 @@ interface Props {
 }
 
 const { moduleId } = Astro.props;
-const content = SCENARIOS[moduleId];
-if (!content) throw new Error(`ModuleScenario: no scenario registered for module "${moduleId}"`);
+const entry = CASE_STUDIES[moduleId];
+if (!entry) throw new Error(`ModuleScenario: no case study registered for module "${moduleId}"`);
 const cloudService = MODULE_CLOUD_SERVICE[moduleId];
+const neutral = neutralCaseStudySummary(entry);
+const clouds = ["gcp", "aws", "azure", "oss"] as const;
 ---
 
-<aside class="module-scenario" aria-label="In the field: composite scenario examples">
-  <p class="scenario-kicker">IN THE FIELD <span class="scenario-disclaimer">— composite, illustrative examples, not real companies</span></p>
+<aside class="module-scenario" aria-label="In the field: real customer case study">
+  <p class="scenario-kicker">IN THE FIELD <span class="scenario-disclaimer">— real, publicly published customer stories, cited below</span></p>
   {
     cloudService && (
       <p class="scenario-cloud-line mono">
-        BOTH STORIES BELOW, ON THIS CLOUD:{" "}
+        ON THIS CLOUD:{" "}
         <span class="cloud-swap">
           <span data-for="neutral">{cloudService.neutral}</span>
           <span data-for="gcp">{cloudService.gcp}</span>
@@ -34,29 +36,32 @@ const cloudService = MODULE_CLOUD_SERVICE[moduleId];
       </p>
     )
   }
-  <div class="scenario-beats">
+  <div class="scenario-beat cloud-swap">
+    <div data-for="neutral" class="scenario-neutral">{neutral}</div>
     {
-      content.beats.map((beat) => (
-        <div class="scenario-beat">
-          <p class="scenario-company">
-            <span class="chip chip--accent">{beat.company.kind}</span>
-            <strong>{beat.company.name}</strong>
-            <span class="scenario-context">— {beat.company.context}</span>
-          </p>
-          <p class="scenario-vignette cloud-swap">
-            <span data-for="neutral">{beat.vignette.neutral}</span>
-            <span data-for="gcp">{beat.vignette.gcp}</span>
-            <span data-for="aws">{beat.vignette.aws}</span>
-            <span data-for="azure">{beat.vignette.azure}</span>
-            <span data-for="oss">{beat.vignette.oss}</span>
-          </p>
-          <p class="scenario-impact">
-            <span class="scenario-impact-problem">{beat.impact.problem}</span>
-            <span class="scenario-impact-arrow" aria-hidden="true">→</span>
-            <span class="scenario-impact-fix">{beat.impact.fix}</span>
-          </p>
-        </div>
-      ))
+      clouds.map((cloud) => {
+        const story = entry[cloud];
+        return (
+          <div data-for={cloud} class="scenario-story">
+            <p class="scenario-company">
+              <span class="chip chip--accent">{story.industry}</span>
+              <strong>{story.company}</strong>
+              {story.stretch && <span class="chip chip--pending" title="Closest publicly available real match — the vignette explains why">CLOSEST PUBLISHED MATCH</span>}
+            </p>
+            <p class="scenario-vignette">{story.vignette}</p>
+            <p class="scenario-impact">
+              <span class="scenario-impact-problem">{story.impact.problem}</span>
+              <span class="scenario-impact-arrow" aria-hidden="true">→</span>
+              <span class="scenario-impact-fix">{story.impact.fix}</span>
+            </p>
+            <p class="scenario-source">
+              <a href={story.sourceUrl} target="_blank" rel="noopener noreferrer">
+                Source ↗
+              </a>
+            </p>
+          </div>
+        );
+      })
     }
   </div>
 </aside>
@@ -98,10 +103,29 @@ const cloudService = MODULE_CLOUD_SERVICE[moduleId];
     font-weight: 600;
   }
 
-  .scenario-beats {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1.5rem;
+  /* The shared .cloud-swap utility (base.css) sets every [data-for] to
+     display:none, and the active one to display:inline — fine for short
+     labels, but this beat's active variant is a full block (company line +
+     vignette + impact + source), so the active state is overridden to
+     display:block here. Astro's per-component scoping (an extra attribute
+     selector on every selector below) gives this the specificity edge over
+     the shared inline rule without touching base.css's site-wide behavior. */
+  .scenario-beat > [data-for] {
+    max-width: 44rem;
+  }
+
+  :root:not([data-cloud]) .scenario-beat > [data-for="neutral"],
+  :root[data-cloud="gcp"] .scenario-beat > [data-for="gcp"],
+  :root[data-cloud="aws"] .scenario-beat > [data-for="aws"],
+  :root[data-cloud="azure"] .scenario-beat > [data-for="azure"],
+  :root[data-cloud="oss"] .scenario-beat > [data-for="oss"] {
+    display: block;
+  }
+
+  .scenario-neutral {
+    color: var(--text-secondary);
+    line-height: 1.55;
+    font-size: 0.92rem;
   }
 
   .scenario-company {
@@ -111,11 +135,6 @@ const cloudService = MODULE_CLOUD_SERVICE[moduleId];
     gap: 0.5rem;
     margin: 0 0 0.5rem;
     font-size: 0.9rem;
-  }
-
-  .scenario-context {
-    color: var(--text-secondary);
-    font-size: 0.82rem;
   }
 
   .scenario-vignette {
@@ -130,7 +149,7 @@ const cloudService = MODULE_CLOUD_SERVICE[moduleId];
     flex-wrap: wrap;
     align-items: baseline;
     gap: 0.4rem;
-    margin: 0;
+    margin: 0 0 0.6rem;
     padding-top: 0.6rem;
     border-top: 1px dashed var(--border);
     font-family: var(--font-mono);
@@ -151,14 +170,23 @@ const cloudService = MODULE_CLOUD_SERVICE[moduleId];
     font-weight: 600;
   }
 
+  .scenario-source {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+  }
+
+  .scenario-source a {
+    color: var(--text-secondary);
+  }
+
+  .scenario-source a:hover {
+    color: var(--accent-text, var(--accent));
+  }
+
   @media (max-width: 640px) {
     .module-scenario {
       padding: 1.15rem 1.15rem 1.3rem;
-    }
-
-    .scenario-beats {
-      grid-template-columns: 1fr;
-      gap: 1.25rem;
     }
   }
 </style>
