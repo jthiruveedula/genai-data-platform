@@ -104,6 +104,19 @@
   box-sizing: border-box;
 }
 
+/* Themed text selection: without this, selecting any text falls back to the
+   browser's default opaque blue highlight, which clashes hard against the
+   dark "control room" surfaces and the per-cloud accent everywhere else on
+   the page reacts to. Tying it to --accent means selection recolors with
+   the active cloud like everything else, instead of sitting outside the
+   theme entirely. Only 45% mixed with transparent (not a solid fill) so
+   --text — already contrast-tuned against --bg/--bg-card — stays readable
+   underneath it across every cloud accent, in both themes. */
+::selection {
+  background: color-mix(in srgb, var(--accent) 45%, transparent);
+  color: var(--text);
+}
+
 /* Defensive reset for the `hidden` attribute: any author-stylesheet class
    that sets `display` (e.g. `.chip { display: inline-flex }`) has the same
    specificity as the UA stylesheet's `[hidden] { display: none }` and loads
