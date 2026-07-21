@@ -4,6 +4,7 @@ import FlavorTabs from "../../../components/FlavorTabs.astro";
 import ModuleHero from "../../../components/module/ModuleHero.astro";
 import ModuleScenario from "../../../components/module/ModuleScenario.astro";
 import ModuleFlowDiagram from "../../../components/module/ModuleFlowDiagram.astro";
+import HybridSearchDemo from "../../../components/module/demos/HybridSearchDemo.astro";
 import ModuleFooterNav from "../../../components/module/ModuleFooterNav.astro";
 import ModuleRecap from "../../../components/module/ModuleRecap.astro";
 import { flavor as gcp } from "../../../data/flavors/gcp";
@@ -41,6 +42,8 @@ const entries = {
       together, then combines both rankings. It's the single highest-leverage upgrade from Module 15's plain vector
       index: it fixes the class of failures where the right chunk exists but the embedding just wasn't close enough.
     </p>
+
+    <HybridSearchDemo />
 
     <h2>Rerankers</h2>
     <p>

@@ -1,0 +1,229 @@
+---
+// Bespoke concept demo for Module 35 (Retrieval quality) — shows two
+// searches running in parallel and fusing into one ranked list. The numbers
+// are real reciprocal-rank-fusion math (k=60), not decorative: "Claims
+// filing process" outranks "Form HO-3-2024 (exact match)" specifically
+// because it appears in BOTH lists, even at a middling rank in each — the
+// exact behavior this module's prose describes in words.
+const DENSE = ["Renewal terms overview", "Claims filing process", "Coverage continuation policy"];
+const SPARSE = ["Form HO-3-2024 (exact match)", "Form HO-3-2024 addendum", "Claims filing process"];
+const FUSED = [
+  { text: "Claims filing process", tag: "D+S", score: "0.032" },
+  { text: "Form HO-3-2024 (exact match)", tag: "S", score: "0.016" },
+  { text: "Renewal terms overview", tag: "D", score: "0.016" },
+];
+---
+
+<figure class="concept-demo hybrid-demo" data-hybrid-demo aria-label="Hybrid search: dense and sparse results fused by reciprocal rank">
+  <figcaption class="concept-demo-label mono">[ SEE IT: TWO SEARCHES, ONE RANKED LIST ]</figcaption>
+
+  <p class="hybrid-query mono" data-hybrid-item>QUERY → "form HO-3-2024 renewal terms"</p>
+
+  <div class="hybrid-lanes">
+    <div class="hybrid-lane">
+      <span class="hybrid-lane-label mono">DENSE — by meaning</span>
+      <ol class="hybrid-list">
+        {DENSE.map((item) => <li class="hybrid-chip hybrid-chip--dense" data-hybrid-item>{item}</li>)}
+      </ol>
+    </div>
+    <div class="hybrid-lane">
+      <span class="hybrid-lane-label mono">SPARSE — by keyword (BM25)</span>
+      <ol class="hybrid-list">
+        {SPARSE.map((item) => <li class="hybrid-chip hybrid-chip--sparse" data-hybrid-item>{item}</li>)}
+      </ol>
+    </div>
+  </div>
+
+  <div class="hybrid-fuse" data-hybrid-item>
+    <span class="chip chip--accent">FUSE — RECIPROCAL RANK</span>
+  </div>
+
+  <div class="hybrid-output">
+    <span class="hybrid-lane-label mono">TOP-K, RERANKED</span>
+    <ol class="hybrid-output-list">
+      {
+        FUSED.map((item) => (
+          <li class="hybrid-output-row" data-hybrid-item>
+            <span class="hybrid-tag mono">{item.tag}</span>
+            <span class="hybrid-output-text">{item.text}</span>
+            <span class="hybrid-score mono">{item.score}</span>
+          </li>
+        ))
+      }
+    </ol>
+    <p class="hybrid-note">
+      "Claims filing process" ranks first — not the #1 keyword match — because reciprocal rank fusion rewards
+      appearing in <em>both</em> lists over ranking #1 in only one.
+    </p>
+  </div>
+</figure>
+
+<script>
+  import { gsap } from "gsap";
+  import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+  gsap.registerPlugin(ScrollTrigger);
+
+  let ctx: gsap.Context | undefined;
+
+  function setup() {
+    const rootEl = document.querySelector<HTMLElement>("[data-hybrid-demo]");
+    if (!rootEl) return;
+    ctx?.revert();
+    ctx = gsap.context(() => {
+      const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const items = gsap.utils.toArray<HTMLElement>("[data-hybrid-item]", rootEl);
+
+      if (reduced) {
+        gsap.set(items, { autoAlpha: 1, y: 0 });
+        return;
+      }
+
+      gsap.set(items, { autoAlpha: 0, y: 10 });
+      gsap.to(items, {
+        autoAlpha: 1,
+        y: 0,
+        duration: 0.4,
+        ease: "power2.out",
+        stagger: 0.09,
+        scrollTrigger: { trigger: rootEl, start: "top 85%", once: true },
+      });
+    }, rootEl);
+  }
+
+  setup();
+  document.addEventListener("astro:page-load", setup);
+  document.addEventListener("astro:after-swap", () => ctx?.revert());
+</script>
+
+<style>
+  .concept-demo {
+    margin: 1.75rem 0 2rem;
+    padding: 1.4rem 1.6rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-raised);
+  }
+
+  .concept-demo-label {
+    margin: 0 0 1.1rem;
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    color: var(--accent-text, var(--accent));
+  }
+
+  .hybrid-query {
+    margin: 0 0 1.25rem;
+    font-size: 0.85rem;
+    color: var(--text);
+  }
+
+  .hybrid-lanes {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .hybrid-lane-label {
+    display: block;
+    margin-bottom: 0.6rem;
+    font-size: 0.65rem;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+  }
+
+  .hybrid-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .hybrid-chip {
+    padding: 0.4rem 0.6rem;
+    border-radius: var(--radius);
+    font-size: 0.8rem;
+    color: var(--text);
+  }
+
+  .hybrid-chip--dense {
+    border: 1px solid var(--accent);
+    background: transparent;
+  }
+
+  .hybrid-chip--sparse {
+    background: color-mix(in srgb, var(--accent) 22%, transparent);
+  }
+
+  .hybrid-fuse {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 1.25rem;
+  }
+
+  .hybrid-output {
+    border-top: 1px dashed var(--border);
+    padding-top: 1.1rem;
+  }
+
+  .hybrid-output-list {
+    list-style: none;
+    margin: 0.6rem 0 1rem;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .hybrid-output-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.5rem 0.7rem;
+    border-radius: var(--radius);
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+  }
+
+  .hybrid-output-row:first-child {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent);
+  }
+
+  .hybrid-tag {
+    flex: none;
+    font-size: 0.65rem;
+    padding: 0.15rem 0.4rem;
+    border-radius: 3px;
+    background: color-mix(in srgb, var(--accent) 30%, transparent);
+    color: var(--accent-text, var(--accent));
+  }
+
+  .hybrid-output-text {
+    flex: 1;
+    font-size: 0.85rem;
+    color: var(--text);
+  }
+
+  .hybrid-score {
+    flex: none;
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+  }
+
+  .hybrid-note {
+    margin: 0;
+    font-size: 0.82rem;
+    line-height: 1.5;
+    color: var(--text-secondary);
+  }
+
+  @media (max-width: 640px) {
+    .hybrid-lanes {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

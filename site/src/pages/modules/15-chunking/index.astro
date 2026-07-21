@@ -4,6 +4,7 @@ import FlavorTabs from "../../../components/FlavorTabs.astro";
 import ModuleHero from "../../../components/module/ModuleHero.astro";
 import ModuleScenario from "../../../components/module/ModuleScenario.astro";
 import ModuleFlowDiagram from "../../../components/module/ModuleFlowDiagram.astro";
+import ChunkOverlapDemo from "../../../components/module/demos/ChunkOverlapDemo.astro";
 import ModuleFooterNav from "../../../components/module/ModuleFooterNav.astro";
 import ModuleRecap from "../../../components/module/ModuleRecap.astro";
 import { flavor as gcp } from "../../../data/flavors/gcp";
@@ -53,6 +54,8 @@ const entries = {
       chance that a key sentence gets split exactly at a chunk boundary — at the cost of some storage and embedding
       redundancy.
     </p>
+
+    <ChunkOverlapDemo />
 
     <h2>Try it in your flavor</h2>
     <FlavorTabs moduleId={moduleId} entries={entries} />

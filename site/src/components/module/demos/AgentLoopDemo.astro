@@ -1,0 +1,229 @@
+---
+// Bespoke concept demo for Module 85 (Agents & tool use) — the plan/act/
+// observe loop hitting its iteration budget and stopping gracefully. Same
+// scenario this module's own Fernlight vignette describes ("kept calling
+// the same lookup tool in a loop when a merchant's product data was
+// malformed... a hard step budget turned a runaway loop into a graceful
+// response") — the animation shows the exact mechanism the prose names.
+const BUDGET = 4;
+---
+
+<figure class="concept-demo agent-loop-demo" data-agent-loop aria-label="Agent loop repeating until it hits its iteration budget, then stopping">
+  <figcaption class="concept-demo-label mono">[ SEE IT: THE LOOP HITS ITS BUDGET ]</figcaption>
+
+  <p class="agent-loop-goal mono">GOAL → "look up SKU for a merchant's malformed product row"</p>
+
+  <div class="agent-loop-row">
+    <div class="agent-node" data-agent-node="0">
+      <span class="agent-node-label">PLAN</span>
+      <span class="agent-node-detail">try the lookup_sku tool</span>
+    </div>
+    <span class="agent-loop-chevron" aria-hidden="true">›</span>
+    <div class="agent-node" data-agent-node="1">
+      <span class="agent-node-label">ACT</span>
+      <span class="agent-node-detail">call the tool</span>
+    </div>
+    <span class="agent-loop-chevron" aria-hidden="true">›</span>
+    <div class="agent-node" data-agent-node="2">
+      <span class="agent-node-label">OBSERVE</span>
+      <span class="agent-node-detail">malformed row, no SKU found</span>
+    </div>
+  </div>
+
+  <div class="agent-loop-back" aria-hidden="true">
+    <svg viewBox="0 0 100 20" preserveAspectRatio="none">
+      <defs>
+        <marker id="agent-loop-arrowhead" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+          <path d="M0,0 L8,4 L0,8 Z" fill="var(--text-secondary)"></path>
+        </marker>
+      </defs>
+      <path
+        d="M95 3 C 60 20, 40 20, 5 3"
+        stroke="var(--text-secondary)"
+        stroke-width="1.25"
+        fill="none"
+        stroke-dasharray="4 4"
+        marker-end="url(#agent-loop-arrowhead)"
+      ></path>
+    </svg>
+    <span class="agent-loop-back-label mono">retry, budget allowing</span>
+  </div>
+
+  <div class="agent-budget">
+    <span class="agent-budget-label mono">ITERATION BUDGET</span>
+    <div class="agent-budget-ticks" data-agent-ticks>
+      {Array.from({ length: BUDGET }).map((_, i) => <span class="agent-tick" data-agent-tick={i} />)}
+    </div>
+  </div>
+
+  <p class="agent-outcome mono" data-agent-outcome>[ BUDGET HIT → GRACEFUL STOP: "couldn't find that" ]</p>
+</figure>
+
+<script>
+  import { gsap } from "gsap";
+  import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+  gsap.registerPlugin(ScrollTrigger);
+
+  const BUDGET = 4;
+
+  let ctx: gsap.Context | undefined;
+
+  function setup() {
+    const rootEl = document.querySelector<HTMLElement>("[data-agent-loop]");
+    if (!rootEl) return;
+    ctx?.revert();
+    ctx = gsap.context(() => {
+      const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const nodes = gsap.utils.toArray<HTMLElement>("[data-agent-node]", rootEl);
+      const ticks = gsap.utils.toArray<HTMLElement>("[data-agent-tick]", rootEl);
+      const outcome = rootEl.querySelector<HTMLElement>("[data-agent-outcome]");
+
+      if (reduced) {
+        gsap.set(nodes, { autoAlpha: 1 });
+        gsap.set(ticks, { autoAlpha: 0.35 });
+        gsap.set(outcome, { autoAlpha: 1 });
+        return;
+      }
+
+      gsap.set(nodes, { autoAlpha: 0.85 });
+      gsap.set(outcome, { autoAlpha: 0, y: 8 });
+
+      const tl = gsap.timeline({
+        scrollTrigger: { trigger: rootEl, start: "top 85%", once: true },
+      });
+
+      for (let i = 0; i < BUDGET; i++) {
+        nodes.forEach((node) => {
+          tl.to(node, { autoAlpha: 1, scale: 1.04, duration: 0.22, ease: "power2.out", yoyo: true, repeat: 1 }, "+=0.05");
+        });
+        tl.to(ticks[i], { autoAlpha: 0.3, scale: 0.85, duration: 0.3, ease: "power2.out" }, "-=0.1");
+      }
+
+      tl.to(outcome, { autoAlpha: 1, y: 0, duration: 0.4, ease: "power2.out" }, "+=0.2");
+    }, rootEl);
+  }
+
+  setup();
+  document.addEventListener("astro:page-load", setup);
+  document.addEventListener("astro:after-swap", () => ctx?.revert());
+</script>
+
+<style>
+  .concept-demo {
+    margin: 1.75rem 0 2rem;
+    padding: 1.4rem 1.6rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-raised);
+  }
+
+  .concept-demo-label {
+    margin: 0 0 1.1rem;
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    color: var(--accent-text, var(--accent));
+  }
+
+  .agent-loop-goal {
+    margin: 0 0 1.25rem;
+    font-size: 0.85rem;
+    color: var(--text);
+  }
+
+  .agent-loop-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .agent-node {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    padding: 0.7rem 0.9rem;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+  }
+
+  .agent-node-label {
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: var(--text);
+  }
+
+  .agent-node-detail {
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+  }
+
+  .agent-loop-chevron {
+    flex: none;
+    color: var(--text-secondary);
+  }
+
+  .agent-loop-back {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 0.25rem 0 1rem;
+  }
+
+  .agent-loop-back svg {
+    width: 60%;
+    max-width: 20rem;
+    height: 20px;
+  }
+
+  .agent-loop-back-label {
+    font-size: 0.65rem;
+    color: var(--text-secondary);
+  }
+
+  .agent-budget {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .agent-budget-label {
+    font-size: 0.65rem;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+  }
+
+  .agent-budget-ticks {
+    display: flex;
+    gap: 0.4rem;
+  }
+
+  .agent-tick {
+    width: 1.1rem;
+    height: 1.1rem;
+    border-radius: 3px;
+    background: var(--accent);
+  }
+
+  .agent-outcome {
+    margin: 0;
+    padding-top: 0.9rem;
+    border-top: 1px dashed var(--border);
+    font-size: 0.8rem;
+    color: var(--accent-text, var(--accent));
+  }
+
+  @media (max-width: 640px) {
+    .agent-loop-row {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .agent-loop-chevron {
+      align-self: center;
+      transform: rotate(90deg);
+    }
+  }
+</style>
