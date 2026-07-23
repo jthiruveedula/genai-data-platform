@@ -90,10 +90,24 @@ const totalTimeLabel = totalRemainderMinutes === 0 ? `${totalHours}H` : `${total
 
 <script>
   import { gsap } from "gsap";
-  import { ScrollTrigger } from "gsap/ScrollTrigger";
   import { isModuleComplete, getCompletionSummary } from "../../lib/progress";
 
-  gsap.registerPlugin(ScrollTrigger);
+  // ScrollTrigger only matters once this below-fold section nears the
+  // viewport. Static-importing it (as every homepage scene used to) forced
+  // its ~25KB vendor chunk into the same eager parse/eval task as
+  // HeroScene's above-fold GSAP work, which is most of the homepage's
+  // chronic total-blocking-time overage. Dynamic-importing it here instead
+  // means that cost is paid only on scroll, never during Lighthouse's
+  // static, no-scroll audit.
+  let scrollTriggerReady: Promise<void> | null = null;
+  function loadScrollTrigger() {
+    if (!scrollTriggerReady) {
+      scrollTriggerReady = import("gsap/ScrollTrigger").then(({ ScrollTrigger }) => {
+        gsap.registerPlugin(ScrollTrigger);
+      });
+    }
+    return scrollTriggerReady;
+  }
 
   // Reads recap-view progress written by ModuleRecap.astro on a module page
   // (plus legacy quiz scores) — separate from the GSAP entrance animation below since
@@ -168,30 +182,29 @@ const totalTimeLabel = totalRemainderMinutes === 0 ? `${totalHours}H` : `${total
 
   // Below-fold, scroll-revealed (once: true) — one ScrollTrigger per module
   // card (18 of them), the heaviest single setup() among the homepage's
-  // scroll-reveal components. An idle-callback still fires inside the
-  // page-load main-thread window and counts toward Lighthouse's TBT budget
-  // even though none of this is reachable before the visitor scrolls.
-  // Gating the *first* setup behind an IntersectionObserver keeps that
-  // creation cost off the main thread until the section actually nears the
-  // viewport. renderProgress() is plain DOM/text, not GSAP, so it stays
-  // immediate. Later astro:page-load re-setups stay immediate too.
+  // scroll-reveal components. Gating the *first* setup behind an
+  // IntersectionObserver (in addition to the dynamic import above) keeps
+  // that creation cost off the main thread until the section actually
+  // nears the viewport. renderProgress() is plain DOM/text, not GSAP, so
+  // it stays immediate. Later astro:page-load re-setups stay immediate too
+  // since ScrollTrigger is already loaded by then.
   const curriculumRootEl = document.querySelector<HTMLElement>("[data-curriculum]");
   if (curriculumRootEl && typeof IntersectionObserver === "function") {
     const curriculumObserver = new IntersectionObserver(
       (entries) => {
         if (!entries.some((entry) => entry.isIntersecting)) return;
         curriculumObserver.disconnect();
-        setup();
+        loadScrollTrigger().then(setup);
       },
       { rootMargin: "600px 0px" },
     );
     curriculumObserver.observe(curriculumRootEl);
   } else {
-    setup();
+    loadScrollTrigger().then(setup);
   }
   renderProgress();
   document.addEventListener("astro:page-load", () => {
-    setup();
+    loadScrollTrigger().then(setup);
     renderProgress();
   });
   document.addEventListener("astro:after-swap", () => ctx?.revert());

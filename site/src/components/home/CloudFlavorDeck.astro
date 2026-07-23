@@ -127,9 +127,23 @@ const MAPPING: { label: string; values: Record<(typeof CLOUD_KEYS)[number], stri
 
 <script>
   import { gsap } from "gsap";
-  import { ScrollTrigger } from "gsap/ScrollTrigger";
 
-  gsap.registerPlugin(ScrollTrigger);
+  // ScrollTrigger only matters once this below-fold section nears the
+  // viewport. Static-importing it (as every homepage scene used to) forced
+  // its ~25KB vendor chunk into the same eager parse/eval task as
+  // HeroScene's above-fold GSAP work, which is most of the homepage's
+  // chronic total-blocking-time overage. Dynamic-importing it here instead
+  // means that cost is paid only on scroll, never during Lighthouse's
+  // static, no-scroll audit.
+  let scrollTriggerReady: Promise<void> | null = null;
+  function loadScrollTrigger() {
+    if (!scrollTriggerReady) {
+      scrollTriggerReady = import("gsap/ScrollTrigger").then(({ ScrollTrigger }) => {
+        gsap.registerPlugin(ScrollTrigger);
+      });
+    }
+    return scrollTriggerReady;
+  }
 
   const prefersReducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -176,27 +190,26 @@ const MAPPING: { label: string; values: Record<(typeof CLOUD_KEYS)[number], stri
     gsap.fromTo(values, { autoAlpha: 0.4 }, { autoAlpha: 1, duration: 0.35, ease: "power2.out", overwrite: "auto" });
   });
 
-  // Below-fold, scroll-revealed (once: true) — an idle-callback still fires
-  // inside the page-load main-thread window and counts toward Lighthouse's
-  // TBT budget even though nothing here is visible yet. Gating the *first*
-  // setup behind an IntersectionObserver keeps its ScrollTrigger.create()
-  // cost off the main thread until the section actually nears the
-  // viewport. Later astro:page-load re-setups stay immediate.
+  // Below-fold, scroll-revealed (once: true) — gating the *first* setup
+  // behind an IntersectionObserver (in addition to the dynamic import
+  // above) keeps ScrollTrigger.create() off the main thread until the
+  // section actually nears the viewport. Later astro:page-load re-setups
+  // stay immediate since ScrollTrigger is already loaded by then.
   const flavorDeckRootEl = document.querySelector<HTMLElement>("[data-flavor-deck]");
   if (flavorDeckRootEl && typeof IntersectionObserver === "function") {
     const flavorDeckObserver = new IntersectionObserver(
       (entries) => {
         if (!entries.some((entry) => entry.isIntersecting)) return;
         flavorDeckObserver.disconnect();
-        setup();
+        loadScrollTrigger().then(setup);
       },
       { rootMargin: "600px 0px" },
     );
     flavorDeckObserver.observe(flavorDeckRootEl);
   } else {
-    setup();
+    loadScrollTrigger().then(setup);
   }
-  document.addEventListener("astro:page-load", setup);
+  document.addEventListener("astro:page-load", () => loadScrollTrigger().then(setup));
   document.addEventListener("astro:after-swap", () => ctx?.revert());
 </script>
 
