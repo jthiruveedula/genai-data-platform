@@ -331,10 +331,14 @@ const SERVICE_OVERLAYS = [
 
       // ---- 1. Entrance -------------------------------------------------
       gsap.set(flows, { autoAlpha: 0 });
-      // Reads (getTotalLength forces layout) batched before writes — doing
-      // both per-element in one pass forces a synchronous reflow on every
-      // iteration (write invalidates the layout the next read needs).
-      const wireLengths = wires.map((p) => p.getTotalLength());
+      // Precomputed getTotalLength() for the 7 static ".hs-draw" wires
+      // above, in document order — their `d` attributes are hardcoded and
+      // never change, so measuring them at runtime only bought a forced
+      // synchronous layout (part of this scene's above-the-fold
+      // total-blocking-time cost, since it can't be deferred like the
+      // below-fold sections) for a value that's always the same.
+      const WIRE_LENGTHS = [25, 25, 25, 221.649, 174.085, 60, 60];
+      const wireLengths = wires.map((p, i) => WIRE_LENGTHS[i] ?? p.getTotalLength());
       wires.forEach((p, i) => {
         gsap.set(p, { strokeDasharray: wireLengths[i], strokeDashoffset: wireLengths[i] });
       });
