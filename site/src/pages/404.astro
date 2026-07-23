@@ -11,7 +11,7 @@ const base = import.meta.env.BASE_URL;
 const orderedModules = [...MODULES].sort((a, b) => a.order - b.order);
 ---
 
-<BaseLayout title="Page not found" description="This page doesn't exist. Find your way back to the curriculum.">
+<BaseLayout title="Page not found" description="This page doesn't exist. Find your way back to the curriculum." noIndex>
   <article class="not-found">
     <span class="chip mono">404 NOT FOUND</span>
     <h1>This page took a wrong turn somewhere in the pipeline.</h1>

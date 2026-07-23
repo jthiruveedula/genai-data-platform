@@ -42,20 +42,24 @@ jobs:
       - name: Link check
         uses: lycheeverse/lychee-action@v2
         with:
-          # qdrant.tech, developers.redhat.com, and medium.com all block
-          # requests from the GitHub Actions runner's IP/user-agent (bot
-          # protection) — connection-refused or 403, even though the pages
-          # are live and were confirmed reachable via a real browser when
-          # added as scenario case-study sources (validation/sources.yaml,
-          # id prefix `scenario-`). Excluded from the crawl rather than
-          # accepting 403 globally, so an actually-dead link elsewhere that
-          # happens to 403 still fails the check.
+          # qdrant.tech, developers.redhat.com, medium.com, and docs.vllm.ai
+          # all block requests from the GitHub Actions runner's IP/user-agent
+          # (bot protection) — connection-refused, 403, or (docs.vllm.ai) a
+          # Cloudflare bot-challenge served as 429 (`cf-mitigated: challenge`
+          # response header, not a true rate limit — confirmed by curl still
+          # getting 429 with a browser User-Agent, and retrying/backing off
+          # doesn't help since it's a fingerprint challenge, not a request
+          # counter). All four pages are live and were confirmed reachable
+          # via a real browser. Excluded from the crawl rather than accepting
+          # 403/429 globally, so an actually-dead link elsewhere that happens
+          # to 403/429 still fails the check.
           args: >-
             --root-dir ${{ runner.temp }}/link-check-root
             --no-progress
             --exclude 'qdrant\.tech'
             --exclude 'developers\.redhat\.com'
             --exclude 'medium\.com'
+            --exclude 'docs\.vllm\.ai'
             '${{ runner.temp }}/link-check-root/genai-data-platform/**/*.html'
           fail: true
       - name: Install Playwright browsers

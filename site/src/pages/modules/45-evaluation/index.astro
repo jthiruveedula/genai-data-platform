@@ -11,6 +11,7 @@ import { flavor as gcp } from "../../../data/flavors/gcp";
 import { flavor as aws } from "../../../data/flavors/aws";
 import { flavor as azure } from "../../../data/flavors/azure";
 import { flavor as oss } from "../../../data/flavors/oss";
+import { MODULES } from "../../../data/modules";
 
 const moduleId = "45-evaluation";
 const entries = {
@@ -19,9 +20,10 @@ const entries = {
   azure: azure[moduleId],
   oss: oss[moduleId],
 };
+const moduleData = MODULES.find((m) => m.id === moduleId)!;
 ---
 
-<BaseLayout title="45 · Evaluation">
+<BaseLayout title="45 · Evaluation" description={moduleData.summary}>
   <article>
     <ModuleHero moduleId={moduleId}>
       <p>
