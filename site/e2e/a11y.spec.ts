@@ -18,6 +18,7 @@ const KEY_PAGES = [
   'freshness/',
   'paths/beginner/',
   'calculator/',
+  'this-page-does-not-exist/',
 ];
 
 const CLOUDS = ['gcp', 'aws', 'azure', 'oss'] as const;
