@@ -15,7 +15,10 @@ const rows = buildMatrixRows(MODULES, flavorsByCloud, cloudIds);
 const stageCount = MODULES.length;
 ---
 
-<BaseLayout title="Service equivalence matrix">
+<BaseLayout
+  title="Service equivalence matrix"
+  description={`Every one of the ${stageCount} curriculum modules mapped to its equivalent service on GCP, AWS, Azure, and OSS — one row per module, one column per cloud.`}
+>
   <article>
     <header class="matrix-hero">
       <div class="hero-meta">
