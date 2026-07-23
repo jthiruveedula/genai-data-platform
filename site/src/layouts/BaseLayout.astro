@@ -54,6 +54,15 @@ const verifiedClaimCount = claims.filter((c) => claimStatus(c) === "verified").l
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
+    <link rel="canonical" href={new URL(Astro.url.pathname, Astro.site)} />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="GenAI Data Platform" />
+    <meta property="og:title" content={`${title} · GenAI Data Platform`} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={new URL(Astro.url.pathname, Astro.site)} />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content={`${title} · GenAI Data Platform`} />
+    <meta name="twitter:description" content={description} />
     <link rel="icon" type="image/svg+xml" href={`${import.meta.env.BASE_URL}favicon.svg`} />
     <link rel="preload" href={ibmPlexSans400} as="font" type="font/woff2" crossorigin />
     <link rel="preload" href={inter800} as="font" type="font/woff2" crossorigin />
