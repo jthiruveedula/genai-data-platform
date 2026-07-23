@@ -85,6 +85,17 @@ test('navbar links to the matrix page', async ({ page }) => {
   await expect(page.locator('header.navbar a[href*="matrix/"]')).toBeVisible();
 });
 
+test('an unmatched path renders the themed 404 page, not a blank/default one', async ({ page }) => {
+  const response = await page.goto('this-page-does-not-exist/');
+  expect(response?.status()).toBe(404);
+  await expect(page).toHaveTitle(/Page not found/);
+  await expect(page.getByText('404 NOT FOUND')).toBeVisible();
+  const homeLink = page.getByRole('link', { name: 'Back to home' });
+  await expect(homeLink).toBeVisible();
+  await homeLink.click();
+  await expect(page).toHaveTitle(/Home/);
+});
+
 test('the vector-space scene stays in normal flow after hydration and does not overlap the next section', async ({
   page,
 }) => {

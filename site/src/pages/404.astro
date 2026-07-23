@@ -1,0 +1,76 @@
+---
+// GitHub Pages serves this file (built to 404.html) for any unmatched path
+// under the project's base — https://jthiruveedula.github.io/genai-data-platform/
+// — instead of GitHub's generic, unthemed 404. Astro's static build emits
+// dist/404.html from this route automatically; no extra config needed.
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Button from "../components/ui/Button.astro";
+import { MODULES } from "../data/modules";
+
+const base = import.meta.env.BASE_URL;
+const orderedModules = [...MODULES].sort((a, b) => a.order - b.order);
+---
+
+<BaseLayout title="Page not found" description="This page doesn't exist. Find your way back to the curriculum.">
+  <article class="not-found">
+    <span class="chip mono">404 NOT FOUND</span>
+    <h1>This page took a wrong turn somewhere in the pipeline.</h1>
+    <p>Whatever you were looking for isn't at this address — or never was. Here's how to get back on track.</p>
+
+    <div class="not-found-actions">
+      <Button href={base} variant="primary">Back to home</Button>
+      <Button href={`${base}paths/beginner/`} variant="secondary">Start the beginner path</Button>
+      <Button href={`${base}matrix/`} variant="ghost">Service equivalence matrix</Button>
+    </div>
+
+    <h2>Or jump straight to a module</h2>
+    <ul class="module-list">
+      {
+        orderedModules.map((m) => (
+          <li>
+            <a href={`${base}modules/${m.id}/`}>{m.title}</a>
+          </li>
+        ))
+      }
+    </ul>
+  </article>
+</BaseLayout>
+
+<style>
+  .not-found {
+    padding-top: 3rem;
+  }
+
+  .not-found .chip {
+    margin-bottom: 1.5rem;
+  }
+
+  .not-found-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin: 1.75rem 0 3rem;
+  }
+
+  .module-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+    gap: 0.5rem 1.5rem;
+    list-style: none;
+    padding: 0;
+    margin: 1rem 0 0;
+  }
+
+  .module-list a {
+    display: block;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+    text-decoration: none;
+  }
+
+  .module-list a:hover,
+  .module-list a:focus-visible {
+    color: var(--accent-text, var(--accent));
+  }
+</style>
