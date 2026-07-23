@@ -176,15 +176,25 @@ const MAPPING: { label: string; values: Record<(typeof CLOUD_KEYS)[number], stri
     gsap.fromTo(values, { autoAlpha: 0.4 }, { autoAlpha: 1, duration: 0.35, ease: "power2.out", overwrite: "auto" });
   });
 
-  // Below-fold, scroll-revealed (once: true) — deferring the *first* setup
-  // to idle time keeps its ScrollTrigger.create() cost off the initial
-  // page-load main-thread task (measured as part of Lighthouse's TBT budget)
-  // without any visible effect, since nothing here is reachable before the
-  // visitor scrolls anyway. Later astro:page-load re-setups stay immediate.
-  if (typeof window.requestIdleCallback === "function") {
-    window.requestIdleCallback(setup, { timeout: 1000 });
+  // Below-fold, scroll-revealed (once: true) — an idle-callback still fires
+  // inside the page-load main-thread window and counts toward Lighthouse's
+  // TBT budget even though nothing here is visible yet. Gating the *first*
+  // setup behind an IntersectionObserver keeps its ScrollTrigger.create()
+  // cost off the main thread until the section actually nears the
+  // viewport. Later astro:page-load re-setups stay immediate.
+  const flavorDeckRootEl = document.querySelector<HTMLElement>("[data-flavor-deck]");
+  if (flavorDeckRootEl && typeof IntersectionObserver === "function") {
+    const flavorDeckObserver = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((entry) => entry.isIntersecting)) return;
+        flavorDeckObserver.disconnect();
+        setup();
+      },
+      { rootMargin: "600px 0px" },
+    );
+    flavorDeckObserver.observe(flavorDeckRootEl);
   } else {
-    setTimeout(setup, 200);
+    setup();
   }
   document.addEventListener("astro:page-load", setup);
   document.addEventListener("astro:after-swap", () => ctx?.revert());

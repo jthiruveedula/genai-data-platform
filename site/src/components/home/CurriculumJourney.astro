@@ -168,16 +168,26 @@ const totalTimeLabel = totalRemainderMinutes === 0 ? `${totalHours}H` : `${total
 
   // Below-fold, scroll-revealed (once: true) — one ScrollTrigger per module
   // card (18 of them), the heaviest single setup() among the homepage's
-  // scroll-reveal components. Deferring the *first* setup to idle time keeps
-  // that creation cost off the initial page-load main-thread task (measured
-  // as part of Lighthouse's TBT budget) with no visible effect, since none
-  // of this is reachable before the visitor scrolls. renderProgress() is
-  // plain DOM/text, not GSAP, so it stays immediate. Later astro:page-load
-  // re-setups stay immediate too.
-  if (typeof window.requestIdleCallback === "function") {
-    window.requestIdleCallback(setup, { timeout: 1000 });
+  // scroll-reveal components. An idle-callback still fires inside the
+  // page-load main-thread window and counts toward Lighthouse's TBT budget
+  // even though none of this is reachable before the visitor scrolls.
+  // Gating the *first* setup behind an IntersectionObserver keeps that
+  // creation cost off the main thread until the section actually nears the
+  // viewport. renderProgress() is plain DOM/text, not GSAP, so it stays
+  // immediate. Later astro:page-load re-setups stay immediate too.
+  const curriculumRootEl = document.querySelector<HTMLElement>("[data-curriculum]");
+  if (curriculumRootEl && typeof IntersectionObserver === "function") {
+    const curriculumObserver = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((entry) => entry.isIntersecting)) return;
+        curriculumObserver.disconnect();
+        setup();
+      },
+      { rootMargin: "600px 0px" },
+    );
+    curriculumObserver.observe(curriculumRootEl);
   } else {
-    setTimeout(setup, 200);
+    setup();
   }
   renderProgress();
   document.addEventListener("astro:page-load", () => {
