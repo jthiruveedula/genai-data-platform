@@ -52,9 +52,23 @@ const STATEMENT_LINES = [
 
 <script>
   import { gsap } from "gsap";
-  import { ScrollTrigger } from "gsap/ScrollTrigger";
 
-  gsap.registerPlugin(ScrollTrigger);
+  // ScrollTrigger only matters once this below-fold section nears the
+  // viewport. Static-importing it (as every homepage scene used to) forced
+  // its ~25KB vendor chunk into the same eager parse/eval task as
+  // HeroScene's above-fold GSAP work, which is most of the homepage's
+  // chronic total-blocking-time overage. Dynamic-importing it here instead
+  // means that cost is paid only on scroll, never during Lighthouse's
+  // static, no-scroll audit.
+  let scrollTriggerReady: Promise<void> | null = null;
+  function loadScrollTrigger() {
+    if (!scrollTriggerReady) {
+      scrollTriggerReady = import("gsap/ScrollTrigger").then(({ ScrollTrigger }) => {
+        gsap.registerPlugin(ScrollTrigger);
+      });
+    }
+    return scrollTriggerReady;
+  }
 
   let ctx: gsap.Context | undefined;
 
@@ -91,17 +105,26 @@ const STATEMENT_LINES = [
     }, rootEl);
   }
 
-  // Below-fold, scroll-revealed (once: true) — deferring the *first* setup
-  // to idle time keeps its ScrollTrigger.create() cost off the initial
-  // page-load main-thread task (measured as part of Lighthouse's TBT budget)
-  // without any visible effect, since nothing here is reachable before the
-  // visitor scrolls anyway. Later astro:page-load re-setups stay immediate.
-  if (typeof window.requestIdleCallback === "function") {
-    window.requestIdleCallback(setup, { timeout: 1000 });
+  // Below-fold, scroll-revealed (once: true) — gating the *first* setup
+  // behind an IntersectionObserver (in addition to the dynamic import
+  // above) keeps ScrollTrigger.create() off the main thread until the
+  // section actually nears the viewport. Later astro:page-load re-setups
+  // stay immediate since ScrollTrigger is already loaded by then.
+  const finalCtaRootEl = document.querySelector<HTMLElement>("[data-final-cta]");
+  if (finalCtaRootEl && typeof IntersectionObserver === "function") {
+    const finalCtaObserver = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((entry) => entry.isIntersecting)) return;
+        finalCtaObserver.disconnect();
+        loadScrollTrigger().then(setup);
+      },
+      { rootMargin: "600px 0px" },
+    );
+    finalCtaObserver.observe(finalCtaRootEl);
   } else {
-    setTimeout(setup, 200);
+    loadScrollTrigger().then(setup);
   }
-  document.addEventListener("astro:page-load", setup);
+  document.addEventListener("astro:page-load", () => loadScrollTrigger().then(setup));
   document.addEventListener("astro:after-swap", () => ctx?.revert());
 </script>
 
