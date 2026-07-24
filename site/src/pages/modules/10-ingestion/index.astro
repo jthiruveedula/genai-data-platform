@@ -53,6 +53,19 @@ const moduleData = MODULES.find((m) => m.id === moduleId)!;
 
     <IdempotentIngestDemo />
 
+    <h2>Partial-batch failures need per-item status, not job-level retries</h2>
+    <p>
+      Idempotency solves "the whole job crashed and reran." It doesn't solve "the job ingested 480 of 500 files, then
+      the 481st threw a parsing error." Retrying the whole batch re-does the 480 that already succeeded; skipping the
+      batch entirely leaves 480 good documents un-ingested along with the 20 bad ones.
+    </p>
+    <p>
+      The fix is the same metadata table this module already asks for, with one more column: a per-document status
+      (<code>pending</code> / <code>done</code> / <code>failed</code>), not just a row that exists or doesn't. A
+      retry then means "re-run everything still <code>pending</code> or <code>failed</code>," which is naturally
+      idempotent — succeeded rows are already <code>done</code> and get skipped, not reprocessed.
+    </p>
+
     <h2>Try it in your flavor</h2>
     <FlavorTabs moduleId={moduleId} entries={entries} />
 
