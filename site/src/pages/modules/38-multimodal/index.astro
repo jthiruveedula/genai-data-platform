@@ -42,6 +42,22 @@ const moduleData = MODULES.find((m) => m.id === moduleId)!;
       built for it.
     </p>
 
+    <h2>Extraction is the default, not the exception</h2>
+    <p>
+      Across the four flavors in this curriculum, only GCP's Gemini embedding model takes raw video directly —
+      everywhere else, extraction is the only path: AWS pulls a transcript and keyframes with Transcribe and
+      Rekognition before embedding either, Azure does the same through Video Indexer and AI Vision, and the OSS stack
+      runs whisper.cpp and CLIP locally. Native multimodal video embedding is still the exception industry-wide, not
+      a shortcut you're missing.
+    </p>
+    <p>
+      That extra step isn't free. Each flavor's per-video cost note above reflects it — OSS pays nothing beyond GPU
+      time it already owns, GCP's single native call runs about $0.04, and the two-stage extract-then-embed pipelines
+      on AWS and Azure run $0.05–$0.06 for the same short clip. The bigger cost is a new failure surface: a bad
+      transcript or a keyframe sampled at the wrong moment degrades retrieval quality in a way that's invisible until
+      someone asks the question that hits it.
+    </p>
+
     <h2>Try it in your flavor</h2>
     <FlavorTabs moduleId={moduleId} entries={entries} />
 
