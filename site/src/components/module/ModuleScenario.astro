@@ -48,6 +48,23 @@ const clouds = ["gcp", "aws", "azure", "oss"] as const;
               <strong>{story.company}</strong>
               {story.stretch && <span class="chip chip--pending" title="Closest publicly available real match — the vignette explains why">CLOSEST PUBLISHED MATCH</span>}
             </p>
+            {
+              story.stat && (
+                <div class="scenario-stat" data-scenario-stat>
+                  <span
+                    class="scenario-stat-value mono"
+                    data-stat-value
+                    data-target={story.stat.value}
+                    data-decimals={story.stat.decimals ?? 0}
+                    data-prefix={story.stat.prefix ?? ""}
+                    data-suffix={story.stat.suffix}
+                  >
+                    {(story.stat.prefix ?? "") + story.stat.value + story.stat.suffix}
+                  </span>
+                  <span class="scenario-stat-label">{story.stat.label}</span>
+                </div>
+              )
+            }
             <p class="scenario-vignette">{story.vignette}</p>
             <p class="scenario-impact">
               <span class="scenario-impact-problem">{story.impact.problem}</span>
@@ -65,6 +82,61 @@ const clouds = ["gcp", "aws", "azure", "oss"] as const;
     }
   </div>
 </aside>
+
+<script>
+  import { countUp } from "../../lib/motion/primitives";
+
+  // Animates each case study's headline stat — the numeric half of the
+  // "in the field" story — instead of leaving it as static text (visual
+  // storytelling over another sentence to read). Runs once per element on
+  // first view, and again whenever the visitor switches cloud, since a
+  // cloud switch swaps which [data-for] block (and its stat) is visible.
+  function animateVisible(root: ParentNode) {
+    const activeCloud = document.documentElement.getAttribute("data-cloud");
+    const selector = activeCloud ? `[data-for="${activeCloud}"] [data-stat-value]` : `[data-for="neutral"] [data-stat-value]`;
+    root.querySelectorAll<HTMLElement>(selector).forEach((el) => {
+      const target = Number(el.dataset.target ?? "0");
+      countUp(el, target, {
+        duration: 1.1,
+        decimals: Number(el.dataset.decimals ?? "0"),
+        prefix: el.dataset.prefix ?? "",
+        suffix: el.dataset.suffix ?? "",
+      });
+    });
+  }
+
+  function setup() {
+    document.querySelectorAll<HTMLElement>(".module-scenario").forEach((asideEl) => {
+      if (asideEl.dataset.statBound) return;
+      asideEl.dataset.statBound = "true";
+
+      if (typeof IntersectionObserver !== "function") {
+        animateVisible(asideEl);
+        return;
+      }
+      const observer = new IntersectionObserver(
+        (entries) => {
+          if (!entries.some((entry) => entry.isIntersecting)) return;
+          observer.disconnect();
+          animateVisible(asideEl);
+        },
+        { rootMargin: "200px 0px" },
+      );
+      observer.observe(asideEl);
+    });
+  }
+
+  setup();
+  document.addEventListener("astro:page-load", setup);
+
+  // Cloud switching (Navbar) just flips document.documentElement's
+  // data-cloud attribute — no custom event is dispatched — so a
+  // MutationObserver is the only hook to re-count the newly visible stat.
+  const cloudObserver = new MutationObserver(() => {
+    document.querySelectorAll<HTMLElement>(".module-scenario").forEach(animateVisible);
+  });
+  cloudObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["data-cloud"] });
+</script>
 
 <style>
   .module-scenario {
@@ -135,6 +207,26 @@ const clouds = ["gcp", "aws", "azure", "oss"] as const;
     gap: 0.5rem;
     margin: 0 0 0.5rem;
     font-size: 0.9rem;
+  }
+
+  .scenario-stat {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    margin: 0 0 0.75rem;
+  }
+
+  .scenario-stat-value {
+    font-size: clamp(1.6rem, 3.2vw, 2.1rem);
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    color: var(--accent-text, var(--accent));
+  }
+
+  .scenario-stat-label {
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    max-width: 16rem;
   }
 
   .scenario-vignette {
