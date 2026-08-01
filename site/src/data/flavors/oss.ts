@@ -155,6 +155,7 @@ export const flavor: Record<string, FlavorEntry> = {
       "Route function calling through LiteLLM against a locally served open-weight model and connect it to the MCP server.",
       "Give the agent a multi-step task ('find X, then summarize how it changed across the last two documents') and trace the plan-act-observe loop.",
       "Cap the agent at a fixed iteration budget and add a human-approval gate before any tool call with a side effect.",
+      "Put the MCP server behind an OAuth 2.1 resource-server check (Keycloak or Auth0 as the authorization server), issue the agent a scoped short-lived token, and confirm a request with an expired or under-scoped token is rejected.",
     ],
     costNote: "$0 on a local kind cluster; GPU compute cost only if self-hosting the agent model at scale.",
     claimId: "oss-mcp-agent-loop",

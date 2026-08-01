@@ -163,6 +163,7 @@ export const flavor: Record<string, FlavorEntry> = {
       "Give the agent a multi-step task ('find X, then summarize how it changed across the last two documents') and trace the plan-act-observe loop.",
       "Cap the agent at a fixed iteration budget and confirm it stops instead of looping indefinitely on an unanswerable task.",
       "Add a human-approval gate before any tool call with a side effect (e.g. sending an email) and verify the agent pauses for it.",
+      "Mint the agent's MCP server credentials via Workload Identity Federation instead of a long-lived service-account key, scope the token to read-only on the one MCP server it needs, and confirm a call outside that scope is rejected.",
     ],
     costNote: "~$0.03 for a handful of agent turns with tool calls on the fast tier.",
     claimId: "gcp-vertex-agent-builder",
