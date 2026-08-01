@@ -65,6 +65,21 @@ const moduleData = MODULES.find((m) => m.id === moduleId)!;
       cost.
     </p>
 
+    <h2>Agent loops multiply the unit, they don't change it</h2>
+    <p>
+      Every $/query number above assumes one LLM call per user question. Module 85's agent loop breaks that
+      assumption: a single user question can trigger five, ten, or an unbounded number of plan-act-observe
+      iterations, each one its own LLM call with its own input and output tokens. The unit economics model doesn't
+      change — it's still $/query — but "query" now means "however many iterations the loop actually ran," which is
+      why Module 85's iteration budget is as much a cost control as a safety one: an unbounded loop isn't just a
+      stuck agent, it's an unbounded bill.
+    </p>
+    <p>
+      Attribute cost per iteration, not just per request, in the same event-log join this module already runs — a
+      task that resolves in one iteration and one that takes eight look identical in a request-level cost report, and
+      only the iteration-level view shows which agent behaviors are actually expensive.
+    </p>
+
     <h2>Prompt caching: a different mechanism, a bigger discount</h2>
     <p>
       Semantic caching skips the call entirely for a repeated <em>question</em>. <strong>Prompt caching</strong> is
@@ -150,6 +165,7 @@ const moduleData = MODULES.find((m) => m.id === moduleId)!;
       <li>Committing to reserved capacity before volume is predictable, locking in a fixed cost that ends up more expensive than pay-as-you-go.</li>
       <li>Putting the variable part of the prompt (the user's question) before the stable part (system prompt, retrieved context) — that ordering makes nothing cacheable, so prompt caching's ~90% discount never fires.</li>
       <li>Comparing self-hosted GPU cost against API pricing using only the sticker price per hour, without counting the engineering/on-call time to keep a serving stack healthy — that overhead is often the larger number at low-to-moderate volume.</li>
+      <li>Reporting agent cost per request instead of per iteration — an 8-iteration loop and a 1-iteration loop look identical in a request-level report, hiding exactly which agent behavior is expensive.</li>
     </ul>
   </article>
   <ModuleRecap moduleId={moduleId} />

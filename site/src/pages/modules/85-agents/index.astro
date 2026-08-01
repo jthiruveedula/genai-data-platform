@@ -63,6 +63,37 @@ const moduleData = MODULES.find((m) => m.id === moduleId)!;
       provides, applied to agent tooling instead of SQL.
     </p>
 
+    <h2>Agent development kits: buy the loop, don't build it</h2>
+    <p>
+      The plan-act-observe loop above is a mechanism, not a product — in practice almost nobody hand-rolls it.
+      <strong>LangGraph</strong> models the loop as an explicit state graph instead of letting the model decide
+      transitions, which is why regulated teams reach for it: deterministic edges, a built-in <code>interrupt()</code>
+      for human approval, and a full audit trail. <strong>CrewAI</strong> trades that determinism for speed — role-based
+      agents that get a multi-agent prototype running fastest, at the cost of less control once the workflow outgrows
+      simple roles. <strong>Google's Agent Development Kit (ADK)</strong> and <strong>Microsoft's Agent Framework /
+      Semantic Kernel</strong> are the cloud-native picks when a managed deployment target (Vertex AI Agent Builder,
+      Bedrock Agents, Microsoft Foundry Agent Service — the same services named in this module's case study above)
+      matters more than framework portability. None of them replace the safety rules below — a framework schedules
+      the loop, it doesn't decide what the loop is allowed to touch.
+    </p>
+
+    <h2>Authenticating agents and MCP servers</h2>
+    <p>
+      An agent's tool calls are only as safe as the credentials behind them. The MCP specification requires any
+      remote MCP server to act as an <strong>OAuth 2.1 resource server</strong>: a separate authorization server
+      issues the token, the MCP server only validates it and checks scopes — authentication and authorization stay
+      two distinct layers, not one. Every tool call over HTTP carries a scoped, short-lived
+      <code>Authorization: Bearer</code> token rather than a long-lived API key baked into the agent's config, so a
+      leaked token expires and can't be replayed for more than its narrow scope allows.
+    </p>
+    <p>
+      This is least privilege from the safety section below, applied to the credential itself: a research agent's
+      token should carry read-only scopes on the one MCP server it needs, never an org-wide service-account key. Per
+      cloud, that token minting is Workload Identity Federation (GCP), an IAM role assumed via STS (AWS), or a
+      managed identity (Azure) — the OSS flavor's LiteLLM gateway plus an external OAuth provider (Keycloak, Auth0)
+      does the same job self-hosted.
+    </p>
+
     <h2>When RAG beats agents (and vice versa)</h2>
     <p>
       If the task is "look this one thing up," Module 25's single-hop RAG is faster, cheaper, and simpler — an agent
@@ -90,6 +121,8 @@ const moduleData = MODULES.find((m) => m.id === moduleId)!;
       <li>Reaching for an agent on a single-hop lookup that Module 25's plain RAG API already answers faster and cheaper.</li>
       <li>Granting an agent broad tool access "for flexibility," which turns any planning mistake or injected instruction into a much larger blast radius.</li>
       <li>Letting an agent execute side-effecting tool calls (sending, deleting, spending) with no human approval step in between.</li>
+      <li>Picking a framework by hype instead of fit — CrewAI's speed on a workflow that needed LangGraph's audit trail, or vice versa.</li>
+      <li>Baking a long-lived API key into an agent's config instead of a scoped, short-lived OAuth token an MCP server can validate per call.</li>
     </ul>
   </article>
   <ModuleRecap moduleId={moduleId} />

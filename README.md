@@ -42,5 +42,24 @@ npm run build     # -> site/dist
 
 ## Deployment
 
-Pushes to `main` that touch `site/**` build and deploy automatically to
-GitHub Pages via `.github/workflows/deploy-site.yml`.
+Merging a PR to `main` does **not** deploy by itself — `main` can carry
+several merged, CI-passed PRs ahead of what's actually live. Deploys are
+gated behind a GitHub Release:
+
+1. Merge whatever PRs are ready (each already passed CI on its own branch).
+2. Cut a release once you're ready to ship what's on `main`:
+   ```bash
+   gh release create v1.4.0 --target main --generate-notes
+   ```
+3. Publishing that release triggers `.github/workflows/deploy-site.yml`,
+   which builds `site/` at that tag and deploys it to GitHub Pages.
+
+`workflow_dispatch` on `deploy-site.yml` re-runs a deploy of whatever's
+already checked out (e.g. retrying a flaky Pages upload) — it does not ship
+unreleased `main`.
+
+**Rollback:** if a live release has a problem, run
+`.github/workflows/rollback-site.yml` (Actions tab → Run workflow) with the
+`tag` input set to a previous release tag (see `gh release list`). It
+rebuilds and redeploys that exact tag to Pages without cutting a new
+release.

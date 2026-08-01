@@ -1,11 +1,14 @@
 name: Deploy site to GitHub Pages
 
+# Deploys only on a published GitHub Release (a tag, e.g. v1.4.0) — not on
+# every push to main. main can carry several merged, CI-passed PRs ahead of
+# what's actually live; a release is the deliberate "these merged changes go
+# live now" gate. workflow_dispatch remains for a manual re-run of whatever
+# ref is currently checked out (e.g. retrying a flaky Pages deploy of the
+# same release), not for shipping unreleased main.
 on:
-  push:
-    branches: [main]
-    paths:
-      - "site/**"
-      - ".github/workflows/deploy-site.yml"
+  release:
+    types: [published]
   workflow_dispatch:
 
 permissions:
@@ -46,4 +49,4 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5

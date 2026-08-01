@@ -5,6 +5,7 @@ import ModuleHero from "../../../components/module/ModuleHero.astro";
 import ModuleScenario from "../../../components/module/ModuleScenario.astro";
 import ModuleFlowDiagram from "../../../components/module/ModuleFlowDiagram.astro";
 import TraceWaterfallDemo from "../../../components/module/demos/TraceWaterfallDemo.astro";
+import AgentTraceTreeDemo from "../../../components/module/demos/AgentTraceTreeDemo.astro";
 import ModuleFooterNav from "../../../components/module/ModuleFooterNav.astro";
 import ModuleRecap from "../../../components/module/ModuleRecap.astro";
 import { flavor as gcp } from "../../../data/flavors/gcp";
@@ -49,6 +50,23 @@ const moduleData = MODULES.find((m) => m.id === moduleId)!;
 
     <TraceWaterfallDemo />
 
+    <h2>Tracing an agent loop: a tree, not a waterfall</h2>
+    <p>
+      The four-stage trace above is a flat waterfall because a single RAG call is linear: embed, retrieve, assemble,
+      generate, done. Module 85's agent loop isn't linear — plan, act, observe repeats, and a tool call can itself
+      trigger a nested retrieval or another tool call. The trace for that is a <strong>tree</strong>: each loop
+      iteration is a span with its own child spans, not another bar appended to the same waterfall. Flattening an
+      agent trace back into a waterfall loses exactly the information you need most — which iteration of the loop,
+      how many levels deep, is where things went wrong.
+    </p>
+    <p>
+      The practical difference: a RAG trace answers "which of these four stages was slow or wrong." An agent trace
+      has to answer "which iteration, and which tool call inside it" — so it needs an iteration index and a parent-span
+      link on every tool-call span, not just a stage name.
+    </p>
+
+    <AgentTraceTreeDemo />
+
     <h2>Token accounting per request</h2>
     <p>
       Attach input, output, and cached token counts as attributes on the generation span, per request. This looks like
@@ -83,6 +101,7 @@ const moduleData = MODULES.find((m) => m.id === moduleId)!;
       <li>Skipping token-count attributes because "we'll add cost tracking later" — Module 75 needs this data from day one, not retroactively.</li>
       <li>Optimizing only for total latency and ignoring TTFT, which is what users actually perceive as "slow" in a streaming UI.</li>
       <li>Treating traces as a debugging-only tool instead of the shared data source that evaluation, security, and cost modules all depend on.</li>
+      <li>Flattening an agent's tree-shaped trace back into a single waterfall — you lose which loop iteration and which nested tool call actually failed.</li>
     </ul>
   </article>
   <ModuleRecap moduleId={moduleId} />
