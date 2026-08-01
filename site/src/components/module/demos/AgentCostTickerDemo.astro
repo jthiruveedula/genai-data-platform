@@ -1,0 +1,155 @@
+---
+// Bespoke concept demo for Module 75 (FinOps) — the agent-loop
+// counterpart to CostBreakdownDemo. A single RAG call is a flat bar; an
+// agent loop's cost compounds per iteration until the iteration budget
+// (Module 85) cuts it off. Animated as a count-up ticker so "cost
+// compounds per iteration" is something the reader watches happen.
+const ITERATIONS = [
+  { label: "Iteration 1 · search_docs", cost: 0.006 },
+  { label: "Iteration 2 · compare_versions", cost: 0.011 },
+  { label: "Iteration 3 · generate diff", cost: 0.014 },
+  { label: "Iteration 4 · generate final answer", cost: 0.021 },
+];
+let cumulative = 0;
+const ROWS = ITERATIONS.map((it) => {
+  cumulative += it.cost;
+  return { ...it, cumulative };
+});
+const TOTAL = cumulative;
+const SINGLE_RAG_CALL_COST = 0.006;
+---
+
+<figure class="concept-demo agent-cost-demo" data-agent-cost-demo aria-label="An agent loop's cost compounding per iteration, versus one RAG call">
+  <figcaption class="concept-demo-label mono">[ SEE IT: COST COMPOUNDS PER ITERATION ]</figcaption>
+
+  <div class="agent-cost-rows">
+    {
+      ROWS.map((r) => (
+        <div class="agent-cost-row">
+          <span class="agent-cost-label mono">{r.label}</span>
+          <span
+            class="agent-cost-value mono"
+            data-agent-cost-value
+            data-target={r.cumulative.toFixed(3)}
+            data-decimals="3"
+            data-prefix="$"
+          >
+            ${r.cumulative.toFixed(3)}
+          </span>
+        </div>
+      ))
+    }
+  </div>
+
+  <p class="agent-cost-total mono">
+    ${TOTAL.toFixed(3)} for this 4-iteration task — vs. ${SINGLE_RAG_CALL_COST.toFixed(3)} for the single RAG call one
+    of those iterations reuses. Same per-call cost, {(TOTAL / SINGLE_RAG_CALL_COST).toFixed(1)}x the total, because the
+    loop ran it {ITERATIONS.length} times over.
+  </p>
+</figure>
+
+<script>
+  import { countUp } from "../../../lib/motion/primitives";
+  import { ScrollTrigger } from "gsap/ScrollTrigger";
+  import { gsap } from "gsap";
+
+  gsap.registerPlugin(ScrollTrigger);
+
+  function setup() {
+    const rootEl = document.querySelector<HTMLElement>("[data-agent-cost-demo]");
+    if (!rootEl) return;
+
+    const values = gsap.utils.toArray<HTMLElement>("[data-agent-cost-value]", rootEl);
+    if (rootEl.dataset.costBound) return;
+    rootEl.dataset.costBound = "true";
+
+    const animate = () => {
+      values.forEach((el, i) => {
+        const target = Number(el.dataset.target ?? "0");
+        setTimeout(() => {
+          countUp(el, target, {
+            duration: 0.8,
+            decimals: 3,
+            prefix: el.dataset.prefix ?? "",
+          });
+        }, i * 250);
+      });
+    };
+
+    if (typeof IntersectionObserver !== "function") {
+      animate();
+      return;
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((entry) => entry.isIntersecting)) return;
+        observer.disconnect();
+        animate();
+      },
+      { rootMargin: "200px 0px" },
+    );
+    observer.observe(rootEl);
+  }
+
+  setup();
+  document.addEventListener("astro:page-load", setup);
+</script>
+
+<style>
+  .concept-demo {
+    margin: 1.75rem 0 2rem;
+    padding: 1.4rem 1.6rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-raised);
+  }
+
+  .concept-demo-label {
+    margin: 0 0 1.1rem;
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    color: var(--accent-text, var(--accent));
+  }
+
+  .agent-cost-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    margin-bottom: 1.1rem;
+  }
+
+  .agent-cost-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px dashed var(--border);
+  }
+
+  .agent-cost-row:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  .agent-cost-label {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+  }
+
+  .agent-cost-value {
+    font-size: 1rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--accent-text, var(--accent));
+  }
+
+  .agent-cost-total {
+    margin: 0;
+    padding-top: 0.8rem;
+    border-top: 1px solid var(--border);
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+</style>
