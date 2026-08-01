@@ -64,6 +64,25 @@ const moduleData = MODULES.find((m) => m.id === moduleId)!;
       documents" response.
     </p>
 
+    <h2>Streaming: return tokens as they're generated</h2>
+    <p>
+      The request path above reads as one blocking call, but serving it that way makes users stare at a spinner for
+      the model's full generation time. <strong>Streaming</strong> returns tokens to the client as the model produces
+      them, so the first word appears in a few hundred milliseconds instead of waiting for the whole answer — the
+      same time-to-first-token idea Module 55 measures, applied here as the actual response mechanism, not just a
+      metric. A citation-bearing answer still streams fine: send the chunk IDs either just before the streamed text
+      or as a trailing event once generation finishes.
+    </p>
+
+    <h2>One call here, many calls in an agent loop</h2>
+    <p>
+      Everything above is this module's whole job: one embed, one retrieve, one generate, one response. Module 85's
+      agent loop reuses this exact request path as a single tool call inside its plan-act-observe loop, but a user
+      question there can trigger it — or others like it — several times before the loop produces a final answer. This
+      module's latency and streaming design is what one of those calls looks like; multiply it by however many
+      iterations the loop runs to get the agent's actual end-to-end latency.
+    </p>
+
     <h2>Try it in your flavor</h2>
     <FlavorTabs moduleId={moduleId} entries={entries} />
 
@@ -73,6 +92,7 @@ const moduleData = MODULES.find((m) => m.id === moduleId)!;
       <li>Letting the model answer when retrieval found nothing relevant — this is where hallucination gets blamed on "the AI" when it's actually a missing guard.</li>
       <li>Skipping request logging at launch "to add later" — Module 30's event log needs data from day one, and you can't retroactively log a request that already happened.</li>
       <li>Defaulting to the most expensive/slowest model for every query — start fast-tier, escalate only when needed.</li>
+      <li>Building a blocking, non-streamed API because it's simpler, then wondering why the UI feels slow even though total latency looks fine on a dashboard.</li>
     </ul>
   </article>
   <ModuleRecap moduleId={moduleId} />
