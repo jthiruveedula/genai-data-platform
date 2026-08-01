@@ -1,5 +1,6 @@
 ---
 import { MODULES } from "../../data/modules";
+import CurriculumFlight3D from "../CurriculumFlight3D.astro";
 
 const base = import.meta.env.BASE_URL;
 
@@ -44,6 +45,8 @@ const totalTimeLabel = totalRemainderMinutes === 0 ? `${totalHours}H` : `${total
         Beginner to advanced, in order. <span class="lede-estimate">~{totalTimeLabel} total, reading + labs — see each mission for its own estimate.</span>
       </p>
     </header>
+
+    <CurriculumFlight3D />
 
     <div class="lane-legend-row">
       <div class="lane-legend">
