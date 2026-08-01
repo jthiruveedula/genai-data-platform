@@ -1,9 +1,16 @@
 name: Delete stale merged branches
 
-# Weekly hygiene: remove remote branches that are already merged into main
-# and haven't been touched in 30+ days. Only ever considers branches git
-# itself reports as merged (--merged), so an open PR's branch — merged or
-# not — is never a candidate unless main already contains all its commits.
+# Weekly hygiene: remove remote branches that are merged and haven't been
+# touched in 30+ days. "Merged" is determined via the GitHub API's merged-PR
+# list (gh pr list --state merged), not `git branch --merged` — this repo
+# merges PRs with --squash, which creates a brand-new commit on main with no
+# ancestry back to the original branch tip, so plain git ancestry checks
+# never recognize a squash-merged branch as merged (verified against real
+# squash-merged test branches before this workflow shipped). A branch is
+# also treated as merged if `git branch -r --merged` independently confirms
+# it (covers true fast-forward/merge-commit branches), so either signal is
+# enough — but neither alone is sufficient for a repo that squash-merges.
+# main is excluded from every list before any deletion logic runs.
 # workflow_dispatch is included for an on-demand run without waiting for
 # the schedule.
 on:
@@ -13,6 +20,7 @@ on:
 
 permissions:
   contents: write
+  pull-requests: read
 
 jobs:
   cleanup:
@@ -23,6 +31,8 @@ jobs:
           fetch-depth: 0
 
       - name: Delete merged branches older than 30 days
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           CUTOFF=$(date -d '30 days ago' +%s)
@@ -38,12 +48,15 @@ jobs:
           git branch -r --merged "origin/$DEFAULT_BRANCH" \
             | sed 's#^[[:space:]]*origin/##' \
             | grep -vxF "$DEFAULT_BRANCH" \
-            > /tmp/merged-branches.txt || true
+            > /tmp/git-merged-branches.txt || true
+
+          gh pr list --state merged --limit 500 --json headRefName --jq '.[].headRefName' \
+            > /tmp/pr-merged-branches.txt || true
 
           {
             echo "### Stale branch cleanup"
             echo ""
-            echo "| Branch | Last commit | Merged into $DEFAULT_BRANCH | Action |"
+            echo "| Branch | Last commit | Merged | Action |"
             echo "|---|---|---|---|"
           } >> "$GITHUB_STEP_SUMMARY"
 
@@ -55,8 +68,13 @@ jobs:
             last_commit=$(git log -1 --format=%ct "origin/$branch")
             last_commit_human=$(date -d "@$last_commit" -Iseconds)
 
-            if ! grep -qxF "$branch" /tmp/merged-branches.txt; then
-              echo "Keeping $branch — not merged into $DEFAULT_BRANCH"
+            is_merged=false
+            if grep -qxF "$branch" /tmp/git-merged-branches.txt || grep -qxF "$branch" /tmp/pr-merged-branches.txt; then
+              is_merged=true
+            fi
+
+            if [ "$is_merged" = false ]; then
+              echo "Keeping $branch — not merged (no merged PR, no git ancestry match)"
               echo "| \`$branch\` | $last_commit_human | no | kept (unmerged) |" >> "$GITHUB_STEP_SUMMARY"
               kept_count=$((kept_count + 1))
               continue
