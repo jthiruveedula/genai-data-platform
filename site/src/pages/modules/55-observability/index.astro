@@ -5,6 +5,7 @@ import ModuleHero from "../../../components/module/ModuleHero.astro";
 import ModuleScenario from "../../../components/module/ModuleScenario.astro";
 import ModuleFlowDiagram from "../../../components/module/ModuleFlowDiagram.astro";
 import TraceWaterfallDemo from "../../../components/module/demos/TraceWaterfallDemo.astro";
+import AgentTraceTreeDemo from "../../../components/module/demos/AgentTraceTreeDemo.astro";
 import ModuleFooterNav from "../../../components/module/ModuleFooterNav.astro";
 import ModuleRecap from "../../../components/module/ModuleRecap.astro";
 import { flavor as gcp } from "../../../data/flavors/gcp";
@@ -63,6 +64,8 @@ const moduleData = MODULES.find((m) => m.id === moduleId)!;
       has to answer "which iteration, and which tool call inside it" — so it needs an iteration index and a parent-span
       link on every tool-call span, not just a stage name.
     </p>
+
+    <AgentTraceTreeDemo />
 
     <h2>Token accounting per request</h2>
     <p>
