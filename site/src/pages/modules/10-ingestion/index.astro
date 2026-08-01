@@ -66,6 +66,21 @@ const moduleData = MODULES.find((m) => m.id === moduleId)!;
       idempotent — succeeded rows are already <code>done</code> and get skipped, not reprocessed.
     </p>
 
+    <h2>Data quality and PII redaction before embedding</h2>
+    <p>
+      Everything above assumes the raw file itself is safe to store and eventually embed. It often isn't:
+      <strong>schema validation</strong> at ingestion time (does this record have the fields downstream stages
+      expect, in the types they expect?) catches malformed data before it reaches parsing, and <strong>PII
+      detection and redaction</strong> — scanning for emails, phone numbers, national IDs, and similar patterns —
+      has to happen here too, before a customer's SSN ends up embedded and retrievable by anyone who asks the right
+      question.
+    </p>
+    <p>
+      This is cheaper to fix at this stage than any later one: a redaction rule applied at ingestion runs once per
+      document; the same gap left open means every embedding, index entry, and cached response downstream now
+      contains the same exposed PII, and fixing it later means re-ingesting, re-embedding, and re-indexing everything.
+    </p>
+
     <h2>Try it in your flavor</h2>
     <FlavorTabs moduleId={moduleId} entries={entries} />
 
@@ -74,6 +89,7 @@ const moduleData = MODULES.find((m) => m.id === moduleId)!;
       <li>Skipping metadata (source, timestamp, checksum) — you'll need it for dedup, ACLs, and debugging retrieval later.</li>
       <li>Ingesting straight into a vector index with no raw-file copy — you lose the ability to re-chunk or re-embed later.</li>
       <li>No idempotency check — re-running a job during development silently multiplies your document count.</li>
+      <li>Skipping PII redaction at ingestion because "we'll clean it up later" — later means re-embedding and re-indexing every document, not editing one table.</li>
     </ul>
   </article>
   <ModuleRecap moduleId={moduleId} />
