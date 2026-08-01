@@ -53,15 +53,11 @@ jobs:
           gh pr list --state merged --limit 500 --json headRefName --jq '.[].headRefName' \
             > /tmp/pr-merged-branches.txt || true
 
-          {
-            echo "### Stale branch cleanup"
-            echo ""
-            echo "| Branch | Last commit | Merged | Action |"
-            echo "|---|---|---|---|"
-          } >> "$GITHUB_STEP_SUMMARY"
-
+          : > /tmp/detail-rows.md
           deleted_count=0
-          kept_count=0
+          kept_unmerged_count=0
+          kept_recent_count=0
+          failed_count=0
 
           while IFS= read -r branch; do
             [ -z "$branch" ] && continue
@@ -75,26 +71,45 @@ jobs:
 
             if [ "$is_merged" = false ]; then
               echo "Keeping $branch — not merged (no merged PR, no git ancestry match)"
-              echo "| \`$branch\` | $last_commit_human | no | kept (unmerged) |" >> "$GITHUB_STEP_SUMMARY"
-              kept_count=$((kept_count + 1))
+              echo "| ⚪ | \`$branch\` | $last_commit_human | no | kept — unmerged |" >> /tmp/detail-rows.md
+              kept_unmerged_count=$((kept_unmerged_count + 1))
               continue
             fi
 
             if [ "$last_commit" -lt "$CUTOFF" ]; then
               echo "Deleting stale merged branch: $branch (last commit $last_commit_human)"
               if git push origin --delete "$branch"; then
-                echo "| \`$branch\` | $last_commit_human | yes | **deleted** |" >> "$GITHUB_STEP_SUMMARY"
+                echo "| 🟢 | \`$branch\` | $last_commit_human | yes | **deleted** |" >> /tmp/detail-rows.md
                 deleted_count=$((deleted_count + 1))
               else
                 echo "::warning::Failed to delete $branch (may be protected or already gone)"
-                echo "| \`$branch\` | $last_commit_human | yes | delete failed |" >> "$GITHUB_STEP_SUMMARY"
+                echo "| 🔴 | \`$branch\` | $last_commit_human | yes | delete failed |" >> /tmp/detail-rows.md
+                failed_count=$((failed_count + 1))
               fi
             else
               echo "Keeping $branch — merged but last commit within 30 days"
-              echo "| \`$branch\` | $last_commit_human | yes | kept (< 30 days old) |" >> "$GITHUB_STEP_SUMMARY"
-              kept_count=$((kept_count + 1))
+              echo "| 🟡 | \`$branch\` | $last_commit_human | yes | kept — under 30 days old |" >> /tmp/detail-rows.md
+              kept_recent_count=$((kept_recent_count + 1))
             fi
           done < /tmp/all-branches.txt
 
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "**$deleted_count deleted, $kept_count kept.**" >> "$GITHUB_STEP_SUMMARY"
+          {
+            echo "### Stale branch cleanup"
+            echo ""
+            echo "#### Summary"
+            echo ""
+            echo "| | Count |"
+            echo "|---|---|"
+            echo "| 🟢 Deleted (merged + 30+ days stale) | $deleted_count |"
+            echo "| 🟡 Kept — merged but recent | $kept_recent_count |"
+            echo "| ⚪ Kept — not merged | $kept_unmerged_count |"
+            if [ "$failed_count" -gt 0 ]; then
+              echo "| 🔴 Delete failed | $failed_count |"
+            fi
+            echo ""
+            echo "#### Details"
+            echo ""
+            echo "| | Branch | Last commit | Merged | Action |"
+            echo "|---|---|---|---|---|"
+            cat /tmp/detail-rows.md
+          } >> "$GITHUB_STEP_SUMMARY"
