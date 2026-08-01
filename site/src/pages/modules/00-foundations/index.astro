@@ -70,6 +70,18 @@ const moduleData = MODULES.find((m) => m.id === moduleId)!;
       revisited at every path level.
     </p>
 
+    <h2>RAG vs. agents: one more foundational fork</h2>
+    <p>
+      The three ways to get a model to "know" your data above all assume the task is a single question with a single
+      answer. Some tasks aren't: "find X, then compare it against last quarter's version, then draft a summary" needs
+      several steps, not one retrieval pass. That's what an <strong>agent</strong> (Module 85) is — a loop that plans,
+      acts, and observes across multiple tool calls, one of which is often the RAG call this curriculum spends its
+      next 80-odd modules building. Knowing whether a request needs a single RAG lookup or a multi-step agent loop is
+      itself a foundational decision, alongside RAG vs. fine-tuning vs. long-context above — and the default answer,
+      until proven otherwise, is RAG: it's simpler, cheaper, and faster than reaching for an agent loop on a task that
+      didn't need one.
+    </p>
+
     <h2>Try it in your flavor</h2>
     <FlavorTabs moduleId={moduleId} entries={entries} />
 
@@ -78,6 +90,7 @@ const moduleData = MODULES.find((m) => m.id === moduleId)!;
       <li>Confusing "similar embedding" with "relevant answer" — similarity is necessary, not sufficient.</li>
       <li>Assuming a bigger context window removes the need for good retrieval — it just raises the cost of a bad one.</li>
       <li>Picking a fine-tune when the real problem is stale or missing data (RAG fixes that; fine-tuning doesn't).</li>
+      <li>Reaching for an agent loop by default — most questions are a single RAG lookup, and an agent loop only earns its extra latency and cost on genuinely multi-step tasks.</li>
     </ul>
   </article>
   <ModuleRecap moduleId={moduleId} />
