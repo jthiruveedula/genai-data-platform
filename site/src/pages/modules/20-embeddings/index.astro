@@ -50,6 +50,24 @@ const moduleData = MODULES.find((m) => m.id === moduleId)!;
 
     <ModelMismatchDemo />
 
+    <h2>Dimensionality tradeoffs: Matryoshka embeddings and quantization</h2>
+    <p>
+      A 1536-dimension embedding at float32 precision costs 6 KB per vector — at 100 million vectors, that's 600 GB
+      just for the index, before a single query runs. <strong>Matryoshka Representation Learning (MRL)</strong> models
+      (most current embedding models support this) are trained to front-load the most important semantic signal into
+      the first dimensions, so simply truncating the vector — keeping the first 256 or 128 numbers and discarding the
+      rest — degrades gracefully instead of breaking: truncating to 256 dimensions typically retains upward of 88% of
+      full-dimension retrieval quality, for a 4-6x cut in storage and similarity-computation cost.
+    </p>
+    <p>
+      <strong>Quantization</strong> compresses further on top of that: scalar quantization stacked on a
+      truncated 128-dimension vector can reach roughly a 78% total storage reduction, and binary quantization (one
+      bit per dimension) pushes memory savings to around 32x with a large speedup, at the cost of needing a
+      rescoring pass against the original vectors to hold recall above 90%. None of this requires a different model
+      or a rebuilt pipeline — it is entirely a storage/precision knob on the same embeddings this module already
+      produces.
+    </p>
+
     <h2>What the vector index actually stores</h2>
     <p>
       Beyond the vector itself, every entry needs enough metadata to be useful once retrieved: the source
@@ -66,6 +84,7 @@ const moduleData = MODULES.find((m) => m.id === moduleId)!;
       <li>Embedding queries with a different model than the one used for chunks — similarity breaks silently, not loudly.</li>
       <li>Storing vectors with no metadata — you can retrieve a match but not explain or filter it.</li>
       <li>Re-embedding the entire index by hand after a chunking change — plan for incremental re-embedding from day one (Module 11: Orchestration).</li>
+      <li>Storing full-precision, full-dimension vectors by default at real scale — truncation and quantization cut storage and search cost sharply, with quality loss that's measurable and usually well worth it.</li>
     </ul>
   </article>
   <ModuleRecap moduleId={moduleId} />
