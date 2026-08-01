@@ -66,6 +66,22 @@ const moduleData = MODULES.find((m) => m.id === moduleId)!;
       treats as part of its context, exploiting the fact that the model can't tell instructions from content.
     </p>
 
+    <h2>Agent-specific threats: tool-call injection and excessive agency</h2>
+    <p>
+      Everything above assumes the model's only output is text a human reads. Module 85's agents raise the stakes: an
+      injected instruction hidden in a retrieved document doesn't just poison an answer, it can make the agent <em>call
+      a tool</em> — <strong>tool-call injection</strong>. The same document-poisoning attack from the section above now
+      has a blast radius measured in side effects (sent emails, deleted records, spent money), not just a wrong
+      sentence on screen.
+    </p>
+    <p>
+      <strong>Excessive agency</strong> is the other half: an agent holding more tool scope than its task needs turns
+      any single injected instruction or planning mistake into whatever that scope allows. Module 85's least-privilege
+      tool access and scoped, short-lived OAuth tokens are this module's guardrails applied to agents specifically —
+      the human-approval gate on side-effecting calls is the output-sanitization step above, just for actions instead
+      of rendered text.
+    </p>
+
     <h2>Output handling: treat model output as untrusted</h2>
     <p>
       If your frontend renders the model's answer as HTML without sanitizing it, and an attacker manages (via
@@ -85,6 +101,7 @@ const moduleData = MODULES.find((m) => m.id === moduleId)!;
       <li>Skipping document-level access-control filters on retrieval because "we'll add multi-tenancy later" — by then the index already mixes everyone's data.</li>
       <li>Rendering LLM output directly as HTML without sanitization, treating it as if it came from your own trusted code.</li>
       <li>Conflating jailbreak defenses with injection defenses — a model resistant to jailbreaks can still be hijacked by injected content in retrieved context.</li>
+      <li>Giving an agent broad tool scope "for flexibility" — the same poisoned document that once corrupted an answer can now trigger a real side-effecting tool call.</li>
     </ul>
   </article>
   <ModuleRecap moduleId={moduleId} />

@@ -58,6 +58,20 @@ const moduleData = MODULES.find((m) => m.id === moduleId)!;
 
     <FaithfulnessCheckDemo />
 
+    <h2>Evaluating agent trajectories, not just answers</h2>
+    <p>
+      Faithfulness and context recall score a single answer. Module 85's agent loop needs a different question: was
+      the <strong>trajectory</strong> — the sequence of tool calls it actually made — correct, not just the final
+      output? A trajectory eval checks whether the agent called the right tools, in a sane order, without redundant
+      or unnecessary calls, and whether it stopped when the task was actually done instead of looping past it.
+    </p>
+    <p>
+      This needs its own golden set: instead of question/answer pairs, each row is a task plus the expected tool-call
+      sequence (or an acceptable set of sequences, since more than one valid path often exists). An agent can produce
+      a perfectly faithful final answer while still failing the trajectory eval — it called an expensive or
+      side-effecting tool it never needed, which the answer alone won't show you.
+    </p>
+
     <h2>LLM-as-judge and calibration</h2>
     <p>
       Most of these metrics are themselves computed by asking another LLM to score the response — an
@@ -84,6 +98,7 @@ const moduleData = MODULES.find((m) => m.id === moduleId)!;
       <li>Trusting LLM-as-judge scores without ever checking them against human labels — an uncalibrated judge can be confidently wrong.</li>
       <li>Building a golden dataset once and never updating it as real user questions drift from your original assumptions.</li>
       <li>Blending faithfulness and context recall into one "quality score" — you lose the ability to tell whether retrieval or generation caused a regression.</li>
+      <li>Scoring only an agent's final answer — a faithful answer can still hide an unnecessary or side-effecting tool call the trajectory eval would have caught.</li>
       <li>Adding an eval gate to CI but never lowering the threshold as the pipeline improves, so it stops catching anything.</li>
     </ul>
   </article>
