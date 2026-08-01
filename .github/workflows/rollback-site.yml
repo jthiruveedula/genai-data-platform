@@ -68,7 +68,7 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
       - name: Record rollback in the run summary
         run: |
           echo "### Rolled back to \`${{ inputs.tag }}\`" >> "$GITHUB_STEP_SUMMARY"
