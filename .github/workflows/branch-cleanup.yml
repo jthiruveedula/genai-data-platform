@@ -40,15 +40,43 @@ jobs:
             | grep -vxF "$DEFAULT_BRANCH" \
             > /tmp/merged-branches.txt || true
 
+          {
+            echo "### Stale branch cleanup"
+            echo ""
+            echo "| Branch | Last commit | Merged into $DEFAULT_BRANCH | Action |"
+            echo "|---|---|---|---|"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          deleted_count=0
+          kept_count=0
+
           while IFS= read -r branch; do
             [ -z "$branch" ] && continue
-            grep -qxF "$branch" /tmp/merged-branches.txt || continue
-
             last_commit=$(git log -1 --format=%ct "origin/$branch")
+            last_commit_human=$(date -d "@$last_commit" -Iseconds)
+
+            if ! grep -qxF "$branch" /tmp/merged-branches.txt; then
+              echo "Keeping $branch — not merged into $DEFAULT_BRANCH"
+              echo "| \`$branch\` | $last_commit_human | no | kept (unmerged) |" >> "$GITHUB_STEP_SUMMARY"
+              kept_count=$((kept_count + 1))
+              continue
+            fi
+
             if [ "$last_commit" -lt "$CUTOFF" ]; then
-              echo "Deleting stale merged branch: $branch (last commit $(date -d "@$last_commit" -Iseconds))"
-              git push origin --delete "$branch" || echo "::warning::Failed to delete $branch (may be protected or already gone)"
+              echo "Deleting stale merged branch: $branch (last commit $last_commit_human)"
+              if git push origin --delete "$branch"; then
+                echo "| \`$branch\` | $last_commit_human | yes | **deleted** |" >> "$GITHUB_STEP_SUMMARY"
+                deleted_count=$((deleted_count + 1))
+              else
+                echo "::warning::Failed to delete $branch (may be protected or already gone)"
+                echo "| \`$branch\` | $last_commit_human | yes | delete failed |" >> "$GITHUB_STEP_SUMMARY"
+              fi
             else
               echo "Keeping $branch — merged but last commit within 30 days"
+              echo "| \`$branch\` | $last_commit_human | yes | kept (< 30 days old) |" >> "$GITHUB_STEP_SUMMARY"
+              kept_count=$((kept_count + 1))
             fi
           done < /tmp/all-branches.txt
+
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "**$deleted_count deleted, $kept_count kept.**" >> "$GITHUB_STEP_SUMMARY"
