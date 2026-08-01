@@ -1,0 +1,54 @@
+name: Delete stale merged branches
+
+# Weekly hygiene: remove remote branches that are already merged into main
+# and haven't been touched in 30+ days. Only ever considers branches git
+# itself reports as merged (--merged), so an open PR's branch — merged or
+# not — is never a candidate unless main already contains all its commits.
+# workflow_dispatch is included for an on-demand run without waiting for
+# the schedule.
+on:
+  schedule:
+    - cron: "0 3 * * 1" # every Monday, 03:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Delete merged branches older than 30 days
+        run: |
+          set -euo pipefail
+          CUTOFF=$(date -d '30 days ago' +%s)
+          DEFAULT_BRANCH="${{ github.event.repository.default_branch }}"
+          DEFAULT_BRANCH="${DEFAULT_BRANCH:-main}"
+
+          git for-each-ref --format='%(refname:short)' "refs/remotes/origin" \
+            | sed 's#^origin/##' \
+            | grep -vxF "$DEFAULT_BRANCH" \
+            | grep -vxF "HEAD" \
+            > /tmp/all-branches.txt || true
+
+          git branch -r --merged "origin/$DEFAULT_BRANCH" \
+            | sed 's#^[[:space:]]*origin/##' \
+            | grep -vxF "$DEFAULT_BRANCH" \
+            > /tmp/merged-branches.txt || true
+
+          while IFS= read -r branch; do
+            [ -z "$branch" ] && continue
+            grep -qxF "$branch" /tmp/merged-branches.txt || continue
+
+            last_commit=$(git log -1 --format=%ct "origin/$branch")
+            if [ "$last_commit" -lt "$CUTOFF" ]; then
+              echo "Deleting stale merged branch: $branch (last commit $(date -d "@$last_commit" -Iseconds))"
+              git push origin --delete "$branch" || echo "::warning::Failed to delete $branch (may be protected or already gone)"
+            else
+              echo "Keeping $branch — merged but last commit within 30 days"
+            fi
+          done < /tmp/all-branches.txt
