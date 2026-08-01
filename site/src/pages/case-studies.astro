@@ -19,6 +19,50 @@ const rows = ordered.map((m) => ({
 
 const totalStories = rows.length * CLOUDS.length;
 const statCount = rows.reduce((sum, r) => sum + r.stories.filter((s) => s.story.stat).length, 0);
+
+// Industry-wide 2026 survey data, distinct from the per-company case
+// studies below: those are individual real outcomes, this is the aggregate
+// picture across the whole market — including the honest downside numbers
+// (governance failures, ROI misses), not just the wins. Same sourcing rule
+// as scenarios.ts: every figure traces to a cited report, nothing invented.
+const INDUSTRY_SNAPSHOT = [
+  {
+    value: "80%",
+    label: "of enterprise apps shipped/updated in Q1 2026 embed at least one AI agent (up from 33% in 2024)",
+    source: "Gartner",
+    sourceUrl: "https://www.digitalapplied.com/blog/ai-agent-adoption-2026-enterprise-data-points",
+  },
+  {
+    value: "6.4 hrs/wk",
+    label: "median time recovered per seat by knowledge workers using production agents (10-12 hrs/wk for senior practitioners)",
+    source: "Deloitte State of AI in the Enterprise 2026",
+    sourceUrl: "https://sqmagazine.co.uk/ai-agents-statistics/",
+  },
+  {
+    value: "9x",
+    label: "cheaper per contained support ticket with an AI agent ($0.46) vs. a human-handled one ($4.18)",
+    source: "Industry survey aggregate, 2026",
+    sourceUrl: "https://sqmagazine.co.uk/ai-agents-statistics/",
+  },
+  {
+    value: "14%",
+    label: "more shipped features per engineer-quarter for teams using AI coding agents",
+    source: "Stack Overflow / MIT Sloan, 2025-2026",
+    sourceUrl: "https://www.digitalapplied.com/blog/ai-agent-adoption-2026-enterprise-data-points",
+  },
+  {
+    value: "88%",
+    label: "of enterprise AI agent pilots never reach production — the shipping gap this curriculum's eval/observability/FinOps modules exist to close",
+    source: "DigitalApplied enterprise survey, 2026",
+    sourceUrl: "https://www.digitalapplied.com/blog/ai-agent-adoption-2026-enterprise-data-points",
+  },
+  {
+    value: "41%",
+    label: "of agent rollouts cross positive ROI within 12 months (19% never reach payback at all)",
+    source: "Gartner",
+    sourceUrl: "https://sqmagazine.co.uk/ai-agents-statistics/",
+  },
+] as const;
 ---
 
 <BaseLayout
@@ -40,6 +84,29 @@ const statCount = rows.reduce((sum, r) => sum + r.stories.filter((s) => s.story.
         version of the curriculum, before any of the how.
       </p>
     </header>
+
+    <section class="cs-snapshot" aria-labelledby="cs-snapshot-heading">
+      <h2 id="cs-snapshot-heading" class="cs-snapshot-title">The industry picture, not just the wins</h2>
+      <p class="cs-snapshot-intro">
+        The stories below are real successes — but the honest industry-wide picture includes the failures too.
+        Both sets of numbers are from cited 2026 surveys, not this curriculum's own claims.
+      </p>
+      <div class="cs-snapshot-grid">
+        {
+          INDUSTRY_SNAPSHOT.map((s) => (
+            <div class="cs-snapshot-card">
+              <p class="cs-snapshot-value mono">{s.value}</p>
+              <p class="cs-snapshot-label">{s.label}</p>
+              <p class="cs-snapshot-source">
+                <a href={s.sourceUrl} target="_blank" rel="noopener noreferrer">
+                  {s.source} ↗
+                </a>
+              </p>
+            </div>
+          ))
+        }
+      </div>
+    </section>
 
     <div class="cs-groups">
       {
@@ -157,6 +224,84 @@ const statCount = rows.reduce((sum, r) => sum + r.stories.filter((s) => s.story.
     color: var(--text-secondary);
     line-height: 1.6;
     font-size: 1.05rem;
+  }
+
+  .cs-snapshot {
+    margin-bottom: 2.5rem;
+    padding: 1.5rem;
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: var(--radius);
+    background: var(--bg-raised);
+  }
+
+  .cs-snapshot-title {
+    margin: 0 0 0.5rem;
+    font-size: 1.15rem;
+  }
+
+  .cs-snapshot-intro {
+    margin: 0 0 1.25rem;
+    max-width: 44rem;
+    color: var(--text-secondary);
+    font-size: 0.88rem;
+    line-height: 1.55;
+  }
+
+  .cs-snapshot-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
+  .cs-snapshot-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    padding: 0.9rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-card);
+  }
+
+  .cs-snapshot-value {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: var(--accent-text, var(--accent));
+  }
+
+  .cs-snapshot-label {
+    margin: 0;
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    line-height: 1.45;
+    flex: 1;
+  }
+
+  .cs-snapshot-source {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: 0.66rem;
+  }
+
+  .cs-snapshot-source a {
+    color: var(--text-secondary);
+  }
+
+  .cs-snapshot-source a:hover {
+    color: var(--accent-text, var(--accent));
+  }
+
+  @media (max-width: 1024px) {
+    .cs-snapshot-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 640px) {
+    .cs-snapshot-grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
   }
 
   .cs-groups {
