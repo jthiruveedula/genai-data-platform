@@ -5,6 +5,7 @@ import ModuleHero from "../../../components/module/ModuleHero.astro";
 import ModuleScenario from "../../../components/module/ModuleScenario.astro";
 import ModuleFlowDiagram from "../../../components/module/ModuleFlowDiagram.astro";
 import InjectionBlockedDemo from "../../../components/module/demos/InjectionBlockedDemo.astro";
+import AgentToolCallInjectionDemo from "../../../components/module/demos/AgentToolCallInjectionDemo.astro";
 import ModuleFooterNav from "../../../components/module/ModuleFooterNav.astro";
 import ModuleRecap from "../../../components/module/ModuleRecap.astro";
 import { flavor as gcp } from "../../../data/flavors/gcp";
@@ -81,6 +82,8 @@ const moduleData = MODULES.find((m) => m.id === moduleId)!;
       the human-approval gate on side-effecting calls is the output-sanitization step above, just for actions instead
       of rendered text.
     </p>
+
+    <AgentToolCallInjectionDemo />
 
     <h2>Output handling: treat model output as untrusted</h2>
     <p>

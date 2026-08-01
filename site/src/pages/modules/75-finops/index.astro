@@ -5,6 +5,7 @@ import ModuleHero from "../../../components/module/ModuleHero.astro";
 import ModuleScenario from "../../../components/module/ModuleScenario.astro";
 import ModuleFlowDiagram from "../../../components/module/ModuleFlowDiagram.astro";
 import CostBreakdownDemo from "../../../components/module/demos/CostBreakdownDemo.astro";
+import AgentCostTickerDemo from "../../../components/module/demos/AgentCostTickerDemo.astro";
 import ModuleFooterNav from "../../../components/module/ModuleFooterNav.astro";
 import ModuleRecap from "../../../components/module/ModuleRecap.astro";
 import { flavor as gcp } from "../../../data/flavors/gcp";
@@ -79,6 +80,8 @@ const moduleData = MODULES.find((m) => m.id === moduleId)!;
       task that resolves in one iteration and one that takes eight look identical in a request-level cost report, and
       only the iteration-level view shows which agent behaviors are actually expensive.
     </p>
+
+    <AgentCostTickerDemo />
 
     <h2>Prompt caching: a different mechanism, a bigger discount</h2>
     <p>
