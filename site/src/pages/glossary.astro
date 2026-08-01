@@ -1,0 +1,188 @@
+---
+// A dedicated glossary page — the lower-risk version of PLAN.md's planned
+// (but never shipped) "site-wide glossary hover tooltips": one canonical,
+// linkable reference instead of auto-scanning/rewriting already-tested
+// prose across every module page. Aimed squarely at "anyone without GenAI
+// experience" — every term gets a one-sentence plain-English definition and
+// a link to the module that teaches it in depth.
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { GLOSSARY } from "../data/glossary";
+import { MODULES } from "../data/modules";
+
+const base = import.meta.env.BASE_URL;
+const moduleTitleById = new Map(MODULES.map((m) => [m.id, m.title]));
+
+const sorted = [...GLOSSARY].sort((a, b) => a.term.localeCompare(b.term));
+---
+
+<BaseLayout
+  title="Glossary"
+  description="Plain-English definitions for every GenAI term this curriculum uses — no prior experience assumed."
+>
+  <article>
+    <header class="gl-hero">
+      <div class="hero-meta">
+        <span class="chip mono">[ {sorted.length} TERMS ]</span>
+      </div>
+      <h1>The vocabulary, in plain English.</h1>
+      <p class="intro">
+        Every jargon word this curriculum uses, defined in one sentence, no prior GenAI experience assumed. Each term
+        links to the module that teaches it in depth — start here if a word stopped you cold anywhere on this site.
+      </p>
+      <div class="gl-search-wrap">
+        <input
+          type="text"
+          id="gl-search"
+          class="gl-search"
+          placeholder="Filter terms..."
+          aria-label="Filter glossary terms"
+          autocomplete="off"
+        />
+      </div>
+    </header>
+
+    <dl class="gl-list" id="gl-list">
+      {
+        sorted.map((entry) => (
+          <div class="gl-entry" data-gl-entry data-gl-term={entry.term.toLowerCase()}>
+            <dt class="gl-term">{entry.term}</dt>
+            <dd class="gl-def">
+              {entry.definition}
+              {entry.moduleId && moduleTitleById.has(entry.moduleId) && (
+                <a class="gl-module-link" href={`${base}modules/${entry.moduleId}/`}>
+                  See Module: {moduleTitleById.get(entry.moduleId)} →
+                </a>
+              )}
+            </dd>
+          </div>
+        ))
+      }
+    </dl>
+    <p class="gl-empty" id="gl-empty" hidden>No terms match that filter.</p>
+  </article>
+</BaseLayout>
+
+<script>
+  function setup() {
+    const input = document.getElementById("gl-search") as HTMLInputElement | null;
+    const list = document.getElementById("gl-list");
+    const empty = document.getElementById("gl-empty");
+    if (!input || !list || !empty || input.dataset.bound === "true") return;
+    input.dataset.bound = "true";
+
+    const entries = Array.from(list.querySelectorAll<HTMLElement>("[data-gl-entry]"));
+
+    input.addEventListener("input", () => {
+      const q = input.value.trim().toLowerCase();
+      let visibleCount = 0;
+      entries.forEach((el) => {
+        const matches = !q || el.dataset.glTerm?.includes(q) || el.textContent?.toLowerCase().includes(q);
+        el.hidden = !matches;
+        if (matches) visibleCount++;
+      });
+      empty.hidden = visibleCount > 0;
+    });
+  }
+
+  setup();
+  document.addEventListener("astro:page-load", setup);
+</script>
+
+<style>
+  .gl-hero {
+    padding-bottom: 1.5rem;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .hero-meta {
+    margin-bottom: 0.85rem;
+  }
+
+  h1 {
+    margin: 0 0 0.85rem;
+    font-size: clamp(1.9rem, 4vw, 2.6rem);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+
+  .intro {
+    max-width: 44rem;
+    margin: 0 0 1.25rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    font-size: 1.05rem;
+  }
+
+  .gl-search-wrap {
+    max-width: 24rem;
+  }
+
+  .gl-search {
+    width: 100%;
+    padding: 0.6rem 0.85rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-card);
+    color: var(--text);
+    font-size: 0.9rem;
+    font-family: inherit;
+  }
+
+  .gl-search::placeholder {
+    color: var(--text-secondary);
+  }
+
+  .gl-search:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+
+  .gl-list {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .gl-entry {
+    padding: 1.1rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .gl-entry:first-child {
+    padding-top: 0;
+  }
+
+  .gl-term {
+    margin: 0 0 0.35rem;
+    font-weight: 700;
+    font-size: 1.02rem;
+  }
+
+  .gl-def {
+    margin: 0;
+    color: var(--text-secondary);
+    line-height: 1.55;
+    font-size: 0.92rem;
+  }
+
+  .gl-module-link {
+    display: inline-block;
+    margin-left: 0.35rem;
+    white-space: nowrap;
+    color: var(--accent-text, var(--accent));
+    text-decoration: none;
+    font-size: 0.85rem;
+  }
+
+  .gl-module-link:hover {
+    text-decoration: underline;
+  }
+
+  .gl-empty {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    padding: 1.5rem 0;
+  }
+</style>

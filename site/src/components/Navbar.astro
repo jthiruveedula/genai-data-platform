@@ -14,6 +14,7 @@ const base = import.meta.env.BASE_URL;
     <a class="nav-link" href={`${base}calculator/`}>Cost console</a>
     <a class="nav-link" href={`${base}matrix/`}>Matrix</a>
     <a class="nav-link" href={`${base}case-studies/`}>Case studies</a>
+    <a class="nav-link" href={`${base}glossary/`}>Glossary</a>
   </nav>
 
   <Search />
@@ -116,6 +117,7 @@ const base = import.meta.env.BASE_URL;
 
   .nav-links {
     display: flex;
+    flex-wrap: wrap;
     gap: 0.25rem;
   }
 
