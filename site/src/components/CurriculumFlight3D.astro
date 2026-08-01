@@ -1,0 +1,207 @@
+---
+// 3D companion to CurriculumJourney's mission list (redesign epic #120) —
+// same structural pattern as VectorSpaceScene3D.astro:
+//   1. A static 2D SVG (data-cf3d-static) is always in the markup — what
+//      no-JS, pre-hydration, and prefers-reduced-motion visitors see and
+//      keep seeing.
+//   2. A <noscript> block backs that up explicitly.
+//   3. The 3D scene hydrates lazily (client:visible) so it never competes
+//      with LCP, and only flips visible once mounted and motion is allowed.
+import CurriculumFlight3D from "./CurriculumFlight3D";
+import { MODULES } from "../data/modules";
+
+const ordered = [...MODULES].sort((a, b) => a.order - b.order);
+const waypoints = ordered.map((m) => ({ id: m.id, order: m.order, title: m.title, lane: m.path }));
+
+const LANE_LABEL: Record<string, string> = { beginner: "core", intermediate: "deepen", advanced: "scale" };
+---
+
+<div class="curriculum-flight-3d" data-curriculum-flight-3d>
+  <div class="cf3d-static" data-cf3d-static>
+    <svg viewBox="0 0 200 100" role="img" aria-labelledby="curriculum-flight-caption" preserveAspectRatio="xMidYMid meet">
+      <title id="curriculum-flight-caption">
+        The 12 curriculum modules laid out as one continuous path, colored by learning lane (core, deepen, scale). An
+        interactive 3D version loads once you scroll to it, unless you prefer reduced motion.
+      </title>
+      <path
+        d="M 10 80 C 50 20, 90 90, 130 30 S 190 20, 195 50"
+        fill="none"
+        stroke="var(--border)"
+        stroke-width="1"
+      />
+      {
+        waypoints.map((w, i) => {
+          const x = 10 + (i / (waypoints.length - 1)) * 185;
+          const y = 50 + Math.sin(i * 0.9) * 30;
+          const color = w.lane === "beginner" ? "#34d399" : w.lane === "intermediate" ? "#60a5fa" : "#f472b6";
+          return <circle cx={x} cy={y} r="3" fill={color} />;
+        })
+      }
+    </svg>
+    <p class="flight3d-caption">12 modules, one continuous path — core → deepen → scale.</p>
+  </div>
+
+  <div class="cf3d-mount" data-cf3d-mount>
+    <CurriculumFlight3D client:visible waypoints={waypoints} />
+  </div>
+
+  <ul class="flight3d-legend" aria-hidden="true">
+    <li><span class="legend-dot legend-dot--beginner"></span>core</li>
+    <li><span class="legend-dot legend-dot--intermediate"></span>deepen</li>
+    <li><span class="legend-dot legend-dot--advanced"></span>scale</li>
+  </ul>
+
+  <noscript>
+    <style>
+      [data-cf3d-mount] {
+        display: none !important;
+      }
+      [data-cf3d-static] {
+        display: block !important;
+      }
+    </style>
+  </noscript>
+</div>
+
+<style>
+  .curriculum-flight-3d {
+    position: relative;
+    margin: 2rem 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-card);
+    padding: 1.25rem;
+    min-height: 22rem;
+  }
+
+  .cf3d-static {
+    position: relative;
+    z-index: 2;
+  }
+
+  .cf3d-static svg {
+    width: 100%;
+    max-width: 32rem;
+    display: block;
+    margin: 0 auto;
+    height: 18rem;
+  }
+
+  .flight3d-caption {
+    text-align: center;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    font-family: var(--font-mono);
+    margin: 0.75rem 0 0;
+  }
+
+  /* Same reasoning as VectorSpaceScene3D.astro: never display:none the
+     mount point pre-hydration — client:visible's IntersectionObserver needs
+     a layout box to watch. Stack the static/3D layers instead. */
+  .cf3d-mount {
+    position: absolute;
+    inset: 1.25rem;
+    z-index: 1;
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .curriculum-flight-3d[data-mode="3d"] .cf3d-static {
+    display: none;
+  }
+
+  .curriculum-flight-3d[data-mode="3d"] .cf3d-mount {
+    position: static;
+    inset: auto;
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  :global(.flight3d-root),
+  :global(.flight3d-canvas-wrap) {
+    width: 100%;
+    height: 20rem;
+  }
+
+  :global(.flight3d-canvas-wrap canvas) {
+    border-radius: calc(var(--radius) - 2px);
+  }
+
+  :global(.flight-tooltip) {
+    display: flex;
+    align-items: baseline;
+    gap: 0.4rem;
+    padding: 0.35rem 0.6rem;
+    border-radius: 4px;
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    white-space: nowrap;
+    font-size: 0.72rem;
+    color: var(--text);
+    transform: translateY(-1.5rem);
+  }
+
+  :global(.flight-tooltip__order) {
+    font-family: var(--font-mono);
+    color: var(--text-secondary);
+  }
+
+  :global(.flight-tooltip__title) {
+    font-weight: 600;
+  }
+
+  .flight3d-legend {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    justify-content: center;
+    gap: 1.25rem;
+    list-style: none;
+    margin: 0.75rem 0 0;
+    padding: 0;
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+  }
+
+  .flight3d-legend li {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .legend-dot {
+    width: 0.55rem;
+    height: 0.55rem;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  .legend-dot--beginner {
+    background: #34d399;
+  }
+
+  .legend-dot--intermediate {
+    background: #60a5fa;
+  }
+
+  .legend-dot--advanced {
+    background: #f472b6;
+  }
+
+  @media (max-width: 640px) {
+    .curriculum-flight-3d {
+      min-height: 18rem;
+      padding: 1rem;
+    }
+
+    :global(.flight3d-root),
+    :global(.flight3d-canvas-wrap) {
+      height: 16rem;
+    }
+  }
+</style>

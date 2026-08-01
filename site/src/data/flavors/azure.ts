@@ -155,6 +155,7 @@ export const flavor: Record<string, FlavorEntry> = {
       "Give the agent a multi-step task ('find X, then summarize how it changed across the last two documents') and trace the plan-act-observe loop.",
       "Cap the agent at a fixed iteration budget and confirm it stops instead of looping indefinitely on an unanswerable task.",
       "Add a human-approval gate before any tool call with a side effect (e.g. sending an email) and verify the agent pauses for it.",
+      "Grant the agent a scoped Managed Identity for its one tool endpoint instead of a shared app-registration secret, and confirm a call to an out-of-scope resource is denied.",
     ],
     costNote: "~$0.03 for a handful of agent turns with tool calls on the fast tier.",
     claimId: "azure-foundry-agent-service",

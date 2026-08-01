@@ -53,6 +53,20 @@ jobs:
           # via a real browser. Excluded from the crawl rather than accepting
           # 403/429 globally, so an actually-dead link elsewhere that happens
           # to 403/429 still fails the check.
+          #
+          # jthiruveedula.github.io/genai-data-platform (this site's own
+          # domain) is excluded too, but for a different reason: every
+          # occurrence of it in the build is a page's own self-referencing
+          # `<link rel="canonical">` / `og:url` tag (BaseLayout.astro), never
+          # a cross-page link — genuine internal navigation always uses
+          # root-relative paths, which the local mirror above already
+          # verifies. Checking a page's own canonical URL against the LIVE
+          # site is a chicken-and-egg 404 for any brand-new page: deploys are
+          # release-gated (deploy-site.yml), so a page merged to main can sit
+          # unreleased for a while, and PR-time CI always runs before that
+          # page could possibly be live yet regardless. Confirmed via a real
+          # failure: /case-studies/ 404'd here on its introducing PR despite
+          # building correctly, purely because v1.0.0 predated it.
           args: >-
             --root-dir ${{ runner.temp }}/link-check-root
             --no-progress
@@ -60,6 +74,7 @@ jobs:
             --exclude 'developers\.redhat\.com'
             --exclude 'medium\.com'
             --exclude 'docs\.vllm\.ai'
+            --exclude 'jthiruveedula\.github\.io/genai-data-platform'
             '${{ runner.temp }}/link-check-root/genai-data-platform/**/*.html'
           fail: true
       - name: Install Playwright browsers
