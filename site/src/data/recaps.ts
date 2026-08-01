@@ -217,7 +217,7 @@ export const RECAPS: Record<string, RecapContent> = {
     takeaways: [
       "Agents are plan → act → observe loops that call the same retrieval and generation services every other module built.",
       "Tools are the contract: an agent is only as safe and capable as the tool interfaces you expose to it.",
-      "Bound every loop with budgets and timeouts — a runaway agent is a cost and safety incident at the same time.",
+      "Bound every loop with budgets and timeouts, and scope its credentials to a short-lived OAuth token — a runaway agent or a leaked long-lived key is a cost and safety incident at the same time.",
     ],
     visual: {
       kind: "flow",
@@ -225,6 +225,7 @@ export const RECAPS: Record<string, RecapContent> = {
         { label: "Unbounded loop", note: "a cost and safety incident at once" },
         { label: "+ Iteration budget", note: "hard cap, forces a stop" },
         { label: "+ Least privilege", note: "only the tools the task needs" },
+        { label: "+ Scoped OAuth token", note: "short-lived, per-tool — not a baked-in key" },
         { label: "+ Human gate", note: "on any side-effecting call" },
         { label: "Bounded agent", note: "safe to actually run" },
       ],
