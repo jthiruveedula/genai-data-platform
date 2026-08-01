@@ -59,6 +59,21 @@ const moduleData = MODULES.find((m) => m.id === moduleId)!;
 
     <ChunkOverlapDemo />
 
+    <h2>Parent-document retrieval: embed small, return big</h2>
+    <p>
+      Every strategy above picks one chunk size and uses it for both embedding and retrieval. <strong>Parent-document
+      retrieval</strong> splits that decision in two: embed small "child" chunks (a sentence or two) so similarity
+      search stays precise, but store a pointer from each child back to its larger "parent" chunk or full section —
+      and return the parent to the model, not the child. The small chunk wins the search; the bigger one answers the
+      question.
+    </p>
+    <p>
+      <strong>Sentence-window retrieval</strong> is the same idea at a smaller radius: embed and match on a single
+      sentence, but expand the returned context to include the N sentences immediately before and after it. Both
+      patterns solve the same tension as chunk size and overlap above — precise matching wants small chunks, useful
+      answers want surrounding context — without forcing one chunk size to do both jobs.
+    </p>
+
     <h2>Try it in your flavor</h2>
     <FlavorTabs moduleId={moduleId} entries={entries} />
 
@@ -68,6 +83,7 @@ const moduleData = MODULES.find((m) => m.id === moduleId)!;
       <li>Zero overlap — a sentence that carries the answer gets cut exactly at a chunk boundary and neither half retrieves well.</li>
       <li>Chunking before parsing/OCR is done — you'll split mid-table or mid-figure-caption and lose the layout signal that would have prevented it.</li>
       <li>Never revisiting chunk size after looking at real retrieval failures — chunking strategy should be evaluated (Module 45), not set once and forgotten.</li>
+      <li>Using the same chunk for both matching and answering — a size tuned for precise search is rarely the size that gives the model enough context to answer well.</li>
     </ul>
   </article>
   <ModuleRecap moduleId={moduleId} />
