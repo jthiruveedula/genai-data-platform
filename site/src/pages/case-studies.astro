@@ -1,0 +1,261 @@
+---
+// One consolidated, scannable entry point for the real, cited enterprise
+// case studies otherwise scattered one-per-module-per-cloud inside
+// ModuleScenario. Every module already ships this data (scenarios.ts); this
+// page is purely a different view over the same source of truth — no new
+// facts, no invented numbers, same honest-copy rule as scenarios.ts itself.
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { MODULES } from "../data/modules";
+import { CASE_STUDIES } from "../data/scenarios";
+
+const base = import.meta.env.BASE_URL;
+const CLOUDS = ["gcp", "aws", "azure", "oss"] as const;
+
+const ordered = [...MODULES].sort((a, b) => a.order - b.order);
+const rows = ordered.map((m) => ({
+  module: m,
+  stories: CLOUDS.map((cloud) => ({ cloud, story: CASE_STUDIES[m.id][cloud] })),
+}));
+
+const totalStories = rows.length * CLOUDS.length;
+const statCount = rows.reduce((sum, r) => sum + r.stories.filter((s) => s.story.stat).length, 0);
+---
+
+<BaseLayout
+  title="Enterprise case studies"
+  description={`${totalStories} real, publicly cited enterprise case studies across all ${rows.length} curriculum modules and 4 clouds — no invented numbers, every figure sourced.`}
+>
+  <article>
+    <header class="cs-hero">
+      <div class="hero-meta">
+        <span class="chip mono">[ {totalStories} REAL STORIES ]</span>
+        <span class="chip mono">[ {rows.length} MODULES ]</span>
+        <span class="chip mono">[ {statCount} WITH A HEADLINE NUMBER ]</span>
+      </div>
+      <h1>What real companies shipped with this.</h1>
+      <p class="intro">
+        Every module in this curriculum ships one real, publicly cited customer story per cloud — not a composite,
+        not an invented number. This page pulls all {totalStories} of them into one place: what the company was
+        solving, what they shipped, and the cited source. New to GenAI? Start here — this is the "why it matters"
+        version of the curriculum, before any of the how.
+      </p>
+    </header>
+
+    <div class="cs-groups">
+      {
+        rows.map((row) => (
+          <section class="cs-group" aria-labelledby={`cs-${row.module.id}`}>
+            <h2 id={`cs-${row.module.id}`} class="cs-group-title">
+              <a href={`${base}modules/${row.module.id}/`}>{row.module.title}</a>
+            </h2>
+            <div class="cs-cards">
+              {row.stories.map(({ cloud, story }) => (
+                <article class="cs-card glass-panel">
+                  <p class="cs-card-meta">
+                    <span class="chip chip--accent">{cloud.toUpperCase()}</span>
+                    <span class="chip mono">{story.industry}</span>
+                    {story.stretch && (
+                      <span class="chip chip--pending" title="Closest publicly available real match">
+                        CLOSEST MATCH
+                      </span>
+                    )}
+                  </p>
+                  <p class="cs-card-company">{story.company}</p>
+                  {story.stat && (
+                    <p class="cs-card-stat">
+                      <span
+                        class="cs-card-stat-value mono"
+                        data-cs-stat-value
+                        data-target={story.stat.value}
+                        data-decimals={story.stat.decimals ?? 0}
+                        data-prefix={story.stat.prefix ?? ""}
+                        data-suffix={story.stat.suffix}
+                      >
+                        {(story.stat.prefix ?? "") + story.stat.value + story.stat.suffix}
+                      </span>
+                      <span class="cs-card-stat-label">{story.stat.label}</span>
+                    </p>
+                  )}
+                  <p class="cs-card-vignette">{story.vignette}</p>
+                  <p class="cs-card-source">
+                    <a href={story.sourceUrl} target="_blank" rel="noopener noreferrer">
+                      Source ↗
+                    </a>
+                  </p>
+                </article>
+              ))}
+            </div>
+          </section>
+        ))
+      }
+    </div>
+  </article>
+</BaseLayout>
+
+<script>
+  import { countUp } from "../lib/motion/primitives";
+
+  function setup() {
+    const values = document.querySelectorAll<HTMLElement>("[data-cs-stat-value]");
+    if (!values.length) return;
+    if (typeof IntersectionObserver !== "function") {
+      values.forEach((el) => animate(el));
+      return;
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          animate(entry.target as HTMLElement);
+          observer.unobserve(entry.target);
+        });
+      },
+      { rootMargin: "200px 0px" },
+    );
+    values.forEach((el) => observer.observe(el));
+  }
+
+  function animate(el: HTMLElement) {
+    if (el.dataset.animated === "true") return;
+    el.dataset.animated = "true";
+    const target = Number(el.dataset.target ?? "0");
+    countUp(el, target, {
+      duration: 1,
+      decimals: Number(el.dataset.decimals ?? "0"),
+      prefix: el.dataset.prefix ?? "",
+      suffix: el.dataset.suffix ?? "",
+    });
+  }
+
+  setup();
+  document.addEventListener("astro:page-load", setup);
+</script>
+
+<style>
+  .cs-hero {
+    padding-bottom: 1.5rem;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .hero-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.85rem;
+  }
+
+  h1 {
+    margin: 0 0 0.85rem;
+    font-size: clamp(1.9rem, 4vw, 2.6rem);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+
+  .intro {
+    max-width: 48rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    font-size: 1.05rem;
+  }
+
+  .cs-groups {
+    display: flex;
+    flex-direction: column;
+    gap: 2.5rem;
+  }
+
+  .cs-group-title {
+    margin: 0 0 1rem;
+    font-size: 1.3rem;
+  }
+
+  .cs-group-title a {
+    color: var(--text);
+    text-decoration: none;
+  }
+
+  .cs-group-title a:hover {
+    color: var(--accent-text, var(--accent));
+    text-decoration: underline;
+  }
+
+  .cs-cards {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
+  .cs-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 1.1rem;
+  }
+
+  .cs-card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin: 0;
+  }
+
+  .cs-card-company {
+    margin: 0;
+    font-weight: 700;
+    font-size: 0.95rem;
+  }
+
+  .cs-card-stat {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+  }
+
+  .cs-card-stat-value {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--accent-text, var(--accent));
+  }
+
+  .cs-card-stat-label {
+    font-size: 0.68rem;
+    color: var(--text-secondary);
+    font-family: var(--font-mono);
+  }
+
+  .cs-card-vignette {
+    margin: 0;
+    font-size: 0.82rem;
+    line-height: 1.5;
+    color: var(--text-secondary);
+    flex: 1;
+  }
+
+  .cs-card-source {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+  }
+
+  .cs-card-source a {
+    color: var(--text-secondary);
+  }
+
+  .cs-card-source a:hover {
+    color: var(--accent-text, var(--accent));
+  }
+
+  @media (max-width: 1024px) {
+    .cs-cards {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 640px) {
+    .cs-cards {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+</style>
