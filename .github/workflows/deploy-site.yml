@@ -6,6 +6,15 @@ name: Deploy site to GitHub Pages
 # live now" gate. workflow_dispatch remains for a manual re-run of whatever
 # ref is currently checked out (e.g. retrying a flaky Pages deploy of the
 # same release), not for shipping unreleased main.
+#
+# Tests run again here, at the exact release tag, before anything deploys —
+# PR-time CI already ran once, but a release tag can in principle be cut
+# from any point on main, so this is the gate against the commit that's
+# actually about to go live, not against whatever happened to pass earlier.
+# A final `notify` job always posts a run-summary: a "site is live" summary
+# with the release tag and URL on success, or a table naming the failed
+# stage, its error, and the release tag on failure — so the outcome of a
+# deploy is visible from the Actions run without opening step logs.
 on:
   release:
     types: [published]
@@ -23,30 +32,136 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      failed_stage: ${{ steps.record_stage.outputs.failed_stage }}
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - id: checkout
+        uses: actions/checkout@v7
+      - id: setup_node
+        uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
           cache-dependency-path: site/package-lock.json
-      - name: Install dependencies
+      - id: install
+        name: Install dependencies
         working-directory: site
         run: npm ci
-      - name: Build
+      - id: unit_tests
+        name: Unit tests
+        working-directory: site
+        run: npm run test
+      - id: astro_build
+        name: Build
         working-directory: site
         run: npm run build
+      - id: install_browsers
+        name: Install Playwright browsers
+        working-directory: site
+        run: npx playwright install --with-deps chromium
+      - id: e2e_tests
+        name: e2e + accessibility tests
+        working-directory: site
+        run: npx playwright test
+      - uses: actions/upload-artifact@v7
+        if: failure() && steps.e2e_tests.outcome == 'failure'
+        with:
+          name: playwright-report
+          path: site/playwright-report/
+          retention-days: 14
       - uses: actions/configure-pages@v6
       - uses: actions/upload-pages-artifact@v5
         with:
           path: site/dist
 
+      - id: record_stage
+        name: Record which stage failed (if any)
+        if: always()
+        run: |
+          failed_stage=""
+          declare -A LABELS=(
+            [checkout]="Checkout"
+            [setup_node]="Set up Node"
+            [install]="Install dependencies"
+            [unit_tests]="Unit tests"
+            [astro_build]="Build"
+            [install_browsers]="Install Playwright browsers"
+            [e2e_tests]="e2e + accessibility tests"
+          )
+          declare -A OUTCOMES=(
+            [checkout]="${{ steps.checkout.outcome }}"
+            [setup_node]="${{ steps.setup_node.outcome }}"
+            [install]="${{ steps.install.outcome }}"
+            [unit_tests]="${{ steps.unit_tests.outcome }}"
+            [astro_build]="${{ steps.astro_build.outcome }}"
+            [install_browsers]="${{ steps.install_browsers.outcome }}"
+            [e2e_tests]="${{ steps.e2e_tests.outcome }}"
+          )
+          for id in checkout setup_node install unit_tests astro_build install_browsers e2e_tests; do
+            if [ "${OUTCOMES[$id]}" = "failure" ]; then
+              failed_stage="${LABELS[$id]}"
+              break
+            fi
+          done
+          echo "failed_stage=$failed_stage" >> "$GITHUB_OUTPUT"
+
   deploy:
     needs: build
+    if: needs.build.result == 'success'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
+    outputs:
+      page_url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
         uses: actions/deploy-pages@v5
+
+  notify:
+    needs: [build, deploy]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post deploy summary
+        run: |
+          TAG="${{ github.event.release.tag_name }}"
+          TAG="${TAG:-manual workflow_dispatch (no release tag)}"
+
+          BUILD_RESULT="${{ needs.build.result }}"
+          DEPLOY_RESULT="${{ needs.deploy.result }}"
+          FAILED_STAGE="${{ needs.build.outputs.failed_stage }}"
+          PAGE_URL="${{ needs.deploy.outputs.page_url }}"
+          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+          if [ "$BUILD_RESULT" = "success" ] && [ "$DEPLOY_RESULT" = "success" ]; then
+            {
+              echo "### 🎉 Site is live"
+              echo ""
+              echo "Release **$TAG** deployed successfully."
+              echo ""
+              echo "| | |"
+              echo "|---|---|"
+              echo "| Release tag | \`$TAG\` |"
+              echo "| Live URL | ${PAGE_URL:-https://jthiruveedula.github.io/genai-data-platform/} |"
+              echo "| Tests | ✅ unit + e2e passed at this exact commit |"
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            STAGE_LABEL="${FAILED_STAGE:-deploy step}"
+            if [ "$BUILD_RESULT" != "success" ] && [ -z "$FAILED_STAGE" ]; then
+              STAGE_LABEL="build job (cancelled or infra error before a stage recorded)"
+            fi
+            {
+              echo "### ❌ Deploy failed — site NOT updated"
+              echo ""
+              echo "| | |"
+              echo "|---|---|"
+              echo "| Release tag | \`$TAG\` |"
+              echo "| Failed stage | **$STAGE_LABEL** |"
+              echo "| Build job | $BUILD_RESULT |"
+              echo "| Deploy job | ${DEPLOY_RESULT:-skipped (build did not succeed)} |"
+              echo "| Logs | [View this run]($RUN_URL) |"
+              echo ""
+              echo "The previously deployed release is still live — this workflow only replaces it on a successful deploy."
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
