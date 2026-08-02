@@ -13,6 +13,24 @@ const base = import.meta.env.BASE_URL;
 const moduleTitleById = new Map(MODULES.map((m) => [m.id, m.title]));
 
 const sorted = [...GLOSSARY].sort((a, b) => a.term.localeCompare(b.term));
+
+/**
+ * Concept-cluster view (redesign phase 4, issue #150): every GLOSSARY term
+ * already carries an optional `moduleId` (55/55 current terms have one) —
+ * grouping by that field, in module order, is the "connected reference
+ * system" the brief asks for with zero schema change. Terms with no
+ * moduleId (none currently, but the field is optional) fall into an
+ * "Unsorted" bucket rather than being silently dropped.
+ */
+const orderedModules = [...MODULES].sort((a, b) => a.order - b.order);
+const clusters = orderedModules
+  .map((m) => ({
+    moduleId: m.id,
+    title: m.title,
+    terms: GLOSSARY.filter((t) => t.moduleId === m.id).sort((a, b) => a.term.localeCompare(b.term)),
+  }))
+  .filter((c) => c.terms.length > 0);
+const unsortedTerms = GLOSSARY.filter((t) => !t.moduleId).sort((a, b) => a.term.localeCompare(b.term));
 ---
 
 <BaseLayout
@@ -39,9 +57,14 @@ const sorted = [...GLOSSARY].sort((a, b) => a.term.localeCompare(b.term));
           autocomplete="off"
         />
       </div>
+
+      <div class="gl-view-toggle" role="group" aria-label="Glossary view">
+        <button type="button" class="chip gl-view-btn" data-gl-view-btn="alpha" aria-pressed="true">Alphabetical</button>
+        <button type="button" class="chip gl-view-btn" data-gl-view-btn="cluster" aria-pressed="false">By concept cluster</button>
+      </div>
     </header>
 
-    <dl class="gl-list" id="gl-list">
+    <dl class="gl-list" id="gl-list" data-gl-view-panel="alpha">
       {
         sorted.map((entry) => (
           <div class="gl-entry" data-gl-entry data-gl-term={entry.term.toLowerCase()}>
@@ -58,6 +81,42 @@ const sorted = [...GLOSSARY].sort((a, b) => a.term.localeCompare(b.term));
         ))
       }
     </dl>
+
+    <div class="gl-list gl-list--cluster" id="gl-list-cluster" data-gl-view-panel="cluster" hidden>
+      {
+        clusters.map((cluster) => (
+          <section class="gl-cluster" aria-labelledby={`gl-cluster-${cluster.moduleId}`}>
+            <h2 id={`gl-cluster-${cluster.moduleId}`} class="gl-cluster-title">
+              <a href={`${base}modules/${cluster.moduleId}/`}>{cluster.title}</a>
+            </h2>
+            <dl class="gl-cluster-terms">
+              {cluster.terms.map((entry) => (
+                <div class="gl-entry" data-gl-entry data-gl-term={entry.term.toLowerCase()}>
+                  <dt class="gl-term">{entry.term}</dt>
+                  <dd class="gl-def">{entry.definition}</dd>
+                </div>
+              ))}
+            </dl>
+          </section>
+        ))
+      }
+      {
+        unsortedTerms.length > 0 && (
+          <section class="gl-cluster" aria-labelledby="gl-cluster-unsorted">
+            <h2 id="gl-cluster-unsorted" class="gl-cluster-title">Unsorted</h2>
+            <dl class="gl-cluster-terms">
+              {unsortedTerms.map((entry) => (
+                <div class="gl-entry" data-gl-entry data-gl-term={entry.term.toLowerCase()}>
+                  <dt class="gl-term">{entry.term}</dt>
+                  <dd class="gl-def">{entry.definition}</dd>
+                </div>
+              ))}
+            </dl>
+          </section>
+        )
+      }
+    </div>
+
     <p class="gl-empty" id="gl-empty" hidden>No terms match that filter.</p>
   </article>
 </BaseLayout>
@@ -65,27 +124,63 @@ const sorted = [...GLOSSARY].sort((a, b) => a.term.localeCompare(b.term));
 <script>
   function setup() {
     const input = document.getElementById("gl-search") as HTMLInputElement | null;
-    const list = document.getElementById("gl-list");
     const empty = document.getElementById("gl-empty");
-    if (!input || !list || !empty || input.dataset.bound === "true") return;
+    const panels = Array.from(document.querySelectorAll<HTMLElement>("[data-gl-view-panel]"));
+    if (!input || !empty || !panels.length || input.dataset.bound === "true") return;
     input.dataset.bound = "true";
 
-    const entries = Array.from(list.querySelectorAll<HTMLElement>("[data-gl-entry]"));
+    // Both views render their own copy of every entry — filtering queries
+    // across all of them so the currently-hidden view stays in sync and is
+    // already filtered correctly whenever the visitor switches to it.
+    const entries = Array.from(document.querySelectorAll<HTMLElement>("[data-gl-entry]"));
+    const clusters = Array.from(document.querySelectorAll<HTMLElement>(".gl-cluster"));
+
+    function activePanel() {
+      return panels.find((p) => !p.hidden) ?? panels[0];
+    }
 
     input.addEventListener("input", () => {
       const q = input.value.trim().toLowerCase();
-      let visibleCount = 0;
       entries.forEach((el) => {
         const matches = !q || el.dataset.glTerm?.includes(q) || el.textContent?.toLowerCase().includes(q);
         el.hidden = !matches;
-        if (matches) visibleCount++;
       });
-      empty.hidden = visibleCount > 0;
+      // A cluster whose every term got filtered out would otherwise still
+      // show its (now-empty) heading — hide the whole section instead.
+      clusters.forEach((cluster) => {
+        const hasVisible = Array.from(cluster.querySelectorAll<HTMLElement>("[data-gl-entry]")).some((el) => !el.hidden);
+        cluster.hidden = !hasVisible;
+      });
+      const visibleInActive = Array.from(activePanel().querySelectorAll<HTMLElement>("[data-gl-entry]")).some(
+        (el) => !el.hidden,
+      );
+      empty.hidden = visibleInActive;
+    });
+  }
+
+  function setupViewToggle() {
+    const buttons = Array.from(document.querySelectorAll<HTMLButtonElement>("[data-gl-view-btn]"));
+    const panels = Array.from(document.querySelectorAll<HTMLElement>("[data-gl-view-panel]"));
+    if (!buttons.length || !panels.length || buttons[0].dataset.bound === "true") return;
+    buttons.forEach((b) => (b.dataset.bound = "true"));
+
+    buttons.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const view = btn.dataset.glViewBtn;
+        buttons.forEach((b) => b.setAttribute("aria-pressed", String(b === btn)));
+        panels.forEach((p) => {
+          p.hidden = p.dataset.glViewPanel !== view;
+        });
+      });
     });
   }
 
   setup();
-  document.addEventListener("astro:page-load", setup);
+  setupViewToggle();
+  document.addEventListener("astro:page-load", () => {
+    setup();
+    setupViewToggle();
+  });
 </script>
 
 <style>
@@ -116,6 +211,50 @@ const sorted = [...GLOSSARY].sort((a, b) => a.term.localeCompare(b.term));
 
   .gl-search-wrap {
     max-width: 24rem;
+    margin-bottom: 1rem;
+  }
+
+  .gl-view-toggle {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .gl-view-btn {
+    cursor: pointer;
+    font: inherit;
+    font-family: var(--font-mono);
+  }
+
+  .gl-view-btn[aria-pressed="true"] {
+    border-color: var(--accent);
+    color: var(--accent-text, var(--accent));
+    background: color-mix(in srgb, var(--accent) 10%, var(--bg-card));
+  }
+
+  .gl-cluster {
+    margin-bottom: 2rem;
+  }
+
+  .gl-cluster-title {
+    margin: 0 0 0.5rem;
+    font-size: 1.1rem;
+  }
+
+  .gl-cluster-title a {
+    color: var(--text);
+    text-decoration: none;
+  }
+
+  .gl-cluster-title a:hover {
+    color: var(--accent-text, var(--accent));
+    text-decoration: underline;
+  }
+
+  .gl-cluster-terms {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
   }
 
   .gl-search {
