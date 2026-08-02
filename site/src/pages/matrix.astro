@@ -13,6 +13,39 @@ const flavorsByCloud = { gcp, aws, azure, oss };
 const cloudIds = CLOUDS.map((c) => c.id);
 const rows = buildMatrixRows(MODULES, flavorsByCloud, cloudIds);
 const stageCount = MODULES.length;
+
+/**
+ * Summary strip (redesign phase 3, issue #149): surfaces `CLOUDS[].bestFor`
+ * — already in modules.ts, previously rendered nowhere on this page — plus
+ * a computed "how many stages use a fully-managed service" count per cloud,
+ * derived from the same `rows` data the table already renders. No new
+ * dataset; this is a different view over data that already exists.
+ */
+const managedCounts = Object.fromEntries(
+  cloudIds.map((cloudId) => {
+    // OSS is self-hosted by definition (that's the whole point of the
+    // flavor — "no cloud lock-in", per its own CLOUDS.bestFor copy above),
+    // so it's always 0 managed regardless of what any per-cell text
+    // heuristic would compute — a services/storage-text heuristic that
+    // happened to find zero "self-hosted"/"k8s" substrings in OSS's actual
+    // cell text (e.g. "MinIO", "Postgres") would otherwise wrongly report
+    // it as 12/12 managed, undermining the exact distinction this stat
+    // exists to show.
+    if (cloudId === "oss") return [cloudId, 0];
+    const count = rows.filter((row) => {
+      const cell = row.cells[cloudId];
+      if (!cell) return false;
+      const text = [...cell.services, cell.storage].join(" ").toLowerCase();
+      // Heuristic, not authoritative: counts a stage as "managed" if its
+      // service/storage text doesn't read as self-hosted infrastructure
+      // (K8s, self-hosted, VM). Good enough for a directional summary
+      // number, not a certified classification.
+      const selfHosted = /k8s|self-hosted|\bvm\b/.test(text);
+      return !selfHosted;
+    }).length;
+    return [cloudId, count];
+  })
+);
 ---
 
 <BaseLayout
@@ -33,6 +66,35 @@ const stageCount = MODULES.length;
         "Stage" to toggle between pipeline order and alphabetical order.
       </p>
     </header>
+
+    <div class="matrix-summary" role="group" aria-label="Cloud summary">
+      {
+        CLOUDS.map((cloud) => (
+          <article class="summary-card" data-summary-card={cloud.id}>
+            <header class="summary-card-head">
+              <span class="chip chip--accent">{cloud.label}</span>
+              <span class="mono summary-managed">{managedCounts[cloud.id]}/{stageCount} managed</span>
+            </header>
+            <p class="summary-bestfor">{cloud.bestFor}</p>
+          </article>
+        ))
+      }
+    </div>
+
+    <div class="compare-toggle-row">
+      <button type="button" class="chip compare-toggle-btn" data-compare-toggle aria-pressed="false">
+        Compare mode
+      </button>
+      <div class="compare-cloud-picker" data-compare-picker hidden>
+        {
+          CLOUDS.map((cloud, i) => (
+            <button type="button" class="chip compare-pick-btn" data-compare-pick={cloud.id} aria-pressed={i < 2 ? "true" : "false"}>
+              {cloud.label}
+            </button>
+          ))
+        }
+      </div>
+    </div>
 
     <div class="matrix-scroll" role="region" aria-label="Service equivalence matrix, scrollable">
       <table class="matrix-table" data-matrix-table>
@@ -185,6 +247,46 @@ const stageCount = MODULES.length;
 
     setupMatrixSort();
     document.addEventListener("astro:page-load", setupMatrixSort);
+
+    function setupCompareMode() {
+      const toggleBtn = document.querySelector<HTMLButtonElement>("[data-compare-toggle]");
+      const picker = document.querySelector<HTMLElement>("[data-compare-picker]");
+      const table = document.querySelector<HTMLTableElement>("[data-matrix-table]");
+      if (!toggleBtn || !picker || !table || toggleBtn.dataset.compareBound === "true") return;
+      toggleBtn.dataset.compareBound = "true";
+
+      const pickBtns = Array.from(picker.querySelectorAll<HTMLButtonElement>("[data-compare-pick]"));
+
+      function applyVisibility() {
+        const compareActive = toggleBtn!.getAttribute("aria-pressed") === "true";
+        const selected = new Set(
+          pickBtns.filter((b) => b.getAttribute("aria-pressed") === "true").map((b) => b.dataset.comparePick)
+        );
+        for (const cloud of CLOUD_IDS as string[]) {
+          const visible = !compareActive || selected.has(cloud);
+          table!.querySelectorAll<HTMLElement>(`[data-cloud="${cloud}"]`).forEach((el) => {
+            el.style.display = visible ? "" : "none";
+          });
+        }
+      }
+
+      toggleBtn.addEventListener("click", () => {
+        const next = toggleBtn!.getAttribute("aria-pressed") !== "true";
+        toggleBtn!.setAttribute("aria-pressed", String(next));
+        picker!.hidden = !next;
+        applyVisibility();
+      });
+
+      pickBtns.forEach((btn) => {
+        btn.addEventListener("click", () => {
+          btn.setAttribute("aria-pressed", String(btn.getAttribute("aria-pressed") !== "true"));
+          applyVisibility();
+        });
+      });
+    }
+
+    setupCompareMode();
+    document.addEventListener("astro:page-load", setupCompareMode);
   </script>
 </BaseLayout>
 
@@ -206,6 +308,84 @@ const stageCount = MODULES.length;
     font-size: clamp(1.9rem, 4vw, 2.6rem);
     font-weight: 800;
     letter-spacing: -0.02em;
+  }
+
+  .matrix-summary {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.85rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .summary-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.9rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-card);
+  }
+
+  .summary-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  .summary-managed {
+    font-size: 0.68rem;
+    color: var(--text-secondary);
+  }
+
+  .summary-bestfor {
+    margin: 0;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    line-height: 1.45;
+  }
+
+  .compare-toggle-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .compare-toggle-btn {
+    cursor: pointer;
+    font: inherit;
+    font-family: var(--font-mono);
+  }
+
+  .compare-toggle-btn[aria-pressed="true"] {
+    border-color: var(--accent);
+    color: var(--accent-text, var(--accent));
+    background: color-mix(in srgb, var(--accent) 10%, var(--bg-card));
+  }
+
+  .compare-cloud-picker {
+    display: flex;
+    gap: 0.4rem;
+  }
+
+  .compare-pick-btn {
+    cursor: pointer;
+    font: inherit;
+    font-family: var(--font-mono);
+  }
+
+  .compare-pick-btn[aria-pressed="true"] {
+    border-color: var(--accent);
+    color: var(--accent-text, var(--accent));
+  }
+
+  @media (max-width: 900px) {
+    .matrix-summary {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
   }
 
   .intro {
