@@ -6,6 +6,7 @@
 // added complexity and TBT risk that a single static diagram doesn't need
 // to earn; the crossfade toggle below carries the interaction instead.
 import { AGENT_LOOP_STAGES } from "../../data/platform";
+import AgentConstellation3D from "../AgentConstellation3D";
 
 const base = import.meta.env.BASE_URL;
 
@@ -20,10 +21,7 @@ const observe = stageById.get("observe")!;
     <header class="agent-loop-head">
       <p class="section-kicker">HOW AN ENTERPRISE AGENT WORKS</p>
       <h2 id="agent-loop-heading" class="section-title">Plan. Act. Observe. Repeat — with a leash.</h2>
-      <p class="section-lede">
-        Every agent turn is one loop: decide the next step, call a tool, read what came back, decide again. A
-        supervisor can hand work to specialized workers instead of doing it all itself.
-      </p>
+      <p class="section-lede">Decide. Call a tool. Read the result. Decide again — capped, not infinite.</p>
     </header>
 
     <div class="loop-toggle" role="group" aria-label="Agent pattern">
@@ -75,35 +73,52 @@ const observe = stageById.get("observe")!;
       </svg>
 
       <!-- Multi-agent diagram: a supervisor handing work to two workers, each
-           running its own plan/act/observe loop. -->
-      <svg
-        class="loop-diagram loop-diagram--multi"
-        data-loop-diagram="multi"
-        viewBox="0 0 480 300"
-        fill="none"
-        role="img"
-        aria-labelledby="loop-multi-caption"
-        hidden
-      >
-        <title id="loop-multi-caption">A supervisor agent handing off work to two worker agents, each running its own plan/act/observe loop.</title>
-        <path class="multi-branch" d="M240 78 L140 130" stroke="var(--border)" stroke-width="1.4" stroke-dasharray="5 7"></path>
-        <path class="multi-branch" d="M240 78 L340 130" stroke="var(--border)" stroke-width="1.4" stroke-dasharray="5 7"></path>
-        <g class="loop-node" data-loop-node="supervisor">
-          <rect x="170" y="30" width="140" height="48" rx="7" fill="var(--bg-card)" stroke="var(--accent)"></rect>
-          <text class="loop-label" x="240" y="59" text-anchor="middle">SUPERVISOR</text>
-        </g>
-        <g class="loop-node" data-loop-node="worker-a">
-          <rect x="40" y="130" width="140" height="48" rx="7" fill="var(--bg-card)" stroke="var(--border)"></rect>
-          <text class="loop-label" x="110" y="159" text-anchor="middle">WORKER</text>
-        </g>
-        <g class="loop-node" data-loop-node="worker-b">
-          <rect x="300" y="130" width="140" height="48" rx="7" fill="var(--bg-card)" stroke="var(--border)"></rect>
-          <text class="loop-label" x="370" y="159" text-anchor="middle">WORKER</text>
-        </g>
-        <text class="loop-hud" x="110" y="204" text-anchor="middle">OWN PLAN/ACT/OBSERVE LOOP</text>
-        <text class="loop-hud" x="370" y="204" text-anchor="middle">OWN PLAN/ACT/OBSERVE LOOP</text>
-        <text class="loop-hud" x="240" y="252" text-anchor="middle">SUPERVISOR HANDS OFF WORK, DOESN'T DO IT ITSELF</text>
-      </svg>
+           running its own plan/act/observe loop. Same static-SVG + lazy-3D
+           hydration pattern as CurriculumFlight3D.astro: the flat SVG is
+           always in the markup (reduced-motion/no-JS/pre-hydration view),
+           the 3D scene only ever supplements it once mounted and motion is
+           allowed, and the wrapper's `data-mode="3d"` attribute (set by the
+           React component itself) is what actually swaps which one is
+           visible — never CSS display:none on the whole diagram. -->
+      <div class="loop-diagram loop-diagram--multi" data-loop-diagram="multi" hidden>
+        <div class="multi-static" data-multi-static>
+          <svg viewBox="0 0 480 300" fill="none" role="img" aria-labelledby="loop-multi-caption">
+            <title id="loop-multi-caption">A supervisor agent handing off work to two worker agents, each running its own plan/act/observe loop.</title>
+            <path class="multi-branch" d="M240 78 L140 130" stroke="var(--border)" stroke-width="1.4" stroke-dasharray="5 7"></path>
+            <path class="multi-branch" d="M240 78 L340 130" stroke="var(--border)" stroke-width="1.4" stroke-dasharray="5 7"></path>
+            <g class="loop-node" data-loop-node="supervisor">
+              <rect x="170" y="30" width="140" height="48" rx="7" fill="var(--bg-card)" stroke="var(--accent)"></rect>
+              <text class="loop-label" x="240" y="59" text-anchor="middle">SUPERVISOR</text>
+            </g>
+            <g class="loop-node" data-loop-node="worker-a">
+              <rect x="40" y="130" width="140" height="48" rx="7" fill="var(--bg-card)" stroke="var(--border)"></rect>
+              <text class="loop-label" x="110" y="159" text-anchor="middle">WORKER</text>
+            </g>
+            <g class="loop-node" data-loop-node="worker-b">
+              <rect x="300" y="130" width="140" height="48" rx="7" fill="var(--bg-card)" stroke="var(--border)"></rect>
+              <text class="loop-label" x="370" y="159" text-anchor="middle">WORKER</text>
+            </g>
+            <text class="loop-hud" x="110" y="204" text-anchor="middle">OWN PLAN/ACT/OBSERVE LOOP</text>
+            <text class="loop-hud" x="370" y="204" text-anchor="middle">OWN PLAN/ACT/OBSERVE LOOP</text>
+            <text class="loop-hud" x="240" y="252" text-anchor="middle">SUPERVISOR HANDS OFF WORK, DOESN'T DO IT ITSELF</text>
+          </svg>
+        </div>
+
+        <div class="multi-3d-mount" data-multi-3d-mount>
+          <AgentConstellation3D client:visible />
+        </div>
+
+        <noscript>
+          <style>
+            [data-multi-3d-mount] {
+              display: none !important;
+            }
+            [data-multi-static] {
+              display: block !important;
+            }
+          </style>
+        </noscript>
+      </div>
 
       <div class="loop-stack" aria-hidden="true">
         <div class="loop-step">
@@ -165,8 +180,8 @@ const observe = stageById.get("observe")!;
 
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const buttons = Array.from(rootEl.querySelectorAll<HTMLButtonElement>("[data-loop-mode]"));
-    const single = rootEl.querySelector<SVGElement>('[data-loop-diagram="single"]');
-    const multi = rootEl.querySelector<SVGElement>('[data-loop-diagram="multi"]');
+    const single = rootEl.querySelector<HTMLElement>('[data-loop-diagram="single"]');
+    const multi = rootEl.querySelector<HTMLElement>('[data-loop-diagram="multi"]');
     if (!buttons.length || !single || !multi) return;
 
     // SVGElement's `hidden` IDL property isn't reliably attribute-reflected
@@ -174,8 +189,9 @@ const observe = stageById.get("observe")!;
     // JS property but never touches the real `hidden` content attribute, so
     // the `[hidden]` CSS selector never re-matched). setAttribute/
     // removeAttribute operate on the real attribute directly and work on
-    // every element type, SVG included.
-    function setHidden(el: SVGElement, hide: boolean) {
+    // every element type, SVG included — kept for both `single` (an <svg>)
+    // and `multi` (now a <div> wrapping the static SVG + 3D mount).
+    function setHidden(el: HTMLElement, hide: boolean) {
       if (hide) el.setAttribute("hidden", "");
       else el.removeAttribute("hidden");
     }
@@ -275,6 +291,90 @@ const observe = stageById.get("observe")!;
 
   .loop-diagram[hidden] {
     display: none;
+  }
+
+  /* Multi-agent wrapper: reserves the same footprint as the flat SVG
+     (aspect-ratio, not a fixed height, since the panel's width varies with
+     the grid) so the 3D mount never causes layout shift once it hydrates —
+     same reasoning as CurriculumFlight3D.astro's min-height reservation. */
+  .loop-diagram--multi {
+    position: relative;
+    aspect-ratio: 480 / 300;
+  }
+
+  .multi-static {
+    position: relative;
+    z-index: 2;
+  }
+
+  .multi-static svg {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  /* Never display:none the mount point pre-hydration — client:visible's
+     IntersectionObserver needs a layout box to watch. Stack the static/3D
+     layers instead (same idea as CurriculumFlight3D.astro) — but unlike
+     that component, this one keeps the 3D mount `position: absolute; inset:
+     0` in BOTH states rather than switching to `position: static` once
+     active. Verified in-browser that switching to `position: static` left
+     the R3F <canvas> measuring ~150px tall instead of the intended ~280+ —
+     its parent chain's height was only established via `min-height` (no
+     explicit `height`), which is a classically ambiguous case for
+     percentage-height children per the CSS spec. Staying absolutely
+     positioned against `.loop-diagram--multi`'s aspect-ratio-derived,
+     unambiguously-definite size sidesteps that entirely. */
+  .multi-3d-mount {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .loop-diagram--multi[data-mode="3d"] .multi-static {
+    display: none;
+  }
+
+  .loop-diagram--multi[data-mode="3d"] .multi-3d-mount {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* Absolute + inset:0 at every level, all the way up to
+     .loop-diagram--multi's aspect-ratio-derived definite size — not
+     width/height:100% chained through several divs. Verified in-browser
+     that the 100%-chain approach left the actual R3F <canvas> element
+     measuring a bare default 300x150 (the UA's intrinsic <canvas> size
+     when no real measurement is available), even though every ancestor's
+     own getBoundingClientRect() looked correct — R3F's ResizeObserver was
+     resolving against an ambiguous percentage chain, not the values any
+     single element's box model reported in isolation. */
+  :global(.agent3d-root),
+  :global(.agent3d-canvas-wrap) {
+    position: absolute;
+    inset: 0;
+  }
+
+  :global(.agent3d-tag) {
+    padding: 0.3rem 0.55rem;
+    border-radius: 4px;
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    white-space: nowrap;
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.04em;
+    color: var(--text);
+    transform: translateY(-1.4rem);
+  }
+
+  :global(.agent3d-tag--supervisor) {
+    border-color: var(--accent);
+    color: var(--accent-text, var(--accent));
   }
 
   .loop-label {
