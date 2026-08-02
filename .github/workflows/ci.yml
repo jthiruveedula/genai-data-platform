@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        lab: ["85-agents-mcp-oauth"]
+        lab: ["85-agents-mcp-oauth", "85-agents-langgraph-loop"]
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v6
