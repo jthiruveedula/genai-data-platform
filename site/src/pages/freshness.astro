@@ -43,6 +43,11 @@ function statusLabel(status: ClaimStatus, verifiedOn: string | null): string {
       be re-checked against its sources on a schedule by an automated scrape pipeline. This page reads that registry
       directly at build time, so what's below is the actual, current verification state — not a claim about it.
     </p>
+    <p class="governance-framing">
+      This is the same discipline the curriculum's <a href={`${base}#operate`}>Operate in Production</a> chapter
+      teaches — trace every claim, gate on verification, never ship an unverified number as fact — applied to this
+      site's own content instead of a deployed agent's.
+    </p>
     {
       allUnverified && (
         <p>
@@ -54,11 +59,23 @@ function statusLabel(status: ClaimStatus, verifiedOn: string | null): string {
       )
     }
 
-    <div class="freshness-summary" role="list" aria-label="Claim registry summary">
-      <span class="chip mono" role="listitem">{claims.length} CLAIMS</span>
-      <span class="chip chip--verified mono" role="listitem">{verifiedCount} VERIFIED</span>
-      <span class="chip chip--pending chip--unverified mono" role="listitem">{unverifiedCount} UNVERIFIED</span>
-      <span class="chip chip--stale mono" role="listitem">{staleCount} STALE</span>
+    <div class="freshness-stats" role="list" aria-label="Claim registry summary">
+      <div class="stat-block" role="listitem">
+        <span class="stat-value mono">{claims.length}</span>
+        <span class="stat-label">CLAIMS TRACKED</span>
+      </div>
+      <div class="stat-block" role="listitem">
+        <span class="stat-value mono stat-value--verified">{verifiedCount}</span>
+        <span class="stat-label">VERIFIED</span>
+      </div>
+      <div class="stat-block" role="listitem">
+        <span class="stat-value mono stat-value--unverified">{unverifiedCount}</span>
+        <span class="stat-label">UNVERIFIED</span>
+      </div>
+      <div class="stat-block" role="listitem">
+        <span class="stat-value mono stat-value--stale">{staleCount}</span>
+        <span class="stat-label">STALE</span>
+      </div>
     </div>
 
     <div class="table-wrap">
@@ -87,6 +104,9 @@ function statusLabel(status: ClaimStatus, verifiedOn: string | null): string {
               return (
                 <tr>
                   <td id={`claim-${c.id}`} class="mono claim-id">
+                    <button type="button" class="copy-link-btn" data-copy-link={`claim-${c.id}`} aria-label={`Copy link to claim ${c.id}`} title="Copy link to this claim">
+                      #
+                    </button>
                     {c.id}
                   </td>
                   <td>{c.claim}</td>
@@ -109,13 +129,115 @@ function statusLabel(status: ClaimStatus, verifiedOn: string | null): string {
   </article>
 </BaseLayout>
 
-<style>
-  .freshness-summary {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.6rem;
-    margin: 1.5rem 0 2rem;
+<script>
+  function setup() {
+    document.querySelectorAll<HTMLButtonElement>("[data-copy-link]").forEach((btn) => {
+      if (btn.dataset.bound === "true") return;
+      btn.dataset.bound = "true";
+      btn.addEventListener("click", async () => {
+        const anchorId = btn.dataset.copyLink!;
+        const url = `${location.origin}${location.pathname}#${anchorId}`;
+        try {
+          await navigator.clipboard.writeText(url);
+          const original = btn.textContent;
+          btn.textContent = "✓";
+          window.setTimeout(() => {
+            btn.textContent = original;
+          }, 1200);
+        } catch {
+          // Clipboard API unavailable (e.g. insecure context) — no-op,
+          // the claim's #anchor is still directly linkable/bookmarkable.
+        }
+      });
+    });
   }
+
+  setup();
+  document.addEventListener("astro:page-load", setup);
+</script>
+
+<style>
+  .governance-framing {
+    color: var(--text-secondary);
+    font-size: 0.92rem;
+  }
+
+  .governance-framing a {
+    color: var(--accent-text, var(--accent));
+  }
+
+  .freshness-stats {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1.25rem;
+    padding: 1.25rem 0;
+    margin: 1rem 0 2rem;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .stat-block {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+
+  .stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--text);
+  }
+
+  .stat-value--verified {
+    color: color-mix(in srgb, var(--status-verified, #22c55e) 65%, var(--text));
+  }
+
+  .stat-value--unverified {
+    color: color-mix(in srgb, var(--status-unverified, #f59e0b) 65%, var(--text));
+  }
+
+  .stat-value--stale {
+    color: color-mix(in srgb, var(--status-stale, #ef4444) 65%, var(--text));
+  }
+
+  .stat-label {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.08em;
+    color: var(--text-secondary);
+  }
+
+  .copy-link-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.1rem;
+    height: 1.1rem;
+    margin-right: 0.3rem;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 0.65rem;
+    line-height: 1;
+    cursor: pointer;
+    vertical-align: middle;
+  }
+
+  .copy-link-btn:hover,
+  .copy-link-btn:focus-visible {
+    border-color: var(--accent);
+    color: var(--accent-text, var(--accent));
+  }
+
+  @media (max-width: 720px) {
+    .freshness-stats {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
 
   .table-wrap {
     overflow-x: auto;
