@@ -76,6 +76,12 @@ const moduleData = MODULES.find((m) => m.id === moduleId)!;
       matters more than framework portability. None of them replace the safety rules below — a framework schedules
       the loop, it doesn't decide what the loop is allowed to touch.
     </p>
+    <p>
+      <a href="https://github.com/jthiruveedula/genai-data-platform/tree/main/labs/85-agents-langgraph-loop" target="_blank" rel="noopener noreferrer">A real, runnable lab</a>
+      builds the LangGraph pattern above end to end: a genuine <code>StateGraph</code> with a hard iteration budget
+      and a human-approval gate on side-effecting tool calls, proven with a test suite that actually runs the loop
+      instead of just asserting it compiles.
+    </p>
 
     <h2>Authenticating agents and MCP servers</h2>
     <p>
