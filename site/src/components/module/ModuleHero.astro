@@ -17,6 +17,16 @@ const LANE_LABEL: Record<string, string> = {
   advanced: "SCALE",
 };
 
+/** Same 3 lanes as the act-filter on the homepage's Curriculum section
+ *  (redesign phase 5, issue #151) — a second derived label off the same
+ *  `path` field, no new data. Turns "12 independent lessons" into "one
+ *  operating manual with three parts," visible on every module page. */
+const ACT_LABEL: Record<string, string> = {
+  beginner: "Foundations",
+  intermediate: "Runtime & governance",
+  advanced: "Operations & scale",
+};
+
 const orderLabel = String(mod.order).padStart(2, "0");
 ---
 
@@ -29,6 +39,7 @@ const orderLabel = String(mod.order).padStart(2, "0");
 
   <div class="hero-meta">
     <span class="chip chip--accent">{LANE_LABEL[mod.path]}</span>
+    <span class="chip">{ACT_LABEL[mod.path]}</span>
     <span class="chip mono">MODULE {orderLabel}</span>
     <span class="chip mono">~{mod.estimatedMinutes} MIN</span>
   </div>
@@ -97,5 +108,9 @@ const orderLabel = String(mod.order).padStart(2, "0");
     color: var(--text-secondary);
     line-height: 1.6;
     font-size: 1.05rem;
+  }
+
+  .module-intro :global(p + p) {
+    margin-top: 0.75rem;
   }
 </style>

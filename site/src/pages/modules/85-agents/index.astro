@@ -13,6 +13,7 @@ import { flavor as azure } from "../../../data/flavors/azure";
 import { flavor as oss } from "../../../data/flavors/oss";
 import { MODULES } from "../../../data/modules";
 
+const base = import.meta.env.BASE_URL;
 const moduleId = "85-agents";
 const entries = {
   gcp: gcp[moduleId],
@@ -30,6 +31,10 @@ const moduleData = MODULES.find((m) => m.id === moduleId)!;
         Every module so far has been a single retrieval pass answering a single question. Agents are for when the
         task takes more than one step — and after evaluating, observing, securing, and costing out the pipeline, this
         is where you decide when that extra complexity is actually worth it.
+      </p>
+      <p>
+        See the <a href={`${base}#agent-loop`}>plan/act/observe loop and single- vs. multi-agent patterns</a> on the
+        homepage first if you want the concept in one diagram before this module's implementation detail.
       </p>
     </ModuleHero>
 
