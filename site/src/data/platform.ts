@@ -143,7 +143,66 @@ export const LIFECYCLE: LifecycleStage[] = [
 ];
 
 /** "Trusted concepts" row under the hero CTAs. */
-export const CONCEPTS = ["RAG", "RETRIEVAL", "EMBEDDINGS", "EVALS", "GUARDRAILS", "SERVING"] as const;
+export const CONCEPTS = [
+  "RAG",
+  "RETRIEVAL",
+  "EMBEDDINGS",
+  "EVALS",
+  "GUARDRAILS",
+  "SERVING",
+  "ORCHESTRATION",
+  "INTEGRATION",
+  "GOVERNANCE",
+] as const;
+
+/**
+ * The agent-runtime extension of the hero schematic (redesign phase 1,
+ * issue #147): the three stages a query moves through *after* LIFECYCLE's
+ * "answer" once the pipeline becomes an agent loop, not just a RAG pass.
+ * Kept as its own array rather than appended to LIFECYCLE — LIFECYCLE stays
+ * the RAG-only lifecycle WhyItMatters' "10 LIFECYCLE STAGES" stat counts,
+ * and HeroScene renders these as visually-appended nodes, not a 13-stage
+ * LIFECYCLE. Not yet consumed by any component as of this commit — HeroScene
+ * wiring lands in a follow-up PR.
+ */
+export const AGENT_LOOP_STAGES: LifecycleStage[] = [
+  {
+    id: "plan",
+    label: "PLAN",
+    narration: "The model decides its next step instead of just answering — a task, not a lookup.",
+    services: {
+      neutral: "Agent planner",
+      gcp: "Vertex AI Agent Builder",
+      aws: "Bedrock Agents / AgentCore",
+      azure: "Azure AI Foundry Agent Service",
+      oss: "LangGraph",
+    },
+  },
+  {
+    id: "act",
+    label: "TOOL CALL",
+    narration: "It calls a real tool — a ticket system, a warehouse query, a second retrieval pass.",
+    services: {
+      neutral: "Function call / MCP tool",
+      gcp: "Gemini function calling",
+      aws: "Bedrock tool use",
+      azure: "Azure OpenAI function calling",
+      oss: "MCP server",
+    },
+  },
+  {
+    id: "observe",
+    label: "OBSERVE",
+    narration: "The result comes back as new input — the loop repeats, capped by an iteration budget.",
+    services: {
+      neutral: "Observation → next plan",
+      gcp: "Vertex AI Agent Builder",
+      aws: "Bedrock Agents / AgentCore",
+      azure: "Azure AI Foundry Agent Service",
+      oss: "LangGraph",
+    },
+  },
+];
 
 /**
  * Per-cloud visual/story personality for the flavor deck. Accent colors come
