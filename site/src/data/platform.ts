@@ -162,8 +162,8 @@ export const CONCEPTS = [
  * Kept as its own array rather than appended to LIFECYCLE — LIFECYCLE stays
  * the RAG-only lifecycle WhyItMatters' "10 LIFECYCLE STAGES" stat counts,
  * and HeroScene renders these as visually-appended nodes, not a 13-stage
- * LIFECYCLE. Not yet consumed by any component as of this commit — HeroScene
- * wiring lands in a follow-up PR.
+ * LIFECYCLE. Consumed by HeroScene (the appended nodes) and AgentLoopDiagram
+ * (the per-cloud orchestration-framework chips).
  */
 export const AGENT_LOOP_STAGES: LifecycleStage[] = [
   {

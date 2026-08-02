@@ -1,0 +1,346 @@
+---
+// Chapter 3 of the homepage redesign (issue #147): "How an enterprise agent
+// works" — the plan/act/observe loop, with a single-agent/multi-agent
+// toggle. Scoped as a non-pinned scroll-reveal rather than a scrubbed pin —
+// a full ScrollTrigger pin (like ArchitectureStory's coverflow) is real
+// added complexity and TBT risk that a single static diagram doesn't need
+// to earn; the crossfade toggle below carries the interaction instead.
+import { AGENT_LOOP_STAGES } from "../../data/platform";
+
+const base = import.meta.env.BASE_URL;
+
+const stageById = new Map(AGENT_LOOP_STAGES.map((s) => [s.id, s]));
+const plan = stageById.get("plan")!;
+const act = stageById.get("act")!;
+const observe = stageById.get("observe")!;
+---
+
+<section id="agent-loop" class="agent-loop" data-agent-loop aria-labelledby="agent-loop-heading">
+  <div class="scene-inner">
+    <header class="agent-loop-head">
+      <p class="section-kicker">HOW AN ENTERPRISE AGENT WORKS</p>
+      <h2 id="agent-loop-heading" class="section-title">Plan. Act. Observe. Repeat — with a leash.</h2>
+      <p class="section-lede">
+        Every agent turn is one loop: decide the next step, call a tool, read what came back, decide again. A
+        supervisor can hand work to specialized workers instead of doing it all itself.
+      </p>
+    </header>
+
+    <div class="loop-toggle" role="group" aria-label="Agent pattern">
+      <button type="button" class="chip loop-toggle-btn" data-loop-mode="single" aria-pressed="true">
+        Single-agent
+      </button>
+      <button type="button" class="chip loop-toggle-btn" data-loop-mode="multi" aria-pressed="false">
+        Multi-agent
+      </button>
+    </div>
+
+    <div class="loop-stage glass-panel" data-loop-stage>
+      <!-- Single-agent diagram: a closed PLAN -> TOOL CALL -> OBSERVE loop. -->
+      <svg
+        class="loop-diagram loop-diagram--single"
+        data-loop-diagram="single"
+        viewBox="0 0 480 300"
+        fill="none"
+        role="img"
+        aria-labelledby="loop-single-caption"
+      >
+        <title id="loop-single-caption">A single agent repeating plan, act, and observe until its task is done.</title>
+        <defs>
+          <marker id="loop-arrow" markerWidth="7" markerHeight="7" refX="3.2" refY="3.5" orient="auto">
+            <path d="M0,0 L7,3.5 L0,7 Z" fill="var(--accent)"></path>
+          </marker>
+        </defs>
+        <path
+          d="M180 70 C260 40 320 90 320 150 C320 210 260 250 200 240 C140 230 110 190 120 150 C128 118 150 90 180 70"
+          fill="none"
+          stroke="var(--border)"
+          stroke-width="1.4"
+          stroke-dasharray="5 7"
+          marker-end="url(#loop-arrow)"
+        ></path>
+        <g class="loop-node" data-loop-node="plan">
+          <rect x="120" y="30" width="140" height="48" rx="7" fill="var(--bg-card)" stroke="var(--border)"></rect>
+          <text class="loop-label" x="190" y="59" text-anchor="middle">PLAN</text>
+        </g>
+        <g class="loop-node" data-loop-node="act">
+          <rect x="300" y="126" width="140" height="48" rx="7" fill="var(--bg-card)" stroke="var(--border)"></rect>
+          <text class="loop-label" x="370" y="155" text-anchor="middle">TOOL CALL</text>
+        </g>
+        <g class="loop-node" data-loop-node="observe">
+          <rect x="90" y="216" width="140" height="48" rx="7" fill="var(--bg-card)" stroke="var(--border)"></rect>
+          <text class="loop-label" x="160" y="245" text-anchor="middle">OBSERVE</text>
+        </g>
+        <text class="loop-hud" x="240" y="292" text-anchor="middle">CAPPED ITERATION BUDGET — IT STOPS, IT DOESN'T LOOP FOREVER</text>
+      </svg>
+
+      <!-- Multi-agent diagram: a supervisor handing work to two workers, each
+           running its own plan/act/observe loop. -->
+      <svg
+        class="loop-diagram loop-diagram--multi"
+        data-loop-diagram="multi"
+        viewBox="0 0 480 300"
+        fill="none"
+        role="img"
+        aria-labelledby="loop-multi-caption"
+        hidden
+      >
+        <title id="loop-multi-caption">A supervisor agent handing off work to two worker agents, each running its own plan/act/observe loop.</title>
+        <path class="multi-branch" d="M240 78 L140 130" stroke="var(--border)" stroke-width="1.4" stroke-dasharray="5 7"></path>
+        <path class="multi-branch" d="M240 78 L340 130" stroke="var(--border)" stroke-width="1.4" stroke-dasharray="5 7"></path>
+        <g class="loop-node" data-loop-node="supervisor">
+          <rect x="170" y="30" width="140" height="48" rx="7" fill="var(--bg-card)" stroke="var(--accent)"></rect>
+          <text class="loop-label" x="240" y="59" text-anchor="middle">SUPERVISOR</text>
+        </g>
+        <g class="loop-node" data-loop-node="worker-a">
+          <rect x="40" y="130" width="140" height="48" rx="7" fill="var(--bg-card)" stroke="var(--border)"></rect>
+          <text class="loop-label" x="110" y="159" text-anchor="middle">WORKER</text>
+        </g>
+        <g class="loop-node" data-loop-node="worker-b">
+          <rect x="300" y="130" width="140" height="48" rx="7" fill="var(--bg-card)" stroke="var(--border)"></rect>
+          <text class="loop-label" x="370" y="159" text-anchor="middle">WORKER</text>
+        </g>
+        <text class="loop-hud" x="110" y="204" text-anchor="middle">OWN PLAN/ACT/OBSERVE LOOP</text>
+        <text class="loop-hud" x="370" y="204" text-anchor="middle">OWN PLAN/ACT/OBSERVE LOOP</text>
+        <text class="loop-hud" x="240" y="252" text-anchor="middle">SUPERVISOR HANDS OFF WORK, DOESN'T DO IT ITSELF</text>
+      </svg>
+
+      <div class="loop-stack" aria-hidden="true">
+        <div class="loop-step">
+          <span class="chip chip--accent">{plan.label}</span>
+          <p class="loop-step-narration">{plan.narration}</p>
+          <p class="loop-step-service mono">
+            <span class="cloud-swap">
+              <span data-for="neutral">{plan.services.neutral}</span>
+              <span data-for="gcp">{plan.services.gcp}</span>
+              <span data-for="aws">{plan.services.aws}</span>
+              <span data-for="azure">{plan.services.azure}</span>
+              <span data-for="oss">{plan.services.oss}</span>
+            </span>
+          </p>
+        </div>
+        <div class="loop-step">
+          <span class="chip chip--accent">{act.label}</span>
+          <p class="loop-step-narration">{act.narration}</p>
+          <p class="loop-step-service mono">
+            <span class="cloud-swap">
+              <span data-for="neutral">{act.services.neutral}</span>
+              <span data-for="gcp">{act.services.gcp}</span>
+              <span data-for="aws">{act.services.aws}</span>
+              <span data-for="azure">{act.services.azure}</span>
+              <span data-for="oss">{act.services.oss}</span>
+            </span>
+          </p>
+        </div>
+        <div class="loop-step">
+          <span class="chip chip--accent">{observe.label}</span>
+          <p class="loop-step-narration">{observe.narration}</p>
+          <p class="loop-step-service mono">
+            <span class="cloud-swap">
+              <span data-for="neutral">{observe.services.neutral}</span>
+              <span data-for="gcp">{observe.services.gcp}</span>
+              <span data-for="aws">{observe.services.aws}</span>
+              <span data-for="azure">{observe.services.azure}</span>
+              <span data-for="oss">{observe.services.oss}</span>
+            </span>
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <p class="agent-loop-cta">
+      <a class="arch-link" href={`${base}modules/85-agents/`}>Go deeper in Module 85: Agents &amp; tool use →</a>
+    </p>
+  </div>
+</section>
+
+<script>
+  import { gsap } from "gsap";
+
+  function setup() {
+    const rootEl = document.querySelector<HTMLElement>("[data-agent-loop]");
+    if (!rootEl) return;
+    if (rootEl.dataset.agentLoopBound === "true") return;
+    rootEl.dataset.agentLoopBound = "true";
+
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const buttons = Array.from(rootEl.querySelectorAll<HTMLButtonElement>("[data-loop-mode]"));
+    const single = rootEl.querySelector<SVGElement>('[data-loop-diagram="single"]');
+    const multi = rootEl.querySelector<SVGElement>('[data-loop-diagram="multi"]');
+    if (!buttons.length || !single || !multi) return;
+
+    // SVGElement's `hidden` IDL property isn't reliably attribute-reflected
+    // (verified in-browser: setting `.hidden = true/false` round-trips the
+    // JS property but never touches the real `hidden` content attribute, so
+    // the `[hidden]` CSS selector never re-matched). setAttribute/
+    // removeAttribute operate on the real attribute directly and work on
+    // every element type, SVG included.
+    function setHidden(el: SVGElement, hide: boolean) {
+      if (hide) el.setAttribute("hidden", "");
+      else el.removeAttribute("hidden");
+    }
+
+    function setMode(mode: string) {
+      buttons.forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.loopMode === mode)));
+      const showSingle = mode === "single";
+
+      if (reduced) {
+        setHidden(single!, !showSingle);
+        setHidden(multi!, showSingle);
+        return;
+      }
+
+      const incoming = showSingle ? single! : multi!;
+      const outgoing = showSingle ? multi! : single!;
+      gsap.killTweensOf([single, multi]);
+      setHidden(incoming, false);
+      gsap.fromTo(incoming, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.3, ease: "power2.out" });
+      gsap.to(outgoing, {
+        autoAlpha: 0,
+        duration: 0.2,
+        ease: "power2.out",
+        onComplete: () => {
+          setHidden(outgoing, true);
+        },
+      });
+    }
+
+    buttons.forEach((btn) => {
+      btn.addEventListener("click", () => setMode(btn.dataset.loopMode!));
+    });
+
+    // Scroll reveal — panel rises once. Reduced motion: no reveal, fully usable immediately.
+    const panel = rootEl.querySelector<HTMLElement>("[data-loop-stage]");
+    if (!reduced && panel && typeof IntersectionObserver === "function") {
+      gsap.set(panel, { autoAlpha: 0, y: 24 });
+      const observer = new IntersectionObserver(
+        (entries) => {
+          if (!entries.some((entry) => entry.isIntersecting)) return;
+          observer.disconnect();
+          gsap.to(panel, { autoAlpha: 1, y: 0, duration: 0.6, ease: "power2.out" });
+        },
+        { rootMargin: "-10% 0px" },
+      );
+      observer.observe(panel);
+    }
+  }
+
+  setup();
+  document.addEventListener("astro:page-load", setup);
+</script>
+
+<style>
+  .agent-loop {
+    padding-block: clamp(3.5rem, 7vw, 5.5rem);
+    background: var(--bg-deep);
+    border-block: 1px solid var(--border);
+  }
+
+  .agent-loop-head {
+    max-width: 46rem;
+    margin-bottom: 1.75rem;
+  }
+
+  .loop-toggle {
+    display: flex;
+    gap: 0.6rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .loop-toggle-btn {
+    cursor: pointer;
+    font: inherit;
+    font-family: var(--font-mono);
+  }
+
+  .loop-toggle-btn[aria-pressed="true"] {
+    border-color: var(--accent);
+    color: var(--accent-text, var(--accent));
+    background: color-mix(in srgb, var(--accent) 10%, var(--bg-card));
+  }
+
+  .loop-stage {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    gap: 2rem;
+    align-items: center;
+    padding: clamp(1.5rem, 3vw, 2.25rem);
+  }
+
+  .loop-diagram {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  .loop-diagram[hidden] {
+    display: none;
+  }
+
+  .loop-label {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    letter-spacing: 0.06em;
+    fill: var(--text);
+  }
+
+  .loop-hud {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.04em;
+    fill: var(--text-secondary);
+  }
+
+  .loop-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+  }
+
+  .loop-step-narration {
+    margin: 0.4rem 0 0.3rem;
+    color: var(--text);
+    line-height: 1.5;
+    font-size: 0.92rem;
+  }
+
+  .loop-step-service {
+    margin: 0;
+    font-size: 0.72rem;
+    color: var(--accent-text, var(--accent));
+  }
+
+  .agent-loop-cta {
+    margin: 1.5rem 0 0;
+  }
+
+  .arch-link {
+    color: var(--accent-text);
+    text-decoration: none;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+  }
+
+  .arch-link:hover {
+    text-decoration: underline;
+  }
+
+  .arch-link:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 3px;
+  }
+
+  @media (max-width: 900px) {
+    .loop-stage {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .loop-stage {
+      opacity: 1;
+      transform: none;
+    }
+  }
+</style>
