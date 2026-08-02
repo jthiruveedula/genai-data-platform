@@ -345,3 +345,74 @@ article > ul {
   line-height: 1.6;
   margin: 0;
 }
+
+/* Concept comparison strip (redesign: reduce text density, lead with
+   visuals — issue #169). For a module-page concept that's inherently a
+   short comparison (RAG vs. fine-tuning vs. long-context; framework
+   picks), a row of chip-headed cards scans faster than a paragraph
+   listing the same options — same chip grammar as everywhere else on
+   the site, not a new visual language. */
+.concept-comparison-lede {
+  margin: 0 0 0.5rem;
+  color: var(--text);
+}
+
+.concept-comparison {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+  gap: 1rem;
+  margin: 0 0 1rem;
+}
+
+.concept-comparison-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+}
+
+.concept-comparison-item p {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+@media (max-width: 640px) {
+  .concept-comparison {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Concept flow strip — a linear chip sequence (agent -> token -> server ->
+   tool) for a concept that's inherently a short pipeline, same reasoning
+   as .concept-comparison above but for "A leads to B leads to C" instead
+   of "A vs. B vs. C". */
+.concept-flow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0 0 1rem;
+}
+
+.concept-flow-arrow {
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+}
+
+@media (max-width: 640px) {
+  .concept-flow {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .concept-flow-arrow {
+    transform: rotate(90deg);
+    margin-left: 0.6rem;
+  }
+}
