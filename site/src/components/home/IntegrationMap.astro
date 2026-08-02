@@ -213,6 +213,11 @@ const positioned = NODES.map((n) => {
   .integrate-node:hover {
     transform: translate(-50%, -50%) scale(1.05);
     border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+    /* Same accent-tinted glow as .glass-panel:hover (base.css) — this
+       button doesn't use that shared class (it's part of the radial map's
+       absolute-positioned layout, not a card), but the hover language
+       should still match site-wide. */
+    box-shadow: 0 8px 28px -12px color-mix(in srgb, var(--accent) 25%, transparent);
   }
 
   .integrate-node:focus-visible {
