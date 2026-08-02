@@ -93,6 +93,12 @@ const moduleData = MODULES.find((m) => m.id === moduleId)!;
       managed identity (Azure) — the OSS flavor's LiteLLM gateway plus an external OAuth provider (Keycloak, Auth0)
       does the same job self-hosted.
     </p>
+    <p>
+      This isn't just a diagram — <a href="https://github.com/jthiruveedula/genai-data-platform/tree/main/labs/85-agents-mcp-oauth" target="_blank" rel="noopener noreferrer">a real, runnable lab</a>
+      implements this exact gate: a FastAPI MCP server that mints/validates a scoped JWT and rejects an expired or
+      under-scoped token before the tool ever runs, with a test suite that mints real signed tokens to prove it —
+      <code>pip install -r requirements.txt && pytest -v</code>, no external identity provider required to try it.
+    </p>
 
     <h2>When RAG beats agents (and vice versa)</h2>
     <p>
