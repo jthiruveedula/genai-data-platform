@@ -1,0 +1,403 @@
+---
+// Chapter 6 of the homepage redesign (issue #147): "Operate in Production"
+// — a 4-panel control-room mockup (trace / eval / governance / deploy).
+// Non-pinned, reveal-on-scroll only — a scrubbed ScrollTrigger pin was
+// scoped out deliberately: this is the site's 4th candidate pinned section
+// and the one with the most simultaneous DOM (four mockups), so it's also
+// the single biggest risk to the existing 700ms TBT budget. A stagger
+// reveal teaches the same "four disciplines, one page" point without that
+// risk.
+const TRACE_SPANS = [
+  { label: "PLAN", ms: 120 },
+  { label: "TOOL CALL", ms: 340 },
+  { label: "OBSERVE", ms: 40 },
+];
+
+const EVAL_RUNS = [
+  { id: "run-2026-08-01-14", trajectory: "PASS", faithfulness: 0.94 },
+  { id: "run-2026-08-01-13", trajectory: "PASS", faithfulness: 0.91 },
+  { id: "run-2026-08-01-12", trajectory: "FAIL", faithfulness: 0.78 },
+];
+
+const APPROVALS = [
+  { label: "Refund > $500", status: "pending" as const },
+  { label: "PO to new vendor", status: "blocked" as const },
+  { label: "Contract redline", status: "approved" as const },
+];
+
+const STATUS_LABEL: Record<string, string> = { approved: "APPROVED", pending: "PENDING", blocked: "BLOCKED" };
+
+const ENVIRONMENTS = ["dev", "staging", "prod"];
+---
+
+<section id="operate" class="operate" data-operate aria-labelledby="operate-heading">
+  <div class="scene-inner">
+    <header class="operate-head">
+      <p class="section-kicker">OPERATE IN PRODUCTION</p>
+      <h2 id="operate-heading" class="section-title">Ship it. Watch it. Roll it back in one command.</h2>
+      <p class="section-lede">Trace, eval, govern, deploy — one discipline, four panels.</p>
+    </header>
+
+    <div class="operate-grid" data-operate-grid>
+      <article class="operate-panel glass-panel" data-operate-panel>
+        <header class="operate-panel-head">
+          <span class="chip chip--accent">TRACE</span>
+          <span class="mono operate-panel-meta">req_8f21a</span>
+        </header>
+        <ul class="trace-list">
+          {
+            TRACE_SPANS.map((span) => (
+              <li class="trace-row">
+                <span class="mono trace-label">{span.label}</span>
+                <span class="trace-bar" style={`--w:${Math.min(100, span.ms / 5)}%`} aria-hidden="true"><span></span></span>
+                <span class="mono trace-ms">{span.ms}ms</span>
+              </li>
+            ))
+          }
+        </ul>
+        <p class="operate-panel-foot mono">Every plan → tool call → observe step, timed and costed.</p>
+      </article>
+
+      <article class="operate-panel glass-panel" data-operate-panel>
+        <header class="operate-panel-head">
+          <span class="chip chip--accent">EVAL</span>
+          <span class="mono operate-panel-meta">golden set · 40</span>
+        </header>
+        <ul class="eval-list">
+          {
+            EVAL_RUNS.map((run) => (
+              <li class="eval-row">
+                <span class={`chip eval-chip eval-chip--${run.trajectory.toLowerCase()}`}>{run.trajectory}</span>
+                <span class="mono eval-id">{run.id}</span>
+                <span class="mono eval-score">{run.faithfulness.toFixed(2)}</span>
+              </li>
+            ))
+          }
+        </ul>
+        <p class="operate-panel-foot mono">Trajectory pass/fail, not just answer pass/fail.</p>
+      </article>
+
+      <article class="operate-panel glass-panel" data-operate-panel>
+        <header class="operate-panel-head">
+          <span class="chip chip--accent">GOVERNANCE</span>
+          <span class="mono operate-panel-meta">3 pending</span>
+        </header>
+        <ul class="approval-list">
+          {
+            APPROVALS.map((a) => (
+              <li class="approval-row">
+                <span class={`chip status-chip status-chip--${a.status}`}>{STATUS_LABEL[a.status]}</span>
+                <span class="approval-label">{a.label}</span>
+              </li>
+            ))
+          }
+        </ul>
+        <p class="operate-panel-foot mono">Pending approvals and policy violations, in one queue.</p>
+      </article>
+
+      <article class="operate-panel glass-panel" data-operate-panel>
+        <header class="operate-panel-head">
+          <span class="chip chip--accent">DEPLOY</span>
+          <span class="mono operate-panel-meta">v2026.08.02-3</span>
+        </header>
+        <div class="env-strip">
+          {
+            ENVIRONMENTS.map((env, i) => (
+              <span class={`env-node ${i === ENVIRONMENTS.length - 1 ? "env-node--active" : ""}`}>
+                <span class="mono">{env}</span>
+              </span>
+            ))
+          }
+        </div>
+        <pre class="operate-code"><code>{`kubectl rollout undo deployment/agent-runtime`}</code></pre>
+        <p class="operate-panel-foot mono">dev → staging → prod, with a rollback that works.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<script>
+  import { stagger } from "../../lib/motion/primitives";
+
+  function setup() {
+    const rootEl = document.querySelector<HTMLElement>("[data-operate]");
+    if (!rootEl) return;
+    if (rootEl.dataset.operateBound === "true") return;
+    rootEl.dataset.operateBound = "true";
+
+    const panels = Array.from(rootEl.querySelectorAll<HTMLElement>("[data-operate-panel]"));
+    if (!panels.length) return;
+
+    if (typeof IntersectionObserver !== "function") return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((entry) => entry.isIntersecting)) return;
+        observer.disconnect();
+        stagger(panels, { y: 20, stagger: 0.1 });
+      },
+      { rootMargin: "-10% 0px" },
+    );
+    observer.observe(rootEl.querySelector("[data-operate-grid]")!);
+  }
+
+  setup();
+  document.addEventListener("astro:page-load", setup);
+</script>
+
+<style>
+  .operate {
+    padding-block: clamp(3.5rem, 7vw, 5.5rem);
+    background: var(--bg-deep);
+    border-block: 1px solid var(--border);
+  }
+
+  .operate-head {
+    max-width: 46rem;
+    margin-bottom: 1.75rem;
+  }
+
+  .operate-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem;
+  }
+
+  .operate-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    padding: 1.25rem 1.4rem;
+  }
+
+  .operate-panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  .operate-panel-meta {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+  }
+
+  .operate-panel-foot {
+    margin: 0;
+    font-size: 0.68rem;
+    color: var(--text-secondary);
+  }
+
+  /* ---- Trace ---- */
+  .trace-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .trace-row {
+    display: grid;
+    grid-template-columns: 5.5rem 1fr 3rem;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .trace-label {
+    font-size: 0.68rem;
+    color: var(--text-secondary);
+  }
+
+  .trace-bar {
+    display: block;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--border);
+    overflow: hidden;
+  }
+
+  .trace-bar span {
+    display: block;
+    width: var(--w);
+    height: 100%;
+    background: var(--accent);
+    border-radius: 3px;
+  }
+
+  .trace-ms {
+    font-size: 0.68rem;
+    text-align: right;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ---- Eval ---- */
+  .eval-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .eval-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .eval-id {
+    flex: 1;
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .eval-score {
+    font-size: 0.7rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-secondary);
+  }
+
+  .eval-chip {
+    font-size: 0.65rem;
+  }
+
+  .eval-chip--pass {
+    border-color: color-mix(in srgb, var(--status-verified) 55%, var(--border));
+    color: color-mix(in srgb, var(--status-verified) 55%, var(--text));
+  }
+
+  .eval-chip--pass::before,
+  .eval-chip--pass::after {
+    color: color-mix(in srgb, var(--status-verified) 55%, var(--text));
+  }
+
+  .eval-chip--fail {
+    border-color: color-mix(in srgb, var(--status-stale) 55%, var(--border));
+    color: color-mix(in srgb, var(--status-stale) 55%, var(--text));
+  }
+
+  .eval-chip--fail::before,
+  .eval-chip--fail::after {
+    color: color-mix(in srgb, var(--status-stale) 55%, var(--text));
+  }
+
+  /* ---- Governance ---- */
+  .approval-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .approval-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .approval-label {
+    font-size: 0.8rem;
+    color: var(--text);
+  }
+
+  .status-chip {
+    font-size: 0.6rem;
+    flex: none;
+  }
+
+  .status-chip--approved {
+    border-color: color-mix(in srgb, var(--status-verified) 55%, var(--border));
+    color: color-mix(in srgb, var(--status-verified) 55%, var(--text));
+  }
+
+  .status-chip--approved::before,
+  .status-chip--approved::after {
+    color: color-mix(in srgb, var(--status-verified) 55%, var(--text));
+  }
+
+  .status-chip--pending {
+    border-style: dashed;
+    border-color: color-mix(in srgb, var(--status-unverified) 55%, var(--border));
+    color: color-mix(in srgb, var(--status-unverified) 55%, var(--text));
+  }
+
+  .status-chip--pending::before,
+  .status-chip--pending::after {
+    color: color-mix(in srgb, var(--status-unverified) 55%, var(--text));
+  }
+
+  .status-chip--blocked {
+    border-color: color-mix(in srgb, var(--status-stale) 55%, var(--border));
+    color: color-mix(in srgb, var(--status-stale) 55%, var(--text));
+  }
+
+  .status-chip--blocked::before,
+  .status-chip--blocked::after {
+    color: color-mix(in srgb, var(--status-stale) 55%, var(--text));
+  }
+
+  /* ---- Deploy ---- */
+  .env-strip {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .env-node {
+    display: flex;
+    align-items: center;
+    padding: 0.3rem 0.6rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+  }
+
+  .env-node::after {
+    content: "→";
+    margin-left: 0.5rem;
+    color: var(--border);
+  }
+
+  .env-node:last-child::after {
+    content: none;
+  }
+
+  .env-node--active {
+    border-color: var(--accent);
+    color: var(--accent-text, var(--accent));
+  }
+
+  .operate-code {
+    margin: 0;
+    padding: 0.7rem 0.9rem;
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow-x: auto;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--text);
+  }
+
+  @media (max-width: 767px) {
+    .operate-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .operate-panel {
+      opacity: 1;
+      transform: none;
+    }
+  }
+</style>

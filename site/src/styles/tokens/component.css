@@ -43,4 +43,18 @@
      .flavor-tabs gap. */
   --tab-indicator-height: 2px; /* border-bottom: 2px solid ... */
   --tab-gap: 0.25rem; /* .flavor-tabs { gap: 0.25rem } */
+
+  /* Status triad (redesign phase 1, issue #147) — promoted from
+     freshness.astro's .chip--verified/--unverified/--stale, the site's
+     existing canonical claim-status color pattern (color-mix with --text
+     so each hue still tracks --text's per-theme lightness, keeping it
+     readable against --bg-card in both themes — see that file's own
+     comment for the contrast reasoning). Named here so OperateControlRoom
+     and any future governance/deploy UI can share one source instead of
+     each redefining the same three hues. freshness.astro itself is NOT
+     migrated to consume these in this change (out of scope — a pure
+     additive token, zero visual change to existing pages). */
+  --status-verified: #22c55e;
+  --status-unverified: #f59e0b;
+  --status-stale: #ef4444;
 }
