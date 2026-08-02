@@ -7,3 +7,7 @@ dist/
 !.env.example
 .codegraph
 .claude/skills/genai-platform-scaffold/
+__pycache__/
+.pytest_cache/
+*.pyc
+.venv/
