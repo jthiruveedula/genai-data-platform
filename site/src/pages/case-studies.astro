@@ -118,6 +118,12 @@ const INDUSTRY_SNAPSHOT = [
             <div class="cs-cards">
               {row.stories.map(({ cloud, story }) => (
                 <article class="cs-card glass-panel">
+                  <!-- Storyboard beats (redesign phase 4, issue #150):
+                       Situation -> Architecture -> Outcome -> Source, all
+                       from data already in scenarios.ts — no new/invented
+                       facts, just a sequenced presentation instead of a
+                       flat paragraph-in-a-card. -->
+                  <p class="cs-beat-kicker mono">SITUATION</p>
                   <p class="cs-card-meta">
                     <span class="chip chip--accent">{cloud.toUpperCase()}</span>
                     <span class="chip mono">{story.industry}</span>
@@ -128,22 +134,32 @@ const INDUSTRY_SNAPSHOT = [
                     )}
                   </p>
                   <p class="cs-card-company">{story.company}</p>
-                  {story.stat && (
-                    <p class="cs-card-stat">
-                      <span
-                        class="cs-card-stat-value mono"
-                        data-cs-stat-value
-                        data-target={story.stat.value}
-                        data-decimals={story.stat.decimals ?? 0}
-                        data-prefix={story.stat.prefix ?? ""}
-                        data-suffix={story.stat.suffix}
-                      >
-                        {(story.stat.prefix ?? "") + story.stat.value + story.stat.suffix}
-                      </span>
-                      <span class="cs-card-stat-label">{story.stat.label}</span>
-                    </p>
-                  )}
                   <p class="cs-card-vignette">{story.vignette}</p>
+
+                  <p class="cs-beat-kicker mono">ARCHITECTURE</p>
+                  <p class="cs-card-architecture">
+                    <a class="chip" href={`${base}modules/${row.module.id}/`}>{row.module.title}</a>
+                  </p>
+
+                  {story.stat && (
+                    <>
+                      <p class="cs-beat-kicker mono">OUTCOME</p>
+                      <p class="cs-card-stat">
+                        <span
+                          class="cs-card-stat-value mono"
+                          data-cs-stat-value
+                          data-target={story.stat.value}
+                          data-decimals={story.stat.decimals ?? 0}
+                          data-prefix={story.stat.prefix ?? ""}
+                          data-suffix={story.stat.suffix}
+                        >
+                          {(story.stat.prefix ?? "") + story.stat.value + story.stat.suffix}
+                        </span>
+                        <span class="cs-card-stat-label">{story.stat.label}</span>
+                      </p>
+                    </>
+                  )}
+
                   <p class="cs-card-source">
                     <a href={story.sourceUrl} target="_blank" rel="noopener noreferrer">
                       Source ↗
@@ -382,6 +398,31 @@ const INDUSTRY_SNAPSHOT = [
     margin: 0;
     font-family: var(--font-mono);
     font-size: 0.68rem;
+  }
+
+  .cs-beat-kicker {
+    margin: 0.35rem 0 -0.2rem;
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+    color: var(--text-secondary);
+  }
+
+  .cs-beat-kicker:first-child {
+    margin-top: 0;
+  }
+
+  .cs-card-architecture {
+    margin: 0;
+  }
+
+  .cs-card-architecture .chip {
+    text-decoration: none;
+    font-size: 0.7rem;
+  }
+
+  .cs-card-architecture .chip:hover {
+    border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+    color: var(--accent-text, var(--accent));
   }
 
   .cs-card-source a {
