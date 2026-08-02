@@ -390,7 +390,17 @@ const ENVIRONMENTS = ["dev", "staging", "prod"];
 
   @media (max-width: 767px) {
     .operate-grid {
-      grid-template-columns: 1fr;
+      /* minmax(0, 1fr), not bare 1fr (== minmax(auto, 1fr)) — verified via
+         CI's horizontal-overflow test that a bare 1fr track expands to fit
+         a grid item's intrinsic min-content width. The DEPLOY panel's
+         unwrapped `kubectl rollout undo ...` <pre> line has a ~320px
+         min-content width regardless of viewport, which was forcing this
+         single-column track (and the whole page) to ~388px wide even at a
+         320px viewport. minmax(0, 1fr) lets the track (and .operate-panel,
+         which also needed min-width: 0 below) actually shrink, so the
+         <pre>'s own overflow-x: auto handles the long line instead of the
+         page growing to fit it. */
+      grid-template-columns: minmax(0, 1fr);
     }
   }
 
