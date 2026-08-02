@@ -24,6 +24,7 @@ import "../styles/tokens/aws.css";
 import "../styles/tokens/azure.css";
 import "../styles/tokens/gcp.css";
 import "../styles/tokens/oss.css";
+import "../styles/tokens/atmosphere.css";
 import "../styles/tokens/transitions.css";
 import Navbar from "../components/Navbar.astro";
 import CustomCursor from "../components/CustomCursor.astro";
@@ -99,6 +100,11 @@ const verifiedClaimCount = claims.filter((c) => claimStatus(c) === "verified").l
     </script>
   </head>
   <body>
+    <div class="atmosphere" aria-hidden="true">
+      <span class="atmosphere-bloom atmosphere-bloom--a"></span>
+      <span class="atmosphere-bloom atmosphere-bloom--b"></span>
+      <span class="atmosphere-grain"></span>
+    </div>
     <a class="skip-link" href="#main">Skip to content</a>
     <CustomCursor />
     <div class="reading-progress" role="progressbar" aria-hidden="true" aria-label="Reading progress">
