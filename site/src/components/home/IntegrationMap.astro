@@ -1,0 +1,270 @@
+---
+// Chapter 4 of the homepage redesign (issue #147): "Integrate With Your
+// Stack" — a radial integration map (agent runtime at the center, 6 real
+// enterprise systems around it) plus a code chip that updates to show the
+// matching MCP tool definition for whichever system is focused/clicked.
+// Non-pinned, static SVG (fixed 6-node layout, no need for a layout
+// library) — matches the "prefer SVG/CSS over new complexity" constraint.
+const base = import.meta.env.BASE_URL;
+
+interface IntegrationNode {
+  id: string;
+  label: string;
+  connection: "MCP" | "Function call" | "Webhook";
+  toolName: string;
+  toolDescription: string;
+  angleDeg: number;
+}
+
+const NODES: IntegrationNode[] = [
+  { id: "ticketing", label: "Ticketing", connection: "MCP", toolName: "create_ticket", toolDescription: "Open a support ticket with a title, description, and priority", angleDeg: -90 },
+  { id: "crm", label: "CRM", connection: "Function call", toolName: "update_contact", toolDescription: "Update a CRM contact's fields after a resolved interaction", angleDeg: -30 },
+  { id: "erp", label: "ERP", connection: "Webhook", toolName: "post_purchase_order", toolDescription: "Submit an approved purchase order to the ERP system", angleDeg: 30 },
+  { id: "internal-apis", label: "Internal APIs", connection: "Function call", toolName: "call_internal_api", toolDescription: "Call a registered internal REST endpoint with typed arguments", angleDeg: 90 },
+  { id: "document-store", label: "Document store", connection: "MCP", toolName: "search_docs", toolDescription: "Search the indexed document store for relevant chunks", angleDeg: 150 },
+  { id: "data-warehouse", label: "Data warehouse", connection: "MCP", toolName: "run_warehouse_query", toolDescription: "Run a read-only SQL query against the analytics warehouse", angleDeg: 210 },
+];
+
+const RADIUS_PCT = 38;
+const positioned = NODES.map((n) => {
+  const rad = (n.angleDeg * Math.PI) / 180;
+  const left = 50 + RADIUS_PCT * Math.cos(rad);
+  const top = 50 + RADIUS_PCT * Math.sin(rad);
+  return { ...n, left, top };
+});
+---
+
+<section id="integrate" class="integrate" data-integrate aria-labelledby="integrate-heading">
+  <div class="scene-inner">
+    <header class="integrate-head">
+      <p class="section-kicker">INTEGRATE WITH YOUR STACK</p>
+      <h2 id="integrate-heading" class="section-title">Agents don't live in a notebook.</h2>
+      <p class="section-lede">Function calling and MCP are the two doors in. Every call carries a scoped credential — never the agent's own identity.</p>
+    </header>
+
+    <div class="integrate-body glass-panel">
+      <div class="integrate-map" data-integrate-map>
+        <svg class="integrate-lines" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+          {
+            positioned.map((n) => (
+              <line
+                x1="50"
+                y1="50"
+                x2={n.left}
+                y2={n.top}
+                stroke="var(--border)"
+                stroke-width="0.4"
+                data-integrate-line={n.id}
+              />
+            ))
+          }
+        </svg>
+
+        <div class="integrate-center">
+          <span class="chip chip--accent">AGENT RUNTIME</span>
+        </div>
+
+        {
+          positioned.map((n) => (
+            <button
+              type="button"
+              class="integrate-node"
+              data-integrate-node={n.id}
+              data-tool-name={n.toolName}
+              data-tool-description={n.toolDescription}
+              data-connection={n.connection}
+              style={`left:${n.left}%; top:${n.top}%;`}
+              aria-pressed="false"
+            >
+              <span class="integrate-node-label">{n.label}</span>
+              <span class="integrate-node-connection mono">{n.connection}</span>
+            </button>
+          ))
+        }
+      </div>
+
+      <div class="integrate-detail">
+        <p class="integrate-detail-hint mono" data-integrate-hint>Tap a system to see the call →</p>
+        <pre class="integrate-code" data-integrate-code hidden><code>{`{
+  "name": "search_docs",
+  "description": "Search the indexed document store for relevant chunks",
+  "inputSchema": {
+    "type": "object",
+    "properties": { "query": { "type": "string" } }
+  }
+}`}</code></pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  function setup() {
+    const rootEl = document.querySelector<HTMLElement>("[data-integrate]");
+    if (!rootEl) return;
+    if (rootEl.dataset.integrateBound === "true") return;
+    rootEl.dataset.integrateBound = "true";
+
+    const nodes = Array.from(rootEl.querySelectorAll<HTMLButtonElement>("[data-integrate-node]"));
+    const hint = rootEl.querySelector<HTMLElement>("[data-integrate-hint]");
+    const code = rootEl.querySelector<HTMLElement>("[data-integrate-code]");
+    if (!nodes.length || !hint || !code) return;
+
+    function activate(node: HTMLButtonElement) {
+      nodes.forEach((n) => {
+        n.setAttribute("aria-pressed", String(n === node));
+        const line = rootEl!.querySelector<SVGLineElement>(`[data-integrate-line="${n.dataset.integrateNode}"]`);
+        line?.classList.toggle("is-active", n === node);
+      });
+
+      const name = node.dataset.toolName ?? "";
+      const description = node.dataset.toolDescription ?? "";
+      hint.hidden = true;
+      code.hidden = false;
+      code.textContent = `{
+  "name": "${name}",
+  "description": "${description}",
+  "inputSchema": {
+    "type": "object",
+    "properties": { "query": { "type": "string" } }
+  }
+}`;
+    }
+
+    nodes.forEach((node) => {
+      node.addEventListener("click", () => activate(node));
+    });
+  }
+
+  setup();
+  document.addEventListener("astro:page-load", setup);
+</script>
+
+<style>
+  .integrate {
+    padding-block: clamp(3.5rem, 7vw, 5.5rem);
+  }
+
+  .integrate-head {
+    max-width: 46rem;
+    margin-bottom: 1.75rem;
+  }
+
+  .integrate-body {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    gap: 2rem;
+    align-items: center;
+    padding: clamp(1.5rem, 3vw, 2.25rem);
+  }
+
+  .integrate-map {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    max-width: 26rem;
+    margin-inline: auto;
+  }
+
+  .integrate-lines {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .integrate-lines line {
+    transition: stroke var(--duration-micro) var(--ease-out), stroke-width var(--duration-micro) var(--ease-out);
+  }
+
+  .integrate-lines line.is-active {
+    stroke: var(--accent);
+    stroke-width: 0.8;
+  }
+
+  .integrate-center {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 2;
+  }
+
+  .integrate-node {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.2rem;
+    min-width: 6.5rem;
+    padding: 0.5rem 0.75rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    cursor: pointer;
+    z-index: 1;
+    transition:
+      transform var(--duration-micro) var(--ease-out),
+      border-color var(--duration-micro) var(--ease-out);
+  }
+
+  .integrate-node:hover {
+    transform: translate(-50%, -50%) scale(1.05);
+    border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+  }
+
+  .integrate-node:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  .integrate-node[aria-pressed="true"] {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent);
+  }
+
+  .integrate-node-label {
+    font-size: 0.78rem;
+    font-weight: 600;
+  }
+
+  .integrate-node-connection {
+    font-size: 0.6rem;
+    letter-spacing: 0.04em;
+    color: var(--text-secondary);
+  }
+
+  .integrate-node[aria-pressed="true"] .integrate-node-connection {
+    color: var(--accent-text, var(--accent));
+  }
+
+  .integrate-detail {
+    min-width: 0;
+  }
+
+  .integrate-detail-hint {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+  }
+
+  .integrate-code {
+    margin: 0;
+    padding: 1rem 1.1rem;
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow-x: auto;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    line-height: 1.55;
+    color: var(--text);
+  }
+
+  @media (max-width: 900px) {
+    .integrate-body {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
