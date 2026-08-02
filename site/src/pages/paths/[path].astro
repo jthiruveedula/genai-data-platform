@@ -31,10 +31,31 @@ const moduleIds = modules.map((m) => m.id);
       <h1 class="path-title">{path.label} path</h1>
       <p class="path-outcome">Ends with {path.outcome}.</p>
       <p class="path-description">{path.description}</p>
+
+      <ul class="path-capabilities" aria-label="What you'll be able to do">
+        {path.capabilities.map((c) => <li class="chip path-capability-chip">{c}</li>)}
+      </ul>
+
       <p class="chip mono path-summary" data-path-summary aria-live="polite">
         0 of {modules.length} modules complete
       </p>
     </header>
+
+    <!-- Milestone strip (redesign phase 2, issue #148): a compact preview of
+         the rail below, built entirely from data the rail already has (no
+         new fields) — clicking a milestone scrolls to and pulses the
+         matching rail item, giving the (already good) rail a table-of-
+         contents companion it didn't have before. -->
+    <nav class="milestone-strip" aria-label="Path milestones" data-milestone-strip>
+      {
+        modules.map((m, i) => (
+          <button type="button" class="milestone-chip" data-milestone-for={m.id}>
+            <span class="milestone-order mono">{String(i + 1).padStart(2, "0")}</span>
+            <span class="milestone-title">{m.title}</span>
+          </button>
+        ))
+      }
+    </nav>
 
     <ol class="module-rail" aria-label={`${path.label} path modules`} data-module-rail>
       {
@@ -107,6 +128,26 @@ const moduleIds = modules.map((m) => m.id);
 
   render();
   document.addEventListener("astro:page-load", render);
+
+  function setupMilestones() {
+    const strip = document.querySelector<HTMLElement>("[data-milestone-strip]");
+    if (!strip || strip.dataset.milestonesBound === "true") return;
+    strip.dataset.milestonesBound = "true";
+
+    strip.addEventListener("click", (e) => {
+      const btn = (e.target as HTMLElement).closest<HTMLButtonElement>("[data-milestone-for]");
+      if (!btn) return;
+      const moduleId = btn.dataset.milestoneFor;
+      const railItem = document.querySelector<HTMLElement>(`[data-rail-item][data-module-id="${moduleId}"]`);
+      if (!railItem) return;
+      railItem.scrollIntoView({ behavior: "smooth", block: "center" });
+      railItem.classList.add("is-pulsed");
+      window.setTimeout(() => railItem.classList.remove("is-pulsed"), 900);
+    });
+  }
+
+  setupMilestones();
+  document.addEventListener("astro:page-load", setupMilestones);
 </script>
 
 <style>
@@ -144,6 +185,61 @@ const moduleIds = modules.map((m) => m.id);
 
   .path-summary {
     color: var(--text-secondary);
+  }
+
+  .path-capabilities {
+    list-style: none;
+    margin: 0 0 1.25rem;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .path-capability-chip {
+    font-size: 0.75rem;
+    white-space: normal;
+    text-align: left;
+  }
+
+  .milestone-strip {
+    display: flex;
+    gap: 0.6rem;
+    overflow-x: auto;
+    padding-bottom: 0.75rem;
+    margin-bottom: 1.75rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .milestone-chip {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.45rem 0.75rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: border-color var(--duration-micro) var(--ease-out), color var(--duration-micro) var(--ease-out);
+  }
+
+  .milestone-chip:hover,
+  .milestone-chip:focus-visible {
+    border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+    color: var(--text);
+  }
+
+  .milestone-order {
+    color: var(--text-secondary);
+  }
+
+  .rail-item.is-pulsed .rail-card {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent);
   }
 
   .module-rail {
