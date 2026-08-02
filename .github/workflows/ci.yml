@@ -6,9 +6,27 @@ on:
     paths:
       - "site/**"
       - "validation/**"
+      - "labs/**"
       - ".github/workflows/ci.yml"
 
 jobs:
+  labs:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        lab: ["85-agents-mcp-oauth"]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install lab dependencies
+        working-directory: labs/${{ matrix.lab }}
+        run: pip install -r requirements.txt
+      - name: Run lab tests
+        working-directory: labs/${{ matrix.lab }}
+        run: pytest -v
+
   build:
     runs-on: ubuntu-latest
     steps:
