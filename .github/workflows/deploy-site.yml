@@ -55,10 +55,30 @@ jobs:
         name: Build
         working-directory: site
         run: npm run build
+      - id: playwright_version
+        name: Get installed Playwright version
+        working-directory: site
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+      - id: playwright_cache
+        name: Cache Playwright browser binaries
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-browsers-${{ runner.os }}-${{ steps.playwright_version.outputs.version }}
       - id: install_browsers
         name: Install Playwright browsers
+        # On a cache hit the browser binaries are already in place, but the
+        # runner image itself is fresh every run, so the OS-level shared
+        # libraries --with-deps installs via apt (not cached above) still
+        # need installing — install-deps alone skips the (slow, network-
+        # bound) browser download while still doing that apt install.
         working-directory: site
-        run: npx playwright install --with-deps chromium
+        run: |
+          if [ "${{ steps.playwright_cache.outputs.cache-hit }}" = "true" ]; then
+            npx playwright install-deps chromium
+          else
+            npx playwright install --with-deps chromium
+          fi
       - id: e2e_tests
         name: e2e + accessibility tests
         working-directory: site

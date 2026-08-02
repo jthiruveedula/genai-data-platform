@@ -20,6 +20,8 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
+          cache: pip
+          cache-dependency-path: labs/${{ matrix.lab }}/requirements.txt
       - name: Install lab dependencies
         working-directory: labs/${{ matrix.lab }}
         run: pip install -r requirements.txt
@@ -95,9 +97,29 @@ jobs:
             --exclude 'jthiruveedula\.github\.io/genai-data-platform'
             '${{ runner.temp }}/link-check-root/genai-data-platform/**/*.html'
           fail: true
-      - name: Install Playwright browsers
+      - name: Get installed Playwright version
+        id: playwright-version
         working-directory: site
-        run: npx playwright install --with-deps chromium
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+      - name: Cache Playwright browser binaries
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-browsers-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}
+      - name: Install Playwright browsers
+        # On a cache hit the browser binaries are already in place, but the
+        # runner image itself is fresh every run, so the OS-level shared
+        # libraries --with-deps installs via apt (not cached above) still
+        # need installing — install-deps alone skips the (slow, network-
+        # bound) browser download while still doing that apt install.
+        working-directory: site
+        run: |
+          if [ "${{ steps.playwright-cache.outputs.cache-hit }}" = "true" ]; then
+            npx playwright install-deps chromium
+          else
+            npx playwright install --with-deps chromium
+          fi
       - name: e2e + accessibility tests
         working-directory: site
         run: npx playwright test
