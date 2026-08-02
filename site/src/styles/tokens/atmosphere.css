@@ -26,10 +26,9 @@
   width: min(60vw, 900px);
   height: min(60vw, 900px);
   border-radius: 50%;
-  filter: blur(90px);
+  filter: blur(60px);
   opacity: var(--atmosphere-opacity, 0.22);
   transition: opacity var(--duration-theme) var(--ease-out);
-  will-change: transform;
 }
 
 .atmosphere-bloom--a {
@@ -62,35 +61,17 @@
   --atmosphere-opacity: 0.09;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .atmosphere-bloom--a {
-    animation: atmosphere-drift-a 28s ease-in-out infinite;
-  }
-
-  .atmosphere-bloom--b {
-    animation: atmosphere-drift-b 34s ease-in-out infinite;
-  }
-}
-
-@keyframes atmosphere-drift-a {
-  0%,
-  100% {
-    transform: translate(0, 0);
-  }
-  50% {
-    transform: translate(4%, 3%);
-  }
-}
-
-@keyframes atmosphere-drift-b {
-  0%,
-  100% {
-    transform: translate(0, 0);
-  }
-  50% {
-    transform: translate(-3%, -4%);
-  }
-}
-
-/* prefers-reduced-motion: reduce is the default (no @media(no-preference)
-   match) — blooms render fully static, grain still shows (it's not motion). */
+/* Deliberately static — no drift animation. A first attempt animated the
+   blooms' transform on an infinite loop (gated behind
+   prefers-reduced-motion, same as everywhere else on the site), but that
+   alone pushed Lighthouse CI's total-blocking-time from its established
+   ~600ms steady-state past the 700ms hard budget (730.5ms measured) and
+   crept LCP over its 2500ms warn threshold too — animating a `transform`
+   on a `filter: blur()`'d element defeats the browser's usual
+   compositor-only fast path for transform animations in the Chrome build
+   Lighthouse CI runs headless, forcing a main-thread repaint every frame
+   instead. The blur was also reduced 90px -> 60px as a second safety
+   margin (blur cost scales roughly with radius squared). Static blooms
+   keep the visual identity work from issue #167 without the ongoing
+   per-frame cost — verified in-browser that the color wash still reads
+   clearly without the drift. */
