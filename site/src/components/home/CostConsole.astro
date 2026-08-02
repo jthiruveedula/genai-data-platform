@@ -11,6 +11,14 @@ type PricingEntry = {
   gpu_hour_usd?: number;
   claimId: string;
   verified_on: string | null;
+  /** Illustrative fast-tier -> reasoning-tier cost multiplier (redesign
+   *  phase 3, issue #149) — deliberately NOT paired with its own claimId/
+   *  verified_on the way the fields above are: real reasoning-vs-fast-tier
+   *  price ratios vary by provider and change often, so this is a rough,
+   *  clearly-labeled illustrative figure for the "what am I trading off"
+   *  question, not a verified quote. The console's existing "UNVERIFIED
+   *  PRICING / not a quote" status chip already covers this framing. */
+  reasoning_multiplier?: number;
 };
 
 interface Props {
@@ -26,25 +34,52 @@ const typedPricing = pricing as Record<string, PricingEntry>;
 const base = import.meta.env.BASE_URL;
 
 /** Defaults mirror the slider defaults below so the no-JS render shows real numbers. */
-const DEFAULTS = { docs: 500, queriesPerDay: 200, avgTokens: 1500 };
+const DEFAULTS = { docs: 500, queriesPerDay: 200, avgTokens: 1500, reasoningPct: 20 };
 
-/** MUST match the client-side math (and the existing calculator) exactly. */
-function estimate(entry: PricingEntry, docs: number, queriesPerDay: number, avgTokens: number) {
+/**
+ * MUST match the client-side math (and the existing calculator) exactly.
+ * Returns the base fast-tier cost and the "reasoning tax" separately (not
+ * just their sum) so the UI can render a 2-segment cost-anatomy bar —
+ * base inference vs. the extra cost from queries that escalate to a
+ * reasoning-tier model, per the reasoning-escalation slider.
+ */
+function estimate(entry: PricingEntry, docs: number, queriesPerDay: number, avgTokens: number, reasoningPct: number) {
   const monthlyQueries = queriesPerDay * 30;
   const monthlyTokensMtok = (monthlyQueries * avgTokens) / 1_000_000;
   const embeddingMtok = (docs * 500) / 1_000_000;
-  const monthly = entry.gpu_hour_usd
+  const reasoningFraction = reasoningPct / 100;
+  const multiplier = entry.reasoning_multiplier ?? 1;
+
+  const base = entry.gpu_hour_usd
     ? entry.gpu_hour_usd * 4 * 30
-    : monthlyTokensMtok * ((entry.input_per_mtok + entry.output_per_mtok) / 2) +
-      embeddingMtok * entry.embedding_per_mtok;
-  return { monthly, perQuery: monthly / monthlyQueries };
+    : monthlyTokensMtok * ((entry.input_per_mtok + entry.output_per_mtok) / 2) + embeddingMtok * entry.embedding_per_mtok;
+  const reasoningTax = base * reasoningFraction * (multiplier - 1);
+  const monthly = base + reasoningTax;
+  return { monthly, base, reasoningTax, perQuery: monthly / monthlyQueries };
 }
 
 const fmtUsd = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 const initial = Object.fromEntries(
-  CLOUDS.map((c) => [c.id, estimate(typedPricing[c.id], DEFAULTS.docs, DEFAULTS.queriesPerDay, DEFAULTS.avgTokens)])
+  CLOUDS.map((c) => [
+    c.id,
+    estimate(typedPricing[c.id], DEFAULTS.docs, DEFAULTS.queriesPerDay, DEFAULTS.avgTokens, DEFAULTS.reasoningPct),
+  ])
 );
+
+const QUALITATIVE_READOUT: Record<string, string> = {
+  gcp: "Token-metered — cost scales directly with volume",
+  aws: "Token-metered — cost scales directly with volume",
+  azure: "Token-metered — cost scales directly with volume",
+  oss: "GPU-hour metered — flat regardless of query volume",
+};
+
+/** One-line consequence per scenario — which situation are you actually in. */
+const SCENARIO_CONSEQUENCE: Record<string, string> = {
+  pilot: "Token cost barely matters yet — prove the pipeline works.",
+  production: "Token cost is now a real line item — this is where routing and caching earn their keep.",
+  scale: "Reliability and per-tenant accounting matter more than the per-token price.",
+};
 ---
 
 <section id="cost" class="cost-console" data-cost-console aria-labelledby="cost-title">
@@ -73,6 +108,7 @@ const initial = Object.fromEntries(
             <button type="button" class="scenario" data-scenario={s.id} aria-pressed="false">
               <span class="scenario-label">{s.label}</span>
               <span class="scenario-caption">{s.caption}</span>
+              <span class="scenario-consequence">{SCENARIO_CONSEQUENCE[s.id]}</span>
             </button>
           ))
         }
@@ -100,7 +136,15 @@ const initial = Object.fromEntries(
           </div>
           <input type="range" id="cc-tokens" min="200" max="8000" step="100" value="1500" />
         </div>
+        <div class="control">
+          <div class="control-head">
+            <label for="cc-reasoning">Reasoning-escalation rate</label>
+            <output for="cc-reasoning" data-out="reasoning">20%</output>
+          </div>
+          <input type="range" id="cc-reasoning" min="0" max="100" step="5" value="20" />
+        </div>
       </div>
+      <p class="reasoning-note mono">% of queries that escalate to a reasoning-tier model — illustrative multiplier, provider pricing varies.</p>
 
       <div class="readout" data-readout role="group" aria-label="Estimated monthly cost per cloud">
         {
@@ -116,6 +160,25 @@ const initial = Object.fromEntries(
                 <span class="per-mo">/ mo</span>
               </span>
               <span class="cloud-perquery" data-per-query>${initial[c.id].perQuery.toFixed(4)} / query</span>
+
+              <span class="cost-anatomy" data-cost-anatomy aria-hidden="true">
+                <span
+                  class="cost-anatomy-base"
+                  data-anatomy-base
+                  style={`width:${initial[c.id].monthly > 0 ? (initial[c.id].base / initial[c.id].monthly) * 100 : 100}%`}
+                ></span>
+                <span
+                  class="cost-anatomy-tax"
+                  data-anatomy-tax
+                  style={`width:${initial[c.id].monthly > 0 ? (initial[c.id].reasoningTax / initial[c.id].monthly) * 100 : 0}%`}
+                ></span>
+              </span>
+              <span class="cost-anatomy-legend mono">
+                <span class="legend-item"><span class="legend-dot legend-dot--base" /> base</span>
+                <span class="legend-item"><span class="legend-dot legend-dot--tax" /> reasoning tax</span>
+              </span>
+
+              <p class="cloud-qualitative">{QUALITATIVE_READOUT[c.id]}</p>
             </article>
           ))
         }
@@ -166,19 +229,24 @@ const initial = Object.fromEntries(
     output_per_mtok: number;
     embedding_per_mtok: number;
     gpu_hour_usd?: number;
+    reasoning_multiplier?: number;
   }
 
   const pricing = pricingData as Record<string, PricingEntry>;
 
-  function estimate(entry: PricingEntry, docs: number, queriesPerDay: number, avgTokens: number) {
+  function estimate(entry: PricingEntry, docs: number, queriesPerDay: number, avgTokens: number, reasoningPct: number) {
     const monthlyQueries = queriesPerDay * 30;
     const monthlyTokensMtok = (monthlyQueries * avgTokens) / 1_000_000;
     const embeddingMtok = (docs * 500) / 1_000_000;
-    const monthly = entry.gpu_hour_usd
+    const reasoningFraction = reasoningPct / 100;
+    const multiplier = entry.reasoning_multiplier ?? 1;
+
+    const base = entry.gpu_hour_usd
       ? entry.gpu_hour_usd * 4 * 30
-      : monthlyTokensMtok * ((entry.input_per_mtok + entry.output_per_mtok) / 2) +
-        embeddingMtok * entry.embedding_per_mtok;
-    return { monthly, perQuery: monthly / monthlyQueries };
+      : monthlyTokensMtok * ((entry.input_per_mtok + entry.output_per_mtok) / 2) + embeddingMtok * entry.embedding_per_mtok;
+    const reasoningTax = base * reasoningFraction * (multiplier - 1);
+    const monthly = base + reasoningTax;
+    return { monthly, base, reasoningTax, perQuery: monthly / monthlyQueries };
   }
 
   const fmtUsd = (n: number) =>
@@ -207,15 +275,17 @@ const initial = Object.fromEntries(
       const docsEl = rootEl.querySelector<HTMLInputElement>("#cc-docs");
       const queriesEl = rootEl.querySelector<HTMLInputElement>("#cc-queries");
       const tokensEl = rootEl.querySelector<HTMLInputElement>("#cc-tokens");
+      const reasoningEl = rootEl.querySelector<HTMLInputElement>("#cc-reasoning");
       const docsOut = rootEl.querySelector<HTMLOutputElement>('[data-out="docs"]');
       const queriesOut = rootEl.querySelector<HTMLOutputElement>('[data-out="queries"]');
       const tokensOut = rootEl.querySelector<HTMLOutputElement>('[data-out="tokens"]');
+      const reasoningOut = rootEl.querySelector<HTMLOutputElement>('[data-out="reasoning"]');
       const readout = rootEl.querySelector<HTMLElement>("[data-readout]");
       const liveEl = rootEl.querySelector<HTMLElement>("[data-live-summary]");
       const panel = rootEl.querySelector<HTMLElement>("[data-console-panel]");
       const scenarioBtns = Array.from(rootEl.querySelectorAll<HTMLButtonElement>("[data-scenario]"));
-      if (!docsEl || !queriesEl || !tokensEl) return;
-      const sliders = [docsEl, queriesEl, tokensEl];
+      if (!docsEl || !queriesEl || !tokensEl || !reasoningEl) return;
+      const sliders = [docsEl, queriesEl, tokensEl, reasoningEl];
 
       const cards = Array.from(rootEl.querySelectorAll<HTMLElement>("[data-cloud-card]"))
         .map((el) => ({
@@ -223,9 +293,11 @@ const initial = Object.fromEntries(
           el,
           monthlyEl: el.querySelector<HTMLElement>("[data-monthly]"),
           perQueryEl: el.querySelector<HTMLElement>("[data-per-query]"),
+          anatomyBaseEl: el.querySelector<HTMLElement>("[data-anatomy-base]"),
+          anatomyTaxEl: el.querySelector<HTMLElement>("[data-anatomy-tax]"),
           // One counter object per cloud — every retarget tweens THIS object with
           // overwrite: true so tweens never stack.
-          state: { monthly: 0, perQuery: 0 },
+          state: { monthly: 0, perQuery: 0, basePct: 100, taxPct: 0 },
         }))
         .filter((c) => c.monthlyEl && c.perQueryEl && pricing[c.id]);
 
@@ -237,6 +309,8 @@ const initial = Object.fromEntries(
       const writeCard = (card: (typeof cards)[number]) => {
         card.monthlyEl!.textContent = `$${fmtUsd(card.state.monthly)}`;
         card.perQueryEl!.textContent = `$${card.state.perQuery.toFixed(4)} / query`;
+        if (card.anatomyBaseEl) card.anatomyBaseEl.style.width = `${card.state.basePct}%`;
+        if (card.anatomyTaxEl) card.anatomyTaxEl.style.width = `${card.state.taxPct}%`;
       };
 
       function readInputs() {
@@ -244,26 +318,34 @@ const initial = Object.fromEntries(
           docs: Number(docsEl!.value),
           queriesPerDay: Number(queriesEl!.value),
           avgTokens: Number(tokensEl!.value),
+          reasoningPct: Number(reasoningEl!.value),
         };
       }
 
       function render(animate: boolean) {
-        const { docs, queriesPerDay, avgTokens } = readInputs();
+        const { docs, queriesPerDay, avgTokens, reasoningPct } = readInputs();
         if (docsOut) docsOut.textContent = docs.toLocaleString("en-US");
         if (queriesOut) queriesOut.textContent = queriesPerDay.toLocaleString("en-US");
         if (tokensOut) tokensOut.textContent = avgTokens.toLocaleString("en-US");
+        if (reasoningOut) reasoningOut.textContent = `${reasoningPct}%`;
 
         for (const card of cards) {
-          const { monthly, perQuery } = estimate(pricing[card.id], docs, queriesPerDay, avgTokens);
+          const { monthly, base, reasoningTax, perQuery } = estimate(pricing[card.id], docs, queriesPerDay, avgTokens, reasoningPct);
+          const basePct = monthly > 0 ? (base / monthly) * 100 : 100;
+          const taxPct = monthly > 0 ? (reasoningTax / monthly) * 100 : 0;
           if (reduced || !animate) {
             gsap.killTweensOf(card.state);
             card.state.monthly = monthly;
             card.state.perQuery = perQuery;
+            card.state.basePct = basePct;
+            card.state.taxPct = taxPct;
             writeCard(card);
           } else {
             gsap.to(card.state, {
               monthly,
               perQuery,
+              basePct,
+              taxPct,
               duration: 0.5,
               ease: "power1.out",
               overwrite: true,
@@ -279,9 +361,9 @@ const initial = Object.fromEntries(
         if (liveTimer) clearTimeout(liveTimer);
         liveTimer = setTimeout(() => {
           if (!interacted || !liveEl) return;
-          const { docs, queriesPerDay, avgTokens } = readInputs();
+          const { docs, queriesPerDay, avgTokens, reasoningPct } = readInputs();
           const parts = cards.map(
-            (c) => `${c.id.toUpperCase()} $${fmtUsd(estimate(pricing[c.id], docs, queriesPerDay, avgTokens).monthly)}`
+            (c) => `${c.id.toUpperCase()} $${fmtUsd(estimate(pricing[c.id], docs, queriesPerDay, avgTokens, reasoningPct).monthly)}`
           );
           liveEl.textContent = `Estimated monthly cost — ${parts.join(", ")}.`;
         }, 500);
@@ -501,6 +583,21 @@ const initial = Object.fromEntries(
     color: var(--text-secondary);
   }
 
+  .scenario-consequence {
+    margin-top: 0.15rem;
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+    max-width: 16rem;
+    white-space: normal;
+  }
+
+  .reasoning-note {
+    margin: -0.5rem 0 0;
+    font-size: 0.68rem;
+    color: var(--text-secondary);
+  }
+
   /* ---- sliders ---- */
   .controls {
     display: grid;
@@ -666,6 +763,64 @@ const initial = Object.fromEntries(
     font-size: 0.72rem;
     font-variant-numeric: tabular-nums;
     color: var(--text-secondary);
+  }
+
+  /* ---- cost anatomy bar ---- */
+  .cost-anatomy {
+    display: flex;
+    height: 6px;
+    border-radius: 3px;
+    overflow: hidden;
+    background: var(--border);
+    margin-top: 0.5rem;
+  }
+
+  .cost-anatomy-base {
+    display: block;
+    height: 100%;
+    background: var(--accent);
+  }
+
+  .cost-anatomy-tax {
+    display: block;
+    height: 100%;
+    background: var(--status-unverified, #f59e0b);
+  }
+
+  .cost-anatomy-legend {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 0.35rem;
+    font-size: 0.6rem;
+    color: var(--text-secondary);
+  }
+
+  .legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+
+  .legend-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  .legend-dot--base {
+    background: var(--accent);
+  }
+
+  .legend-dot--tax {
+    background: var(--status-unverified, #f59e0b);
+  }
+
+  .cloud-qualitative {
+    margin: 0.5rem 0 0;
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
   }
 
   /* ---- architecture line ---- */
