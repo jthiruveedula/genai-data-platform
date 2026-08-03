@@ -1,0 +1,1742 @@
+/**
+ * Scroll-driven platform page (`/platform`).
+ *
+ * Every value here is transcribed from the design handoff prototype, where
+ * the harness forced inline styles. Colour, type and spacing resolve from
+ * the Modernist tokens in `modernist.css` — no literal hexes.
+ *
+ * Radius is 0 everywhere (the one `border-radius: 50%` is the agent loop's
+ * orbit ring, a circle rather than a rounded corner). Rules are 2px solid
+ * `--color-text`, never hairlines.
+ */
+
+html {
+  scroll-behavior: smooth;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--color-accent);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--color-accent-600);
+}
+
+::selection {
+  background: var(--color-accent-200);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+@keyframes om-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes om-orbit {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes om-blink {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0.15;
+  }
+}
+
+@keyframes om-fill {
+  from {
+    width: 0;
+  }
+}
+
+.pf-root {
+  position: relative;
+}
+
+.pf-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Shared type roles ----------------------------------------------------- */
+
+.pf-kicker {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: var(--color-accent);
+}
+
+.pf-accent {
+  color: var(--color-accent);
+}
+
+.pf-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 28px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.pf-grid-bg {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--color-text) 1px, transparent 1px),
+    linear-gradient(90deg, var(--color-text) 1px, transparent 1px);
+  background-size: 48px 48px;
+  opacity: 0.05;
+}
+
+/* Buttons — labels flush left, trailing glyph pushed right. */
+
+.pf-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: flex-start;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 14px 20px;
+  min-width: 220px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.pf-btn__arrow {
+  margin-left: auto;
+}
+
+.pf-btn--primary {
+  background: var(--color-accent);
+  color: var(--color-bg);
+  border: 0;
+}
+
+.pf-btn--primary:hover {
+  background: var(--color-accent-600);
+  color: var(--color-bg);
+}
+
+.pf-btn--secondary {
+  border: 2px solid var(--color-text);
+  color: var(--color-text);
+  background: transparent;
+}
+
+.pf-btn--secondary:hover {
+  background: color-mix(in srgb, var(--color-accent) 8%, transparent);
+  color: var(--color-text);
+}
+
+/* 1 — Nav --------------------------------------------------------------- */
+
+.pf-nav {
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: stretch;
+  background: var(--color-bg);
+  border-bottom: 2px solid var(--color-text);
+}
+
+.pf-nav__left {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  padding: 0 20px;
+  min-height: 58px;
+  flex-wrap: wrap;
+}
+
+.pf-nav__brand {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  font-size: 15px;
+  color: var(--color-text);
+  text-transform: uppercase;
+}
+
+.pf-nav__links {
+  display: flex;
+  gap: 20px;
+  font-size: 11.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.pf-nav__links a {
+  color: var(--color-text);
+}
+
+.pf-nav__links a:hover {
+  color: var(--color-accent);
+}
+
+.pf-nav__right {
+  display: flex;
+  align-items: stretch;
+  border-left: 2px solid var(--color-text);
+}
+
+.pf-meter {
+  display: none;
+  align-items: center;
+  padding: 0 14px;
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  font-weight: 600;
+  border-right: 2px solid var(--color-text);
+  white-space: nowrap;
+  color: var(--color-neutral-700);
+}
+
+.pf-cloud-btn {
+  appearance: none;
+  border: 0;
+  border-right: 1px solid var(--color-neutral-300);
+  background: transparent;
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  padding: 0 16px;
+  cursor: pointer;
+}
+
+.pf-cloud-btn:hover {
+  background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+}
+
+.pf-cloud-btn.is-active {
+  background: var(--color-accent);
+  color: var(--color-bg);
+}
+
+.pf-cloud-btn.is-active:hover {
+  background: var(--color-accent-600);
+}
+
+/* 2 — Hero -------------------------------------------------------------- */
+
+.pf-hero {
+  position: relative;
+  height: 210vh;
+}
+
+.pf-hero__sticky {
+  position: sticky;
+  top: 58px;
+  height: calc(100vh - 58px);
+  overflow: hidden;
+}
+
+.pf-hero__canvas {
+  position: absolute;
+  inset: 0;
+}
+
+.pf-hero__canvas canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.pf-hero__labels {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.pf-pipe-label {
+  position: absolute;
+  left: 0;
+  top: 0;
+  opacity: 0;
+  will-change: transform, opacity;
+}
+
+.pf-pipe-label__inner {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+  transform: translate(-50%, -100%);
+}
+
+.pf-pipe-label__bar {
+  width: 2px;
+  background: var(--color-accent);
+}
+
+.pf-pipe-label__text {
+  padding-bottom: 2px;
+}
+
+.pf-pipe-label__title {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  white-space: nowrap;
+}
+
+.pf-pipe-label__note {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--color-neutral-700);
+  white-space: nowrap;
+  margin-top: 3px;
+}
+
+.pf-hero__front {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  padding: 0 20px;
+  pointer-events: none;
+}
+
+.pf-hero__copy {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  width: min(560px, 46%);
+  will-change: transform, opacity;
+}
+
+.pf-hero__status {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 22px;
+}
+
+.pf-blink-9 {
+  width: 9px;
+  height: 9px;
+  background: var(--color-accent);
+  animation: om-blink 1.4s steps(1) infinite;
+}
+
+.pf-hero__status-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+}
+
+.pf-hero__stack {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  color: var(--color-accent);
+  border-left: 2px solid var(--color-text);
+  padding-left: 12px;
+}
+
+.pf-hero__h1 {
+  margin: 0;
+  font-size: clamp(32px, 3.6vw, 62px);
+  line-height: 0.94;
+  letter-spacing: -0.035em;
+  font-weight: 800;
+  text-wrap: balance;
+}
+
+.pf-hero__body {
+  margin: 20px 0 0;
+  font-size: clamp(14px, 1.1vw, 17px);
+  line-height: 1.45;
+  color: var(--color-neutral-800);
+}
+
+.pf-hero__ctas {
+  display: flex;
+  gap: 0;
+  margin-top: 28px;
+  pointer-events: auto;
+  flex-wrap: wrap;
+}
+
+.pf-hero__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  border-top: 2px solid var(--color-text);
+  padding: 14px 0;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+}
+
+.pf-hero__phase {
+  color: var(--color-accent);
+}
+
+/* 3 — Ticker ------------------------------------------------------------ */
+
+.pf-ticker {
+  border-top: 2px solid var(--color-text);
+  border-bottom: 2px solid var(--color-text);
+  overflow: hidden;
+  padding: 13px 0;
+  background: var(--color-bg);
+}
+
+.pf-ticker__rail {
+  display: flex;
+  width: max-content;
+  animation: om-marquee 34s linear infinite;
+}
+
+.pf-ticker__run {
+  display: flex;
+  gap: 0;
+}
+
+.pf-ticker__word {
+  display: flex;
+  align-items: center;
+  gap: 34px;
+  padding-right: 34px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+}
+
+.pf-ticker__dot {
+  width: 7px;
+  height: 7px;
+  background: var(--color-accent);
+}
+
+/* 4 — Lifecycle --------------------------------------------------------- */
+
+.pf-life {
+  position: relative;
+  height: 900vh;
+  border-bottom: 2px solid var(--color-text);
+}
+
+.pf-life__sticky {
+  position: sticky;
+  top: 58px;
+  height: calc(100vh - 58px);
+  overflow: hidden;
+}
+
+.pf-life__grid {
+  display: grid;
+  grid-template-columns: minmax(300px, 38%) 1fr;
+  height: 100%;
+}
+
+.pf-life__left {
+  border-right: 2px solid var(--color-text);
+  padding: 34px 26px;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.pf-life__h2 {
+  margin: 14px 0 0;
+  font-size: clamp(28px, 3.2vw, 52px);
+  line-height: 0.95;
+  letter-spacing: -0.03em;
+  font-weight: 800;
+}
+
+.pf-life__bottom {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.pf-life__numrow {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+}
+
+.pf-life__num {
+  font-size: clamp(64px, 10vw, 150px);
+  line-height: 0.78;
+  font-weight: 800;
+  letter-spacing: -0.05em;
+  color: var(--color-accent);
+}
+
+.pf-life__den {
+  padding-bottom: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: var(--color-neutral-700);
+}
+
+.pf-life__name {
+  font-size: clamp(20px, 2.2vw, 34px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.pf-life__desc {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--color-neutral-800);
+  max-width: 34em;
+  min-height: 4.5em;
+}
+
+.pf-life__on {
+  border-top: 2px solid var(--color-text);
+  padding-top: 12px;
+}
+
+.pf-life__on-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: var(--color-neutral-700);
+}
+
+.pf-life__on-value {
+  font-size: 14px;
+  font-weight: 600;
+  margin-top: 6px;
+  color: var(--color-accent);
+}
+
+.pf-life__ticks {
+  display: flex;
+  gap: 3px;
+}
+
+.pf-life__tick {
+  flex: 1;
+  height: 5px;
+  background: var(--color-neutral-300);
+}
+
+.pf-life__tick.is-on {
+  background: var(--color-accent);
+}
+
+.pf-life__right {
+  position: relative;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.pf-life__stage {
+  position: relative;
+  overflow: hidden;
+}
+
+.pf-life__canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.pf-life__readout {
+  position: absolute;
+  top: 16px;
+  right: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pf-blink-7 {
+  width: 7px;
+  height: 7px;
+  background: var(--color-accent);
+  animation: om-blink 1s steps(1) infinite;
+}
+
+.pf-life__phase {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: var(--color-neutral-700);
+}
+
+.pf-life__stripwrap {
+  border-top: 2px solid var(--color-text);
+  padding: 14px 0 16px;
+  overflow: hidden;
+  perspective: 900px;
+}
+
+.pf-life__strip {
+  display: flex;
+  gap: 10px;
+  padding-left: 20px;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+.pf-life__card {
+  flex: 0 0 auto;
+  width: 148px;
+  height: 104px;
+  background: var(--color-bg);
+  border: 2px solid var(--color-text);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pf-life__card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.pf-life__card-n {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+}
+
+.pf-life__card-tag {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--color-accent);
+}
+
+.pf-life__card-name {
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  line-height: 1.1;
+}
+
+.pf-life__card-bits {
+  margin-top: auto;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 3px;
+}
+
+.pf-life__bit {
+  height: 12px;
+  background: transparent;
+  border: 1px solid var(--color-text);
+}
+
+.pf-life__bit.is-on {
+  background: var(--color-accent);
+}
+
+/* 5 — Agent loop -------------------------------------------------------- */
+
+.pf-agent {
+  border-bottom: 2px solid var(--color-text);
+}
+
+.pf-agent__grid {
+  display: grid;
+  grid-template-columns: minmax(300px, 40%) 1fr;
+}
+
+.pf-agent__left {
+  border-right: 2px solid var(--color-text);
+  padding: 70px 26px;
+}
+
+.pf-agent__h2 {
+  margin: 16px 0 0;
+  font-size: clamp(28px, 3.4vw, 56px);
+  line-height: 0.95;
+  letter-spacing: -0.03em;
+  font-weight: 800;
+}
+
+.pf-agent__body {
+  margin: 22px 0 0;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--color-neutral-800);
+  max-width: 26em;
+}
+
+.pf-agent__rows {
+  margin-top: 40px;
+  display: flex;
+  flex-direction: column;
+  border-top: 2px solid var(--color-text);
+}
+
+.pf-agent__row {
+  appearance: none;
+  text-align: left;
+  border: 0;
+  border-bottom: 2px solid var(--color-text);
+  background: transparent;
+  color: var(--color-text);
+  font-family: var(--font-body);
+  padding: 18px 0;
+  cursor: pointer;
+  display: grid;
+  grid-template-columns: 34px 1fr;
+  gap: 14px;
+  align-items: start;
+}
+
+.pf-agent__row.is-active {
+  background: var(--color-accent);
+  color: var(--color-bg);
+}
+
+.pf-agent__row-n {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  padding-top: 3px;
+}
+
+.pf-agent__row-name {
+  display: block;
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.pf-agent__row-desc {
+  display: block;
+  font-size: 14px;
+  line-height: 1.45;
+  margin-top: 5px;
+  opacity: 0.78;
+}
+
+.pf-agent__row-stack {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  margin-top: 9px;
+  color: var(--color-accent);
+}
+
+.pf-agent__row.is-active .pf-agent__row-stack {
+  color: var(--color-bg);
+}
+
+.pf-loop {
+  position: relative;
+  min-height: 620px;
+  overflow: hidden;
+  perspective: 1000px;
+}
+
+.pf-loop__plane {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform-style: preserve-3d;
+}
+
+.pf-loop__ring {
+  position: relative;
+  width: 340px;
+  height: 340px;
+  transform-style: preserve-3d;
+}
+
+.pf-loop__circle {
+  position: absolute;
+  inset: 0;
+  border: 2px solid var(--color-neutral-300);
+  border-radius: 50%;
+}
+
+.pf-loop__orbit {
+  position: absolute;
+  inset: 0;
+  animation: om-orbit 9s linear infinite;
+}
+
+.pf-loop__token {
+  position: absolute;
+  left: 50%;
+  top: -9px;
+  width: 18px;
+  height: 18px;
+  margin-left: -9px;
+  background: var(--color-accent);
+}
+
+.pf-loop__node {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0;
+  height: 0;
+  transform: rotate(var(--pf-deg)) translateY(-170px);
+}
+
+.pf-loop__card {
+  transform: rotate(calc(-1 * var(--pf-deg))) translate(-50%, -50%);
+  width: 168px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  border: 2px solid var(--color-text);
+  padding: 14px;
+}
+
+.pf-loop__node.is-active .pf-loop__card {
+  background: var(--color-accent);
+  color: var(--color-bg);
+}
+
+.pf-loop__card-name {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+}
+
+.pf-loop__card-short {
+  font-size: 11px;
+  margin-top: 7px;
+  opacity: 0.75;
+  line-height: 1.35;
+}
+
+.pf-loop__center {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 216px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pf-loop__iterrow {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.pf-loop__iter {
+  font-size: 44px;
+  font-weight: 800;
+  letter-spacing: -0.05em;
+  line-height: 0.8;
+}
+
+.pf-loop__iterlabel {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--color-neutral-700);
+}
+
+.pf-loop__bar {
+  height: 6px;
+  background: var(--color-neutral-300);
+}
+
+.pf-loop__barfill {
+  height: 100%;
+  width: 25%;
+  background: var(--color-accent);
+}
+
+.pf-loop__note {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  line-height: 1.4;
+  color: var(--color-neutral-700);
+}
+
+/* 6 — Integrate --------------------------------------------------------- */
+
+.pf-int {
+  border-bottom: 2px solid var(--color-text);
+  padding: 70px 20px;
+}
+
+.pf-int__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 24px;
+  justify-content: space-between;
+  border-bottom: 2px solid var(--color-text);
+  padding-bottom: 26px;
+}
+
+.pf-int__h2 {
+  margin: 14px 0 0;
+  font-size: clamp(28px, 3.4vw, 56px);
+  line-height: 0.95;
+  letter-spacing: -0.03em;
+  font-weight: 800;
+}
+
+.pf-int__body {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--color-neutral-800);
+  max-width: 26em;
+}
+
+.pf-int__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+  border-left: 2px solid var(--color-text);
+}
+
+.pf-sys {
+  appearance: none;
+  text-align: left;
+  font-family: var(--font-body);
+  cursor: pointer;
+  border: 0;
+  border-right: 2px solid var(--color-text);
+  border-bottom: 2px solid var(--color-text);
+  background: transparent;
+  color: var(--color-text);
+  padding: 24px 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+  min-height: 200px;
+}
+
+.pf-sys.is-active {
+  background: var(--color-text);
+  color: var(--color-bg);
+}
+
+.pf-sys__proto {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  opacity: 0.7;
+}
+
+.pf-sys__name {
+  font-size: clamp(17px, 1.6vw, 23px);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  margin-top: auto;
+}
+
+.pf-sys__bar {
+  display: block;
+  height: 4px;
+  background: var(--color-neutral-300);
+}
+
+.pf-sys.is-active .pf-sys__bar {
+  background: var(--color-accent);
+}
+
+.pf-int__callrow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 26px;
+  align-items: baseline;
+  padding-top: 18px;
+}
+
+.pf-int__calllabel {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: var(--color-neutral-700);
+}
+
+.pf-int__call {
+  font-family: ui-monospace, monospace;
+  font-size: 13.5px;
+  color: var(--color-text);
+}
+
+/* 7 — Stacks ------------------------------------------------------------ */
+
+.pf-stacks {
+  border-bottom: 2px solid var(--color-text);
+}
+
+.pf-stacks__head {
+  padding: 70px 20px 30px;
+}
+
+.pf-stacks__h2 {
+  margin: 14px 0 0;
+  font-size: clamp(28px, 3.6vw, 60px);
+  line-height: 0.95;
+  letter-spacing: -0.03em;
+  font-weight: 800;
+}
+
+.pf-flavors {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
+  border-top: 2px solid var(--color-text);
+}
+
+.pf-flavor {
+  appearance: none;
+  text-align: left;
+  font-family: var(--font-body);
+  cursor: pointer;
+  border: 0;
+  border-right: 2px solid var(--color-text);
+  border-bottom: 2px solid var(--color-text);
+  background: transparent;
+  color: var(--color-text);
+  padding: 22px 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  transform: translateY(0);
+  transition:
+    transform 220ms ease,
+    background 160ms ease;
+}
+
+.pf-flavor.is-active {
+  background: var(--color-text);
+  color: var(--color-bg);
+  transform: translateY(-8px);
+}
+
+.pf-flavor__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+}
+
+.pf-flavor__state {
+  opacity: 0.8;
+}
+
+.pf-flavor__name {
+  font-size: clamp(22px, 2.2vw, 34px);
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  line-height: 1;
+}
+
+.pf-flavor__desc {
+  font-size: 13.5px;
+  line-height: 1.45;
+  opacity: 0.82;
+}
+
+.pf-flavor__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: auto;
+  padding-top: 14px;
+}
+
+.pf-chip {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  border: 1px solid var(--color-neutral-300);
+  padding: 5px 8px;
+}
+
+.pf-flavor.is-active .pf-chip {
+  border-color: color-mix(in srgb, var(--color-bg) 40%, transparent);
+}
+
+.pf-flavor__best {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  opacity: 0.72;
+  padding-top: 6px;
+}
+
+.pf-map {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+}
+
+.pf-map__cell {
+  border-right: 2px solid var(--color-text);
+  border-bottom: 2px solid var(--color-text);
+  padding: 22px 18px;
+}
+
+.pf-map__role {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: var(--color-neutral-700);
+}
+
+.pf-map__value {
+  font-size: clamp(15px, 1.5vw, 20px);
+  font-weight: 700;
+  margin-top: 10px;
+  letter-spacing: -0.01em;
+}
+
+.pf-map__note {
+  grid-column: 1 / -1;
+  border-bottom: 2px solid var(--color-text);
+  padding: 22px 18px;
+  display: flex;
+  align-items: flex-end;
+}
+
+.pf-map__note span {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: var(--color-accent);
+}
+
+/* 8 — Operate ----------------------------------------------------------- */
+
+.pf-ops {
+  border-bottom: 2px solid var(--color-text);
+}
+
+.pf-ops__head {
+  padding: 70px 20px 30px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.pf-ops__h2 {
+  margin: 14px 0 0;
+  font-size: clamp(28px, 3.4vw, 56px);
+  line-height: 0.95;
+  letter-spacing: -0.03em;
+  font-weight: 800;
+}
+
+.pf-ops__body {
+  margin: 0;
+  font-size: 15px;
+  color: var(--color-neutral-800);
+  max-width: 22em;
+  line-height: 1.5;
+}
+
+.pf-ops__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
+  border-top: 2px solid var(--color-text);
+}
+
+.pf-ops__panel {
+  border-right: 2px solid var(--color-text);
+  border-bottom: 2px solid var(--color-text);
+  padding: 20px 18px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 290px;
+}
+
+.pf-ops__panelhead {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  border-bottom: 2px solid var(--color-text);
+  padding-bottom: 10px;
+}
+
+.pf-ops__panelname {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+}
+
+.pf-ops__panelmeta {
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+  color: var(--color-neutral-700);
+}
+
+.pf-ops__rows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pf-ops__row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: center;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
+
+.pf-ops__rowleft {
+  display: grid;
+  gap: 5px;
+}
+
+.pf-ops__bar {
+  height: 6px;
+  background: var(--color-text);
+  animation: om-fill 900ms ease-out;
+}
+
+.pf-ops__bar.is-hot {
+  background: var(--color-accent);
+}
+
+.pf-ops__val {
+  font-family: ui-monospace, monospace;
+  color: var(--color-neutral-700);
+}
+
+.pf-ops__val.is-hot {
+  color: var(--color-accent);
+}
+
+.pf-ops__note {
+  margin-top: auto;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--color-neutral-800);
+}
+
+/* 9 — Curriculum -------------------------------------------------------- */
+
+.pf-cur {
+  position: relative;
+  height: 460vh;
+  border-bottom: 2px solid var(--color-text);
+}
+
+.pf-cur__sticky {
+  position: sticky;
+  top: 58px;
+  height: calc(100vh - 58px);
+  overflow: hidden;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+}
+
+.pf-cur__head {
+  padding: 30px 20px 22px;
+  border-bottom: 2px solid var(--color-text);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.pf-cur__h2 {
+  margin: 10px 0 0;
+  font-size: clamp(24px, 2.8vw, 42px);
+  line-height: 0.98;
+  letter-spacing: -0.03em;
+  font-weight: 800;
+}
+
+.pf-cur__meta {
+  display: flex;
+  gap: 22px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+}
+
+.pf-cur__viewport {
+  position: relative;
+  overflow: hidden;
+  perspective: 1500px;
+  perspective-origin: 50% 50%;
+}
+
+.pf-cur__track {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  gap: 26px;
+  padding: 0 8vw;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+.pf-cur__card {
+  flex: 0 0 auto;
+  width: 300px;
+  height: 350px;
+  background: var(--color-bg);
+  border: 2px solid var(--color-text);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transform-style: preserve-3d;
+}
+
+.pf-cur__cardtop {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.pf-cur__cardn {
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+
+.pf-cur__lane {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  padding: 5px 8px;
+}
+
+.pf-cur__lane--core {
+  background: var(--color-accent);
+  color: var(--color-bg);
+}
+
+.pf-cur__lane--deepen {
+  background: var(--color-text);
+  color: var(--color-bg);
+}
+
+.pf-cur__lane--scale {
+  background: transparent;
+  color: var(--color-text);
+}
+
+.pf-cur__cardtitle {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+}
+
+.pf-cur__cardblurb {
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--color-neutral-800);
+}
+
+.pf-cur__cardfoot {
+  margin-top: auto;
+  border-top: 2px solid var(--color-text);
+  padding-top: 10px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--color-neutral-700);
+}
+
+.pf-cur__foot {
+  border-top: 2px solid var(--color-text);
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.pf-cur__track-progress {
+  flex: 1;
+  height: 6px;
+  background: var(--color-neutral-300);
+}
+
+.pf-cur__progress {
+  height: 100%;
+  width: 0;
+  background: var(--color-accent);
+}
+
+.pf-cur__count {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  white-space: nowrap;
+}
+
+/* 10 — Cost ------------------------------------------------------------- */
+
+.pf-cost {
+  border-bottom: 2px solid var(--color-text);
+}
+
+.pf-cost__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+}
+
+.pf-cost__left {
+  border-right: 2px solid var(--color-text);
+  padding: 66px 24px;
+}
+
+.pf-cost__h2 {
+  margin: 14px 0 0;
+  font-size: clamp(28px, 3.2vw, 50px);
+  line-height: 0.95;
+  letter-spacing: -0.03em;
+  font-weight: 800;
+}
+
+.pf-cost__body {
+  margin: 22px 0 0;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--color-neutral-800);
+  max-width: 28em;
+}
+
+.pf-tiers {
+  display: flex;
+  margin-top: 32px;
+  border: 2px solid var(--color-text);
+}
+
+.pf-tier {
+  appearance: none;
+  flex: 1;
+  text-align: left;
+  font-family: var(--font-body);
+  cursor: pointer;
+  border: 0;
+  border-right: 1px solid var(--color-text);
+  background: transparent;
+  color: var(--color-text);
+  padding: 14px 12px;
+}
+
+.pf-tier.is-active {
+  background: var(--color-accent);
+  color: var(--color-bg);
+}
+
+.pf-tier__name {
+  display: block;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+}
+
+.pf-tier__sub {
+  display: block;
+  font-size: 11px;
+  margin-top: 5px;
+  opacity: 0.75;
+}
+
+.pf-cost__tiernote {
+  margin: 18px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--color-neutral-800);
+  max-width: 30em;
+}
+
+.pf-cost__right {
+  padding: 66px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.pf-cost__consolehead {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  border-bottom: 2px solid var(--color-text);
+  padding-bottom: 10px;
+}
+
+.pf-cost__row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 18px;
+  align-items: center;
+  border-bottom: 2px solid var(--color-neutral-300);
+  padding: 18px 0;
+  background: transparent;
+}
+
+.pf-cost__row.is-active {
+  background: color-mix(in srgb, var(--color-accent) 7%, transparent);
+}
+
+.pf-cost__cloud {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+}
+
+.pf-cost__model {
+  font-size: 13px;
+  color: var(--color-neutral-800);
+  margin-top: 5px;
+}
+
+.pf-cost__bartrack {
+  height: 6px;
+  margin-top: 12px;
+  background: var(--color-neutral-300);
+}
+
+.pf-cost__bar {
+  height: 100%;
+  background: var(--color-text);
+}
+
+.pf-cost__row.is-active .pf-cost__bar {
+  background: var(--color-accent);
+}
+
+.pf-cost__figures {
+  text-align: right;
+}
+
+.pf-cost__monthly {
+  font-size: clamp(20px, 2vw, 30px);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.pf-cost__perquery {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: var(--color-neutral-700);
+  margin-top: 4px;
+}
+
+/* 11 — Stats ------------------------------------------------------------ */
+
+.pf-stats {
+  border-bottom: 2px solid var(--color-text);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.pf-stats__cell {
+  border-right: 2px solid var(--color-text);
+  padding: 46px 20px;
+}
+
+.pf-stats__val {
+  font-size: clamp(46px, 6vw, 92px);
+  font-weight: 800;
+  letter-spacing: -0.05em;
+  line-height: 0.85;
+}
+
+.pf-stats__label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  margin-top: 16px;
+  color: var(--color-neutral-700);
+}
+
+/* 12 — Poster close ----------------------------------------------------- */
+
+.pf-poster {
+  background: var(--color-accent);
+  color: var(--color-bg);
+  padding: 90px 20px 80px;
+}
+
+.pf-poster__kicker {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  opacity: 0.85;
+}
+
+.pf-poster__h2 {
+  margin: 20px 0 0;
+  font-size: clamp(38px, 8vw, 132px);
+  line-height: 0.86;
+  letter-spacing: -0.045em;
+  font-weight: 800;
+  max-width: 18em;
+}
+
+.pf-poster__body {
+  margin: 28px 0 0;
+  font-size: clamp(15px, 1.5vw, 20px);
+  line-height: 1.45;
+  max-width: 34em;
+  opacity: 0.9;
+}
+
+.pf-poster__ctas {
+  display: flex;
+  gap: 0;
+  margin-top: 40px;
+  flex-wrap: wrap;
+}
+
+.pf-poster__btn {
+  padding: 16px 22px;
+}
+
+.pf-poster__btn--fill {
+  background: var(--color-bg);
+  color: var(--color-text);
+  border: 0;
+  min-width: 250px;
+}
+
+.pf-poster__btn--fill:hover {
+  color: var(--color-text);
+}
+
+.pf-poster__btn--outline {
+  border: 2px solid var(--color-bg);
+  color: var(--color-bg);
+  background: transparent;
+  min-width: 220px;
+}
+
+.pf-poster__btn--outline:hover {
+  color: var(--color-bg);
+  background: color-mix(in srgb, var(--color-bg) 12%, transparent);
+}
+
+/* 13 — Footer ----------------------------------------------------------- */
+
+.pf-footer {
+  padding: 34px 20px 44px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px 40px;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.pf-footer__disclaimer {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: var(--color-neutral-700);
+  max-width: 46em;
+  line-height: 1.6;
+}
+
+.pf-footer__freshness {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+}
+
+/* Reduced motion --------------------------------------------------------
+   Idle drift, gizmo updates, agent auto-run and canvas time are frozen in
+   the RAF loop, not here — scroll-driven position keeps tracking so the
+   story stays navigable. This block only stops the decorative CSS loops. */
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .pf-ticker__rail,
+  .pf-loop__orbit,
+  .pf-blink-9,
+  .pf-blink-7,
+  .pf-ops__bar {
+    animation: none;
+  }
+
+  .pf-flavor {
+    transition: none;
+  }
+}
