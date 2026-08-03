@@ -39,22 +39,32 @@ const moduleData = MODULES.find((m) => m.id === moduleId)!;
 
     <h2>Golden datasets</h2>
     <p>
-      A <strong>golden dataset</strong> is 20 or more labeled question/answer pairs, ideally drawn from real user
-      questions plus the documents ingested back in Module 10. Each row needs a question, the reference context (which
-      chunks should be retrieved), and a reference answer. Without this set, every later metric has nothing to compare
-      against — it's the fixture the rest of the module runs on.
+      A <strong>golden dataset</strong> is 20+ labeled question/answer pairs, ideally drawn from real user questions
+      plus the Module 10 documents. Each row needs a question, reference context (which chunks should be retrieved),
+      and a reference answer — the fixture every later metric compares against.
     </p>
 
     <h2>RAGAS-style metrics</h2>
-    <p>
-      <strong>Faithfulness</strong> checks whether every claim in the generated answer is actually supported by the
-      retrieved context — it catches hallucination even when the answer sounds confident. <strong>Answer
-      relevance</strong> checks whether the response actually addresses the question asked, independent of whether
-      it's grounded. <strong>Context precision</strong> and <strong>context recall</strong> score the retrieval half:
-      precision asks whether the retrieved chunks were relevant, recall asks whether the relevant chunks were
-      retrieved at all. Together they separate "retrieval failed" from "generation failed" instead of leaving you with
-      one blended "the answer was wrong" verdict.
-    </p>
+    <p class="concept-comparison-lede">Four metrics, split across the retrieval/generation boundary so a regression points at the actual cause:</p>
+    <div class="concept-comparison" role="list">
+      <div class="concept-comparison-item" role="listitem">
+        <span class="chip chip--accent">FAITHFULNESS</span>
+        <p>Every claim in the answer is checked against the retrieved context — catches hallucination even when the answer sounds confident.</p>
+      </div>
+      <div class="concept-comparison-item" role="listitem">
+        <span class="chip">ANSWER RELEVANCE</span>
+        <p>Does the response actually address the question asked, independent of whether it's grounded?</p>
+      </div>
+      <div class="concept-comparison-item" role="listitem">
+        <span class="chip">CONTEXT PRECISION</span>
+        <p>Were the retrieved chunks actually relevant?</p>
+      </div>
+      <div class="concept-comparison-item" role="listitem">
+        <span class="chip">CONTEXT RECALL</span>
+        <p>Were the relevant chunks retrieved at all?</p>
+      </div>
+    </div>
+    <p>Together they separate "retrieval failed" from "generation failed" instead of one blended verdict.</p>
 
     <FaithfulnessCheckDemo />
 
@@ -63,31 +73,30 @@ const moduleData = MODULES.find((m) => m.id === moduleId)!;
       Faithfulness and context recall score a single answer. Module 85's agent loop needs a different question: was
       the <strong>trajectory</strong> — the sequence of tool calls it actually made — correct, not just the final
       output? A trajectory eval checks whether the agent called the right tools, in a sane order, without redundant
-      or unnecessary calls, and whether it stopped when the task was actually done instead of looping past it.
+      calls, and stopped once the task was actually done.
     </p>
     <p>
-      This needs its own golden set: instead of question/answer pairs, each row is a task plus the expected tool-call
-      sequence (or an acceptable set of sequences, since more than one valid path often exists). An agent can produce
-      a perfectly faithful final answer while still failing the trajectory eval — it called an expensive or
-      side-effecting tool it never needed, which the answer alone won't show you.
+      This needs its own golden set: each row is a task plus the expected tool-call sequence, or an acceptable set of
+      sequences since more than one valid path often exists. An agent can produce a perfectly faithful final answer
+      while still failing the trajectory eval — it called an expensive or side-effecting tool it never needed, which
+      the answer alone won't show you.
     </p>
 
     <h2>LLM-as-judge and calibration</h2>
     <p>
       Most of these metrics are themselves computed by asking another LLM to score the response — an
       <strong>LLM-as-judge</strong>. That's cheap and scales to hundreds of examples, but a judge model has its own
-      blind spots and biases. The fix is calibration: periodically sample judge scores and compare them against a
-      human's own rating on the same examples. If they disagree often, the judge prompt (or judge model) needs work
-      before you trust it to gate anything.
+      blind spots. Calibrate it: periodically compare judge scores against human ratings on the same examples, and
+      fix the judge prompt or model if they disagree often — before trusting it to gate anything.
     </p>
 
     <h2>Regression evals in CI</h2>
     <p>
       Once you trust the metrics, wire them into CI as an <strong>eval-gated deploy</strong>: every change to the
       prompt, retrieval pipeline, or model re-runs the golden dataset, and the build fails if faithfulness or context
-      recall drops below a threshold. This is the same discipline as a unit test suite, aimed at model quality instead
-      of code correctness — and it's what turns Module 55's traces from "interesting logs" into "the thing that stops
-      a bad release."
+      recall drops below threshold. Same discipline as a unit test suite, aimed at model quality instead of code
+      correctness — it's what turns Module 55's traces from "interesting logs" into "the thing that stops a bad
+      release."
     </p>
 
     <h2>Try it in your flavor</h2>
