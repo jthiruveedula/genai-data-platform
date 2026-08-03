@@ -37,25 +37,37 @@ const moduleData = MODULES.find((m) => m.id === moduleId)!;
 
     <h2>One index, whatever it started as</h2>
     <p>
-      A multimodal embedding model puts text, images, and video in the same vector space directly. Where your cloud
+      A multimodal embedding model puts text, images, and video in the same vector space directly. Where the cloud
       doesn't offer that, extract first — transcript, keyframes, captions — then embed each piece with the model
       built for it.
     </p>
 
     <h2>Extraction is the default, not the exception</h2>
+    <p class="concept-comparison-lede">How each flavor gets from raw video to embeddings:</p>
+    <div class="concept-comparison" role="list">
+      <div class="concept-comparison-item" role="listitem">
+        <span class="chip chip--accent">GCP</span>
+        <p>Gemini embeds raw video directly — no extraction step.</p>
+      </div>
+      <div class="concept-comparison-item" role="listitem">
+        <span class="chip">AWS</span>
+        <p>Transcribe and Rekognition pull a transcript and keyframes, then embed each separately.</p>
+      </div>
+      <div class="concept-comparison-item" role="listitem">
+        <span class="chip">AZURE</span>
+        <p>Video Indexer and AI Vision run the same extract-then-embed pipeline.</p>
+      </div>
+      <div class="concept-comparison-item" role="listitem">
+        <span class="chip">OSS</span>
+        <p>whisper.cpp and CLIP do the same extraction locally.</p>
+      </div>
+    </div>
+    <p>Native multimodal video embedding is still the industry exception, not a shortcut you're missing.</p>
     <p>
-      Across the four flavors in this curriculum, only GCP's Gemini embedding model takes raw video directly —
-      everywhere else, extraction is the only path: AWS pulls a transcript and keyframes with Transcribe and
-      Rekognition before embedding either, Azure does the same through Video Indexer and AI Vision, and the OSS stack
-      runs whisper.cpp and CLIP locally. Native multimodal video embedding is still the exception industry-wide, not
-      a shortcut you're missing.
-    </p>
-    <p>
-      That extra step isn't free. Each flavor's per-video cost note above reflects it — OSS pays nothing beyond GPU
-      time it already owns, GCP's single native call runs about $0.04, and the two-stage extract-then-embed pipelines
-      on AWS and Azure run $0.05–$0.06 for the same short clip. The bigger cost is a new failure surface: a bad
-      transcript or a keyframe sampled at the wrong moment degrades retrieval quality in a way that's invisible until
-      someone asks the question that hits it.
+      That extra step isn't free. OSS pays nothing beyond GPU time it already owns, GCP's single native call runs
+      about $0.04, and the two-stage pipelines on AWS and Azure run $0.05–$0.06 for the same short clip. The bigger
+      cost is a new failure surface: a bad transcript or a mistimed keyframe degrades retrieval quality invisibly —
+      until someone asks the question that hits it.
     </p>
 
     <h2>Try it in your flavor</h2>

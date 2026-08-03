@@ -42,38 +42,39 @@ const moduleData = MODULES.find((m) => m.id === moduleId)!;
 
     <h2>Picking an embedding model</h2>
     <p>
-      Embedding models differ in dimensionality, language coverage, and what kind of similarity they were trained to
-      capture. The practical rule: use the same model to embed your chunks and your queries — mixing models breaks
-      the geometry the whole index depends on — and prefer a model your cloud's retrieval service integrates with
-      natively, since that keeps the embed → store → search path in one system instead of three.
+      Models differ in dimensionality, language coverage, and the similarity they were trained to capture. Two rules:
+      embed chunks and queries with the same model — mixing breaks the geometry the index depends on — and prefer
+      one your cloud's retrieval service integrates with natively, keeping embed → store → search in one system.
     </p>
 
     <ModelMismatchDemo />
 
     <h2>Dimensionality tradeoffs: Matryoshka embeddings and quantization</h2>
-    <p>
-      A 1536-dimension embedding at float32 precision costs 6 KB per vector — at 100 million vectors, that's 600 GB
-      just for the index, before a single query runs. <strong>Matryoshka Representation Learning (MRL)</strong> models
-      (most current embedding models support this) are trained to front-load the most important semantic signal into
-      the first dimensions, so simply truncating the vector — keeping the first 256 or 128 numbers and discarding the
-      rest — degrades gracefully instead of breaking: truncating to 256 dimensions typically retains upward of 88% of
-      full-dimension retrieval quality, for a 4-6x cut in storage and similarity-computation cost.
+    <p class="concept-comparison-lede">
+      A 1536-dim float32 vector costs 6 KB — 600 GB for 100M vectors before a single query runs. Compression stacks:
     </p>
+    <div class="concept-flow" role="list" aria-label="Vector compression techniques applied in sequence">
+      <span class="chip chip--accent" role="listitem">FULL VECTOR — 6 KB</span>
+      <span class="concept-flow-arrow" aria-hidden="true">→</span>
+      <span class="chip" role="listitem">MRL TRUNCATION (256D) — ~88% quality, 4-6x smaller</span>
+      <span class="concept-flow-arrow" aria-hidden="true">→</span>
+      <span class="chip" role="listitem">SCALAR QUANT — ~78% smaller</span>
+      <span class="concept-flow-arrow" aria-hidden="true">→</span>
+      <span class="chip" role="listitem">BINARY QUANT — ~32x smaller</span>
+    </div>
     <p>
-      <strong>Quantization</strong> compresses further on top of that: scalar quantization stacked on a
-      truncated 128-dimension vector can reach roughly a 78% total storage reduction, and binary quantization (one
-      bit per dimension) pushes memory savings to around 32x with a large speedup, at the cost of needing a
-      rescoring pass against the original vectors to hold recall above 90%. None of this requires a different model
-      or a rebuilt pipeline — it is entirely a storage/precision knob on the same embeddings this module already
-      produces.
+      <strong>Matryoshka Representation Learning (MRL)</strong> models — most current embedding models — front-load
+      semantic signal into early dimensions, so truncation degrades gracefully instead of breaking.
+      <strong>Quantization</strong> stacks on top: binary quantization needs a rescoring pass against the original
+      vectors to hold recall above 90%. None of this requires a different model or a rebuilt pipeline — it's a
+      storage/precision knob on the embeddings this module already produces.
     </p>
 
     <h2>What the vector index actually stores</h2>
     <p>
-      Beyond the vector itself, every entry needs enough metadata to be useful once retrieved: the source
-      document, the chunk's original text, its position, and anything Module 65 (security) will later need for
-      access control. An index with vectors but no metadata can find a match — it just can't tell you what it
-      found or whether the requesting user is allowed to see it.
+      Beyond the vector, every entry needs metadata to be useful once retrieved: source document, the chunk's
+      original text, its position, and anything Module 65 (security) needs for access control. An index with
+      vectors but no metadata can find a match — it can't tell you what it found or who's allowed to see it.
     </p>
 
     <h2>Try it in your flavor</h2>

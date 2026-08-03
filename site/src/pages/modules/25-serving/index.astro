@@ -27,9 +27,8 @@ const moduleData = MODULES.find((m) => m.id === moduleId)!;
   <article>
     <ModuleHero moduleId={moduleId}>
       <p>
-        Everything so far — ingestion, chunking, embeddings — happens offline, once per document. This module
-        wires the online path: what happens the instant a user asks a question. This is the module where the
-        pipeline becomes a product.
+        Ingestion, chunking, embeddings — everything so far happens offline, once per document. This module wires
+        the online path: what happens the instant a user asks a question.
       </p>
     </ModuleHero>
 
@@ -38,49 +37,54 @@ const moduleData = MODULES.find((m) => m.id === moduleId)!;
     <ModuleFlowDiagram moduleId={moduleId} />
 
     <h2>The request path</h2>
+    <div class="concept-flow" role="list" aria-label="RAG request path">
+      <span class="chip chip--accent" role="listitem">EMBED</span>
+      <span class="concept-flow-arrow" aria-hidden="true">→</span>
+      <span class="chip" role="listitem">RETRIEVE</span>
+      <span class="concept-flow-arrow" aria-hidden="true">→</span>
+      <span class="chip" role="listitem">CONSTRUCT PROMPT</span>
+      <span class="concept-flow-arrow" aria-hidden="true">→</span>
+      <span class="chip" role="listitem">CALL LLM</span>
+    </div>
     <p>
-      Four steps, in order: <strong>embed</strong> the incoming question with the same model used in Module 20,
-      <strong>retrieve</strong> the nearest chunks from the vector index, <strong>construct a prompt</strong> that
-      includes the question plus the retrieved chunks (with enough structure that the model can cite which chunk
-      supports which claim), and <strong>call the LLM</strong> — a fast model by default, escalating to a reasoning
-      model only when the task calls for it (Module 75 covers that trade-off in cost terms).
+      <strong>Embed</strong> the incoming question with the same model used in Module 20. <strong>Retrieve</strong>
+      the nearest chunks from the vector index. <strong>Construct a prompt</strong> with the question plus the
+      retrieved chunks, structured so the model can cite which chunk supports which claim. <strong>Call the LLM</strong>
+      — a fast model by default, escalating to a reasoning model only when the task needs it (Module 75 covers that
+      trade-off in cost terms).
     </p>
 
     <h2>Citations aren't optional</h2>
     <p>
-      A RAG answer without a citation back to its source chunk is a claim you can't verify and a user can't trust.
-      Return the chunk ID (or document + offset) alongside every answer — it costs nothing extra since retrieval
-      already has that metadata, and it's the difference between "an AI said so" and "here's the paragraph it came
-      from."
+      A RAG answer without a citation to its source chunk is a claim you can't verify. Return the chunk ID (or
+      document + offset) alongside every answer — free, since retrieval already has that metadata — and it's the
+      difference between "an AI said so" and "here's the paragraph it came from."
     </p>
 
     <CitationTraceDemo />
 
     <h2>Handling "I don't know"</h2>
     <p>
-      When retrieval returns nothing relevant, the right answer is for the model to say so — not to answer from
-      general knowledge as if it had a source. A simple guard: if the top retrieved chunk's similarity score is
-      below a threshold, skip the LLM call for that context entirely and return a plain "not found in the indexed
-      documents" response.
+      When retrieval returns nothing relevant, the model should say so, not answer from general knowledge as if it
+      had a source. Guard: if the top chunk's similarity score is below a threshold, skip the LLM call and return a
+      plain "not found in the indexed documents" response.
     </p>
 
     <h2>Streaming: return tokens as they're generated</h2>
     <p>
-      The request path above reads as one blocking call, but serving it that way makes users stare at a spinner for
-      the model's full generation time. <strong>Streaming</strong> returns tokens to the client as the model produces
-      them, so the first word appears in a few hundred milliseconds instead of waiting for the whole answer — the
-      same time-to-first-token idea Module 55 measures, applied here as the actual response mechanism, not just a
-      metric. A citation-bearing answer still streams fine: send the chunk IDs either just before the streamed text
-      or as a trailing event once generation finishes.
+      A blocking call makes users stare at a spinner for the model's full generation time. <strong>Streaming</strong>
+      returns tokens as the model produces them, so the first word appears in a few hundred milliseconds instead of
+      after the whole answer — the same time-to-first-token idea Module 55 measures, applied here as the response
+      mechanism, not just a metric. A citation-bearing answer still streams fine: send the chunk IDs just before the
+      streamed text or as a trailing event once generation finishes.
     </p>
 
     <h2>One call here, many calls in an agent loop</h2>
     <p>
-      Everything above is this module's whole job: one embed, one retrieve, one generate, one response. Module 85's
-      agent loop reuses this exact request path as a single tool call inside its plan-act-observe loop, but a user
-      question there can trigger it — or others like it — several times before the loop produces a final answer. This
-      module's latency and streaming design is what one of those calls looks like; multiply it by however many
-      iterations the loop runs to get the agent's actual end-to-end latency.
+      This module's whole job: one embed, one retrieve, one generate, one response. Module 85's agent loop reuses
+      this exact request path as a single tool call inside its plan-act-observe loop — a user question there can
+      trigger it several times before the loop produces a final answer. Multiply this module's latency by however
+      many iterations the loop runs to get the agent's actual end-to-end latency.
     </p>
 
     <h2>Try it in your flavor</h2>

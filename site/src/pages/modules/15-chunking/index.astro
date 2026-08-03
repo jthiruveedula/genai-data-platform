@@ -38,40 +38,48 @@ const moduleData = MODULES.find((m) => m.id === moduleId)!;
     <ModuleFlowDiagram moduleId={moduleId} />
 
     <h2>Fixed vs. recursive vs. semantic vs. layout-aware</h2>
-    <p>
-      <strong>Fixed-size</strong> chunking cuts every N characters/tokens regardless of content — simple, but it
-      slices sentences and tables in half. <strong>Recursive</strong> chunking tries a sequence of separators
-      (paragraph, then sentence, then word) so it prefers natural breaks while still respecting a size limit — the
-      practical default. <strong>Semantic</strong> chunking uses embedding similarity between adjacent sentences to
-      find natural topic boundaries rather than a size limit at all. <strong>Layout-aware</strong> chunking (needed
-      for PDFs with tables/columns) uses the document's visual structure — from Module 10's OCR/parsing stage — so a
-      table row doesn't get split from its header.
-    </p>
+    <p class="concept-comparison-lede">Four ways to decide where a chunk boundary falls:</p>
+    <div class="concept-comparison" role="list">
+      <div class="concept-comparison-item" role="listitem">
+        <span class="chip chip--accent">FIXED-SIZE</span>
+        <p>Cuts every N characters/tokens regardless of content — simple, but slices sentences and tables in half.</p>
+      </div>
+      <div class="concept-comparison-item" role="listitem">
+        <span class="chip">RECURSIVE</span>
+        <p>Tries separators in order (paragraph, then sentence, then word) to prefer natural breaks within a size limit — the practical default.</p>
+      </div>
+      <div class="concept-comparison-item" role="listitem">
+        <span class="chip">SEMANTIC</span>
+        <p>Uses embedding similarity between adjacent sentences to find topic boundaries instead of a size limit.</p>
+      </div>
+      <div class="concept-comparison-item" role="listitem">
+        <span class="chip">LAYOUT-AWARE</span>
+        <p>Uses the document's visual structure from Module 10's OCR/parsing stage, so a table row doesn't split from its header.</p>
+      </div>
+    </div>
 
     <h2>Chunk size and overlap</h2>
     <p>
-      Too small, and a chunk loses the surrounding context a question needs ("orphaned context"). Too large, and
-      irrelevant text dilutes the embedding, making retrieval less precise, and you waste context-window budget at
-      query time. <strong>Overlap</strong> (repeating the tail of one chunk at the start of the next) reduces the
-      chance that a key sentence gets split exactly at a chunk boundary — at the cost of some storage and embedding
-      redundancy.
+      Too small loses the surrounding context a question needs ("orphaned context"). Too large dilutes the
+      embedding with irrelevant text and wastes context-window budget at query time. <strong>Overlap</strong> —
+      repeating the tail of one chunk at the start of the next — cuts the odds of a key sentence splitting at a
+      boundary, at the cost of some storage and embedding redundancy.
     </p>
 
     <ChunkOverlapDemo />
 
     <h2>Parent-document retrieval: embed small, return big</h2>
     <p>
-      Every strategy above picks one chunk size and uses it for both embedding and retrieval. <strong>Parent-document
-      retrieval</strong> splits that decision in two: embed small "child" chunks (a sentence or two) so similarity
-      search stays precise, but store a pointer from each child back to its larger "parent" chunk or full section —
-      and return the parent to the model, not the child. The small chunk wins the search; the bigger one answers the
-      question.
+      Every strategy above uses one chunk size for both embedding and retrieval. <strong>Parent-document
+      retrieval</strong> splits that in two: embed small "child" chunks (a sentence or two) for precise similarity
+      search, but store a pointer from each child to its larger "parent" chunk or full section — and return the
+      parent to the model, not the child. The small chunk wins the search; the bigger one answers the question.
     </p>
     <p>
-      <strong>Sentence-window retrieval</strong> is the same idea at a smaller radius: embed and match on a single
-      sentence, but expand the returned context to include the N sentences immediately before and after it. Both
-      patterns solve the same tension as chunk size and overlap above — precise matching wants small chunks, useful
-      answers want surrounding context — without forcing one chunk size to do both jobs.
+      <strong>Sentence-window retrieval</strong> is the same idea at a smaller radius: match on a single sentence,
+      then expand the returned context to the N sentences around it. Both patterns resolve the same tension as
+      chunk size and overlap above — precise matching wants small chunks, useful answers want surrounding context —
+      without forcing one size to do both jobs.
     </p>
 
     <h2>Try it in your flavor</h2>

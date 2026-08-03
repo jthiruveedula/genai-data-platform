@@ -40,56 +40,72 @@ const moduleData = MODULES.find((m) => m.id === moduleId)!;
     <ModuleFlowDiagram moduleId={moduleId} />
 
     <h2>Traces and spans for RAG</h2>
+    <p>A single user question touches four stages — logged separately, they're nearly impossible to reconstruct.</p>
+    <div class="concept-flow" role="list" aria-label="RAG request stages">
+      <span class="chip chip--accent" role="listitem">EMBED QUERY</span>
+      <span class="concept-flow-arrow" aria-hidden="true">→</span>
+      <span class="chip" role="listitem">RETRIEVE CHUNKS</span>
+      <span class="concept-flow-arrow" aria-hidden="true">→</span>
+      <span class="chip" role="listitem">ASSEMBLE PROMPT</span>
+      <span class="concept-flow-arrow" aria-hidden="true">→</span>
+      <span class="chip" role="listitem">CALL MODEL</span>
+    </div>
     <p>
-      A single user question touches four stages: embed the query, retrieve chunks, assemble the prompt, and call the
-      model. Logging each stage separately makes it nearly impossible to reconstruct what happened for one request.
-      Instead, wrap the whole request in one <strong>trace</strong>, with each stage as a nested <strong>span</strong>.
-      When a user reports a bad answer, you open one trace and see exactly which stage went wrong — instead of
-      grepping four different logs and hoping the timestamps line up.
+      Wrap the whole request in one <strong>trace</strong>, with each stage as a nested <strong>span</strong>. When a
+      user reports a bad answer, open one trace and see exactly which stage went wrong — instead of grepping four
+      logs and hoping the timestamps line up.
     </p>
 
     <TraceWaterfallDemo />
 
     <h2>Tracing an agent loop: a tree, not a waterfall</h2>
+    <p class="concept-comparison-lede">Trace shape follows call shape:</p>
+    <div class="concept-comparison" role="list">
+      <div class="concept-comparison-item" role="listitem">
+        <span class="chip chip--accent">WATERFALL</span>
+        <p>A RAG call is linear — embed, retrieve, assemble, generate — one bar per stage.</p>
+      </div>
+      <div class="concept-comparison-item" role="listitem">
+        <span class="chip">TREE</span>
+        <p>Module 85's agent loop repeats plan/act/observe, and a tool call can trigger nested calls — each iteration is a span with its own child spans.</p>
+      </div>
+    </div>
     <p>
-      The four-stage trace above is a flat waterfall because a single RAG call is linear: embed, retrieve, assemble,
-      generate, done. Module 85's agent loop isn't linear — plan, act, observe repeats, and a tool call can itself
-      trigger a nested retrieval or another tool call. The trace for that is a <strong>tree</strong>: each loop
-      iteration is a span with its own child spans, not another bar appended to the same waterfall. Flattening an
-      agent trace back into a waterfall loses exactly the information you need most — which iteration of the loop,
-      how many levels deep, is where things went wrong.
-    </p>
-    <p>
-      The practical difference: a RAG trace answers "which of these four stages was slow or wrong." An agent trace
-      has to answer "which iteration, and which tool call inside it" — so it needs an iteration index and a parent-span
-      link on every tool-call span, not just a stage name.
+      Flattening an agent trace back into a waterfall loses exactly the information you need most — which iteration,
+      how many levels deep, is where things went wrong. A RAG trace only has to answer "which of these four stages
+      was slow or wrong"; an agent trace needs an iteration index and a parent-span link on every tool-call span.
     </p>
 
     <AgentTraceTreeDemo />
 
     <h2>Token accounting per request</h2>
     <p>
-      Attach input, output, and cached token counts as attributes on the generation span, per request. This looks like
-      overkill until Module 75, where the FinOps unit-economics work is a straight SQL join against this exact data —
-      without it, cost analysis degenerates into "the monthly bill went up, no idea why."
+      Attach input, output, and cached token counts as attributes on the generation span, per request. This looks
+      like overkill until Module 75, where the FinOps unit-economics work is a straight SQL join against this exact
+      data — without it, cost analysis degenerates into "the monthly bill went up, no idea why."
     </p>
 
     <h2>Latency budgets: TTFT vs. total latency</h2>
-    <p>
-      <strong>Time-to-first-token (TTFT)</strong> is how long a user waits before anything appears — the number that
-      determines whether a streaming response feels instant or sluggish. <strong>Total latency</strong> is how long
-      the full answer takes. A model can have great TTFT and mediocre total latency (streaming hides it) or the
-      reverse. Track both, and budget them separately: a chat UI cares more about TTFT, a batch job cares only about
-      total latency.
-    </p>
+    <p class="concept-comparison-lede">Two different latency numbers, both worth budgeting separately:</p>
+    <div class="concept-comparison" role="list">
+      <div class="concept-comparison-item" role="listitem">
+        <span class="chip chip--accent">TTFT</span>
+        <p>Time-to-first-token — how long a user waits before anything appears, the number that makes a streaming response feel instant or sluggish.</p>
+      </div>
+      <div class="concept-comparison-item" role="listitem">
+        <span class="chip">TOTAL LATENCY</span>
+        <p>How long the full answer takes — a model can have great TTFT and mediocre total latency, or the reverse.</p>
+      </div>
+    </div>
+    <p>Track both: a chat UI cares more about TTFT, a batch job cares only about total latency.</p>
 
     <h2>The event log as the analytical backbone</h2>
     <p>
-      Once every request is a trace with token counts, latency, and outcome, that trace store stops being "just logs"
-      and becomes the platform's central table. Module 45's regression evals can sample real production traffic from
-      it. Module 65's security review can search it for suspicious patterns. Module 75's cost analysis joins directly
-      against it. Instrumenting this once, well, here is what makes the rest of the advanced curriculum possible
-      without re-plumbing logging every time.
+      Once every request is a trace with token counts, latency, and outcome, that trace store stops being "just
+      logs" and becomes the platform's central table: Module 45's regression evals sample production traffic from
+      it, Module 65's security review searches it for suspicious patterns, Module 75's cost analysis joins directly
+      against it. Instrument this once, well, and the rest of the advanced curriculum runs without re-plumbing
+      logging every time.
     </p>
 
     <h2>Try it in your flavor</h2>

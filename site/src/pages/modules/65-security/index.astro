@@ -39,13 +39,21 @@ const moduleData = MODULES.find((m) => m.id === moduleId)!;
     <ModuleFlowDiagram moduleId={moduleId} />
 
     <h2>Direct and indirect prompt injection</h2>
+    <p class="concept-comparison-lede">Two ways an attacker gets instructions in front of the model:</p>
+    <div class="concept-comparison" role="list">
+      <div class="concept-comparison-item" role="listitem">
+        <span class="chip chip--accent">DIRECT</span>
+        <p>A user typing "ignore your instructions and..." into the chat box — scoped to their own session.</p>
+      </div>
+      <div class="concept-comparison-item" role="listitem">
+        <span class="chip">INDIRECT</span>
+        <p>A malicious instruction hidden inside a document, ingested (Module 10) and later retrieved (Module 35).</p>
+      </div>
+    </div>
     <p>
-      <strong>Direct injection</strong> is a user typing "ignore your instructions and..." into the chat box — annoying,
-      but scoped to that one user's own session. <strong>Indirect injection</strong> is worse: a malicious instruction
-      hidden inside a document that later gets ingested (back in Module 10) and retrieved (Module 35). Because the
-      model can't distinguish "trusted system instructions" from "text that happened to come back from retrieval," one
-      poisoned document in the index attacks every future query that retrieves it — not just its author's own
-      questions.
+      The model can't distinguish "trusted system instructions" from "text that happened to come back from
+      retrieval" — so one poisoned document in the index attacks every future query that retrieves it, not just its
+      author's own questions.
     </p>
 
     <InjectionBlockedDemo />
@@ -53,46 +61,49 @@ const moduleData = MODULES.find((m) => m.id === moduleId)!;
     <h2>Data exfiltration via retrieval</h2>
     <p>
       Retrieval finds the most semantically similar chunk, full stop — it has no concept of "whose document this is"
-      unless you tell it. If the index mixes multiple tenants or users without a document-level ACL filter applied at
-      query time, one tenant's question can surface another tenant's private chunks. This isn't a hypothetical: it's
-      the direct consequence of skipping the access-control step that Module 20's embeddings work doesn't force you to
-      think about.
+      unless you tell it. Mix multiple tenants in one index without a document-level ACL filter at query time, and
+      one tenant's question can surface another tenant's private chunks — the direct consequence of skipping an
+      access-control step Module 20's embeddings work doesn't force you to think about.
     </p>
 
     <h2>Jailbreaks vs. injection</h2>
-    <p>
-      It's worth keeping these distinct. A <strong>jailbreak</strong> targets the model's own safety training,
-      usually through the user's own prompt, to get it to say something it normally wouldn't. <strong>Injection</strong>
-      doesn't need to break any safety training at all — it just smuggles instructions in through data the model
-      treats as part of its context, exploiting the fact that the model can't tell instructions from content.
-    </p>
+    <p class="concept-comparison-lede">Worth keeping distinct:</p>
+    <div class="concept-comparison" role="list">
+      <div class="concept-comparison-item" role="listitem">
+        <span class="chip chip--accent">JAILBREAK</span>
+        <p>Targets the model's own safety training, usually via the user's own prompt, to get it to say something it normally wouldn't.</p>
+      </div>
+      <div class="concept-comparison-item" role="listitem">
+        <span class="chip">INJECTION</span>
+        <p>Doesn't need to break safety training at all — it smuggles instructions in through data the model treats as context.</p>
+      </div>
+    </div>
+    <p>Both exploit the same root cause: the model can't tell instructions from content.</p>
 
     <h2>Agent-specific threats: tool-call injection and excessive agency</h2>
     <p>
       Everything above assumes the model's only output is text a human reads. Module 85's agents raise the stakes: an
-      injected instruction hidden in a retrieved document doesn't just poison an answer, it can make the agent <em>call
-      a tool</em> — <strong>tool-call injection</strong>. The same document-poisoning attack from the section above now
-      has a blast radius measured in side effects (sent emails, deleted records, spent money), not just a wrong
-      sentence on screen.
+      injected instruction hidden in a retrieved document can make the agent <em>call a tool</em> — <strong>tool-call
+      injection</strong> — turning the same document-poisoning attack into side effects (sent emails, deleted
+      records, spent money) instead of a wrong sentence on screen.
     </p>
     <p>
       <strong>Excessive agency</strong> is the other half: an agent holding more tool scope than its task needs turns
-      any single injected instruction or planning mistake into whatever that scope allows. Module 85's least-privilege
-      tool access and scoped, short-lived OAuth tokens are this module's guardrails applied to agents specifically —
-      the human-approval gate on side-effecting calls is the output-sanitization step above, just for actions instead
-      of rendered text.
+      any single injected instruction or planning mistake into whatever that scope allows. Module 85's
+      least-privilege tool access and scoped, short-lived OAuth tokens are these guardrails applied to agents — the
+      human-approval gate on side-effecting calls is just the output-sanitization step above, for actions instead of
+      rendered text.
     </p>
 
     <AgentToolCallInjectionDemo />
 
     <h2>Output handling: treat model output as untrusted</h2>
     <p>
-      If your frontend renders the model's answer as HTML without sanitizing it, and an attacker manages (via
-      injection) to get the model to emit a <code>&lt;script&gt;</code> tag, you have an XSS vulnerability that
-      originates from your own LLM. The fix is the same one web security has always taught: never trust input you
-      didn't fully control the generation of, and model output — shaped by retrieved documents you don't fully
-      control — qualifies. The <strong>OWASP LLM Top 10</strong> catalogs this and the injection/exfiltration risks
-      above under a shared vocabulary worth knowing before you ship a RAG app to real users.
+      Render the model's answer as HTML without sanitizing it, and an attacker who gets it (via injection) to emit a <code>&lt;script&gt;</code> tag
+      hands you an XSS vulnerability that originates from your own LLM. The fix web security has always taught
+      applies here too: never trust input you didn't fully control the generation of — and model output, shaped by
+      retrieved documents you don't control, qualifies. The <strong>OWASP LLM Top 10</strong> catalogs this alongside
+      the injection/exfiltration risks above, worth knowing before shipping a RAG app to real users.
     </p>
 
     <h2>Try it in your flavor</h2>
