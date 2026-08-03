@@ -73,8 +73,7 @@ const moduleData = MODULES.find((m) => m.id === moduleId)!;
 
     <h2>Data quality and PII redaction before embedding</h2>
     <p>
-      Everything above assumes the raw file is safe to store and eventually embed. It often isn't.
-      <strong>Schema validation</strong> at ingestion time — does this record have the fields and types downstream
+      Everything above assumes the raw file is safe to store and eventually embed. It often isn't. <strong>Schema validation</strong> at ingestion time — does this record have the fields and types downstream
       stages expect? — catches malformed data before parsing. <strong>PII detection and redaction</strong> —
       scanning for emails, phone numbers, national IDs, and similar patterns — has to happen here too, before a
       customer's SSN ends up embedded and retrievable by anyone who asks the right question.

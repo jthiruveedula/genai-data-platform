@@ -49,8 +49,7 @@ const moduleData = MODULES.find((m) => m.id === moduleId)!;
 
     <h2>Rerankers</h2>
     <p>
-      Vector and hybrid search are optimized for speed over millions of chunks, which trades away precision. A
-      <strong>reranker</strong> (typically a cross-encoder) re-scores a small candidate set by looking at the query
+      Vector and hybrid search are optimized for speed over millions of chunks, which trades away precision. A <strong>reranker</strong> (typically a cross-encoder) re-scores a small candidate set by looking at the query
       and each candidate together, not independently — slower per item, far more accurate:
     </p>
     <div class="concept-flow" role="list" aria-label="Retrieval to reranking pipeline">
