@@ -1674,9 +1674,12 @@ a:hover {
   opacity: 0.85;
 }
 
+/* The handoff caps this at 132px. Trimmed to 92px so the statement, its
+   supporting line and both CTAs land in one viewport at desktop widths —
+   still poster-scale, still the page's largest type. */
 .pf-poster__h2 {
   margin: 20px 0 0;
-  font-size: clamp(38px, 8vw, 132px);
+  font-size: clamp(38px, 6vw, 92px);
   line-height: 0.86;
   letter-spacing: -0.045em;
   font-weight: 800;
