@@ -186,6 +186,26 @@ const jsonLd = {
     line-height: 1.6;
   }
 
+  /* Native <details> shows its content instantly with no transition — the
+     browser only paints `.faq-answer` once `display` flips from `none` to
+     `block`, and a CSS `animation` on an element restarts each time it goes
+     from not-rendered to rendered. So this plays fresh on every open, with
+     no JS and no risk to the reduced-render-when-closed a11y behavior
+     `<details>` gives for free (unlike overriding `display` to fake a
+     height transition, which would keep closed answers in the a11y tree). */
+  @media (prefers-reduced-motion: no-preference) {
+    .faq-answer {
+      animation: faq-answer-in 0.35s var(--ease-out);
+    }
+  }
+
+  @keyframes faq-answer-in {
+    from {
+      opacity: 0;
+      transform: translateY(-6px);
+    }
+  }
+
   @media (max-width: 640px) {
     .faq-question {
       gap: 0.6rem;
