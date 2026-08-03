@@ -101,6 +101,13 @@ const headingId = `recap-heading-${moduleId}`;
           if (!entries.some((e) => e.isIntersecting)) return;
           observer.disconnect();
           markRecapViewed(moduleId);
+          // The closing beat of every module — takeaways and their visual
+          // land in one cascading breath instead of appearing fully-formed,
+          // same "reveal, don't just render" language as the homepage's
+          // ScrollTrigger reveals. CSS-only (no gsap import): this section
+          // repeats on all 12 module pages, so its cost is paid on every
+          // module page load, not once on the homepage.
+          root.classList.add("is-revealed");
           if (chartEl) {
             import("../../lib/recap-chart-render").then(({ mountRecapChart }) => {
               mountRecapChart(chartEl, chartEl.dataset.recapChart as RecapChartId);
@@ -151,6 +158,56 @@ const headingId = `recap-heading-${moduleId}`;
     color: var(--accent-text, var(--accent));
     font-family: var(--font-mono);
     font-size: 0.85rem;
+  }
+
+  .recap-takeaways li,
+  .recap-visual {
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.5s var(--ease-out), transform 0.5s var(--ease-out);
+  }
+
+  .recap-takeaways li:nth-child(1) { transition-delay: 0.05s; }
+  .recap-takeaways li:nth-child(2) { transition-delay: 0.15s; }
+  .recap-takeaways li:nth-child(3) { transition-delay: 0.25s; }
+  .recap-visual { transition-delay: 0.35s; }
+
+  .module-recap.is-revealed .recap-takeaways li,
+  .module-recap.is-revealed .recap-visual {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .recap-flow-node,
+  .recap-layer {
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.4s var(--ease-out), transform 0.4s var(--ease-out);
+  }
+
+  .module-recap.is-revealed .recap-flow-node,
+  .module-recap.is-revealed .recap-layer {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .recap-flow-node:nth-child(3) { transition-delay: 0.1s; }
+  .recap-flow-node:nth-child(5) { transition-delay: 0.2s; }
+  .recap-flow-node:nth-child(7) { transition-delay: 0.3s; }
+  .recap-flow-node:nth-child(9) { transition-delay: 0.4s; }
+  .recap-layer:nth-child(2) { transition-delay: 0.1s; }
+  .recap-layer:nth-child(3) { transition-delay: 0.2s; }
+  .recap-layer:nth-child(4) { transition-delay: 0.3s; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .recap-takeaways li,
+    .recap-visual,
+    .recap-flow-node,
+    .recap-layer {
+      opacity: 1;
+      transform: none;
+      transition: none;
+    }
   }
 
   .recap-visual {

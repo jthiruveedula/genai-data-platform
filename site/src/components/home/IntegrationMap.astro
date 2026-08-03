@@ -99,6 +99,9 @@ const positioned = NODES.map((n) => {
 </section>
 
 <script>
+  import { gsap } from "gsap";
+  import { stagger as staggerIn } from "../../lib/motion/primitives";
+
   function setup() {
     const rootEl = document.querySelector<HTMLElement>("[data-integrate]");
     if (!rootEl) return;
@@ -136,8 +139,63 @@ const positioned = NODES.map((n) => {
     });
   }
 
+  // Cinematic entrance: the runtime hub pulses in, connector lines draw
+  // outward from it, then each system node cascades in along its own line —
+  // "one runtime, six doors opening" instead of a static diagram appearing
+  // fully-formed. CSS-only (no ScrollTrigger import) since this section
+  // isn't scrubbed to scroll position, just revealed once on entry — keeps
+  // the vendor-chunk cost that WhyItMatters/CurriculumJourney pay for a
+  // scrubbed reveal off this section entirely.
+  function animateEntrance() {
+    const rootEl = document.querySelector<HTMLElement>("[data-integrate]");
+    const mapEl = rootEl?.querySelector<HTMLElement>("[data-integrate-map]");
+    if (!rootEl || !mapEl || mapEl.dataset.integrateAnimated === "true") return;
+    mapEl.dataset.integrateAnimated = "true";
+
+    const center = mapEl.querySelector<HTMLElement>(".integrate-center");
+    const lines = gsap.utils.toArray<SVGLineElement>("[data-integrate-line]", mapEl);
+    const nodeEls = gsap.utils.toArray<HTMLElement>("[data-integrate-node]", mapEl);
+
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      gsap.set([center, ...lines, ...nodeEls], { autoAlpha: 1 });
+      return;
+    }
+
+    lines.forEach((line) => {
+      const length = line.getTotalLength();
+      gsap.set(line, { strokeDasharray: length, strokeDashoffset: length });
+    });
+
+    const tl = gsap.timeline();
+    if (center) tl.from(center, { autoAlpha: 0, scale: 0.6, duration: 0.4, ease: "back.out(2)" });
+    tl.to(lines, { strokeDashoffset: 0, duration: 0.5, ease: "power2.out", stagger: 0.08 }, "-=0.1");
+    tl.add(() => staggerIn(nodeEls, { y: 10, duration: 0.4, stagger: 0.06 }), "-=0.35");
+  }
+
+  function observeEntrance() {
+    const rootEl = document.querySelector<HTMLElement>("[data-integrate]");
+    if (!rootEl) return;
+    if (typeof IntersectionObserver !== "function") {
+      animateEntrance();
+      return;
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((entry) => entry.isIntersecting)) return;
+        observer.disconnect();
+        animateEntrance();
+      },
+      { rootMargin: "200px 0px" },
+    );
+    observer.observe(rootEl);
+  }
+
   setup();
-  document.addEventListener("astro:page-load", setup);
+  observeEntrance();
+  document.addEventListener("astro:page-load", () => {
+    setup();
+    observeEntrance();
+  });
 </script>
 
 <style>
