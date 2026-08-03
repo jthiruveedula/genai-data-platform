@@ -419,49 +419,47 @@ const SERVICE_OVERLAYS = [
       }
 
       // ---- Boot-sequence: "the system powering on" ----------------------
-      // Hardcoded to match each <rect>'s own x/y/width/height in the markup
-      // above — same reasoning as WIRE_LENGTHS below: a getBBox() read per
-      // node would force a synchronous layout for values that never change.
-      const NODE_RECTS: Record<string, { x: number; y: number; width: number; height: number }> = {
-        sources: { x: 20, y: 70, width: 130, height: 40 },
-        ingest: { x: 175, y: 70, width: 130, height: 40 },
-        chunk: { x: 330, y: 70, width: 130, height: 40 },
-        embed: { x: 485, y: 70, width: 135, height: 40 },
-        index: { x: 230, y: 225, width: 180, height: 105 },
-        retrieve: { x: 60, y: 430, width: 140, height: 40 },
-        llm: { x: 260, y: 430, width: 120, height: 40 },
-        answer: { x: 440, y: 430, width: 140, height: 40 },
-        plan: { x: 20, y: 640, width: 180, height: 40 },
-        act: { x: 230, y: 640, width: 180, height: 40 },
-        observe: { x: 440, y: 640, width: 180, height: 40 },
-      };
+      // A single staggered tween across all 11 nodes (one GSAP tween
+      // instance, not 11) plus one scanner pass down the whole diagram —
+      // an earlier version gave every node its own timeline + scanner
+      // sub-timeline (~40 tween instances total), which read fine locally
+      // but pushed real CI's total-blocking-time from ~600ms to 758ms
+      // (over the 700ms budget) on its slower/throttled runner. This does
+      // the same "power on in sequence" read for a fraction of the
+      // main-thread cost. `is-dim` is removed per node via a plain
+      // `delayedCall` (a scheduled callback, not a tweened property) so
+      // the CSS transition already declared on `.hs-node rect`/`.hs-label`
+      // still carries the dim -> bright fade smoothly.
       const BOOT_ORDER = ["sources", "ingest", "chunk", "embed", "index", "retrieve", "llm", "answer", "plan", "act", "observe"];
       const scanner = rootEl.querySelector<SVGRectElement>(".hs-scanner");
+      const BOOT_STAGGER = 0.09;
 
-      // One node "powering on": the reusable scanner line sweeps down across
-      // its own box while the box itself pops from its dim/grayscale resting
-      // state to full accent brightness — read together as a single scan +
-      // power-up beat, not two independent effects.
-      function materializeNode(id: string) {
-        const box = NODE_RECTS[id];
-        const node = rootEl.querySelector<SVGGElement>(`[data-node="${id}"]`);
-        if (!box || !node) return;
-        if (scanner) {
-          gsap.set(scanner, { x: box.x, width: box.width, y: box.y, opacity: 0 });
-          gsap
-            .timeline()
-            .to(scanner, { opacity: 0.95, duration: 0.06 })
-            .to(scanner, { y: box.y + box.height, duration: 0.3, ease: "power1.inOut" }, "<")
-            .to(scanner, { opacity: 0, duration: 0.12 }, "-=0.1");
-        }
-        node.classList.remove("is-dim");
-        node.classList.add("is-arrived");
+      function bootSequence() {
+        BOOT_ORDER.forEach((id, i) => {
+          gsap.delayedCall(i * BOOT_STAGGER, () => {
+            rootEl.querySelector<SVGGElement>(`[data-node="${id}"]`)?.classList.remove("is-dim");
+          });
+        });
         gsap.fromTo(
-          node,
+          nodes,
           { scale: 0.86 },
-          { scale: 1, transformOrigin: "50% 50%", duration: 0.4, ease: "back.out(2.2)" },
+          {
+            scale: 1,
+            transformOrigin: "50% 50%",
+            duration: 0.4,
+            ease: "back.out(2.2)",
+            stagger: BOOT_STAGGER,
+          },
         );
-        gsap.delayedCall(0.55, () => node.classList.remove("is-arrived"));
+        if (scanner) {
+          gsap.set(scanner, { x: 10, width: 620, y: 60, opacity: 0.85 });
+          gsap.to(scanner, {
+            y: 690,
+            duration: BOOT_ORDER.length * BOOT_STAGGER + 0.35,
+            ease: "none",
+            onComplete: () => gsap.set(scanner, { opacity: 0 }),
+          });
+        }
       }
 
       const heroDoc = rootEl.querySelector<SVGGElement>("[data-hs-hero-doc]");
@@ -524,18 +522,9 @@ const SERVICE_OVERLAYS = [
             });
           });
         })
-        // One node per beat "powers on" in pipeline order — the scan sweep
-        // + pop defined in materializeNode above.
-        .call(
-          () => {
-            BOOT_ORDER.forEach((id, i) => {
-              gsap.delayedCall(i * 0.11, () => materializeNode(id));
-            });
-          },
-          undefined,
-          "-=0.1",
-        )
-        .to(flows, { autoAlpha: 1, duration: 0.6, ease: "power2.out" }, `+=${BOOT_ORDER.length * 0.11 + 0.2}`)
+        // Nodes power on in pipeline order — see bootSequence() above.
+        .call(() => bootSequence(), undefined, "-=0.1")
+        .to(flows, { autoAlpha: 1, duration: 0.6, ease: "power2.out" }, `+=${BOOT_ORDER.length * BOOT_STAGGER + 0.2}`)
         .to(packets, { autoAlpha: 1, duration: 0.4 }, "<");
 
       // ---- 1b. Guided first journey: one document, sources to answer ----
