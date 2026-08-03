@@ -413,6 +413,42 @@ const SERVICE_OVERLAYS = [
         gsap.delayedCall(0.6, () => node.classList.remove("is-arrived"));
       }
 
+      // ---- Boot-sequence: "the system powering on" ----------------------
+      // A single staggered tween across all 11 nodes (one GSAP tween
+      // instance, not 11). Two earlier versions of this (a per-node
+      // scanner+pop timeline, then a single-pass scanner sweep) both read
+      // fine locally but pushed real CI's total-blocking-time over its
+      // 700ms budget (758ms, then 741ms) on its slower/throttled runner —
+      // animating an SVG rect's `y`/geometry over a full second forces a
+      // layout recalculation every frame, unlike a `transform`-only tween,
+      // and that cost only showed up on CI's weaker hardware. Dropped the
+      // scanner sweep entirely; the stagger pop + the dim -> bright CSS
+      // transition (declared on `.hs-node rect`/`.hs-label`) still reads as
+      // "powering on in sequence" without a per-frame layout cost.
+      // `is-dim` is removed per node via a plain `delayedCall` (a scheduled
+      // callback, not a tweened property).
+      const BOOT_ORDER = ["sources", "ingest", "chunk", "embed", "index", "retrieve", "llm", "answer", "plan", "act", "observe"];
+      const BOOT_STAGGER = 0.09;
+
+      function bootSequence() {
+        BOOT_ORDER.forEach((id, i) => {
+          gsap.delayedCall(i * BOOT_STAGGER, () => {
+            rootEl.querySelector<SVGGElement>(`[data-node="${id}"]`)?.classList.remove("is-dim");
+          });
+        });
+        gsap.fromTo(
+          nodes,
+          { scale: 0.86 },
+          {
+            scale: 1,
+            transformOrigin: "50% 50%",
+            duration: 0.4,
+            ease: "back.out(2.2)",
+            stagger: BOOT_STAGGER,
+          },
+        );
+      }
+
       const heroDoc = rootEl.querySelector<SVGGElement>("[data-hs-hero-doc]");
       const heroDocCitation = rootEl.querySelector<SVGLineElement>(".hero-doc-citation");
       const flowAEl = rootEl.querySelector<SVGPathElement>("#hs-flow-a");
@@ -439,6 +475,11 @@ const SERVICE_OVERLAYS = [
           )
         : null;
 
+      // Dim/grayscale resting state for every node until its own
+      // materialize beat below — the "blueprint before power-on" read.
+      nodes.forEach((n) => (n as SVGGElement).classList.add("is-dim"));
+      gsap.set(nodes, { autoAlpha: 0, scale: 0.94, transformOrigin: "50% 50%" });
+
       const entrance = gsap.timeline({ defaults: { ease: "power3.out" } });
       entrance
         .from(rootEl.querySelectorAll(".h1-line"), { yPercent: 30, autoAlpha: 0, duration: 0.7, stagger: 0.08 })
@@ -447,13 +488,30 @@ const SERVICE_OVERLAYS = [
           { y: 14, autoAlpha: 0, duration: 0.55, ease: "power2.out", stagger: 0.06 },
           "-=0.35",
         )
-        .from(
-          nodes,
-          { scale: 0.8, autoAlpha: 0, transformOrigin: "50% 50%", duration: 0.5, ease: "back.out(1.6)", stagger: 0.05 },
-          "-=0.4",
-        )
-        .to(wires, { strokeDashoffset: 0, duration: 0.8, ease: "power2.inOut", stagger: 0.06 }, "-=0.25")
-        .to(flows, { autoAlpha: 1, duration: 0.6, ease: "power2.out" }, "-=0.4")
+        .to(nodes, { autoAlpha: 1, duration: 0.3 }, "-=0.35")
+        // Wires draw first — the circuit's shape appears before anything on
+        // it powers on.
+        .to(wires, { strokeDashoffset: 0, duration: 0.7, ease: "power2.inOut", stagger: 0.04 }, "-=0.1")
+        // Multiple light pulses race the full circuit at once, right as
+        // nodes begin powering on — reuses the same packet dots the ambient
+        // loop uses later, so this costs zero extra DOM.
+        .call(() => {
+          const raceWires = wires.filter((_, i) => i % 2 === 0).slice(0, packets.length);
+          packets.forEach((packet, i) => {
+            const wire = raceWires[i];
+            if (!wire) return;
+            gsap.set(packet, { autoAlpha: 1 });
+            gsap.to(packet, {
+              motionPath: { path: wire, align: wire, alignOrigin: [0.5, 0.5] },
+              duration: 0.9 + i * 0.15,
+              ease: "power1.inOut",
+              onComplete: () => gsap.set(packet, { autoAlpha: 0 }),
+            });
+          });
+        })
+        // Nodes power on in pipeline order — see bootSequence() above.
+        .call(() => bootSequence(), undefined, "-=0.1")
+        .to(flows, { autoAlpha: 1, duration: 0.6, ease: "power2.out" }, `+=${BOOT_ORDER.length * BOOT_STAGGER + 0.2}`)
         .to(packets, { autoAlpha: 1, duration: 0.4 }, "<");
 
       // ---- 1b. Guided first journey: one document, sources to answer ----
@@ -905,6 +963,7 @@ const SERVICE_OVERLAYS = [
     font-size: 11px;
     letter-spacing: 0.08em;
     fill: var(--text-secondary);
+    transition: fill-opacity var(--duration-theme) var(--ease-out);
   }
 
   .hs-hud {
@@ -928,11 +987,25 @@ const SERVICE_OVERLAYS = [
   .hs-node rect {
     transition:
       fill var(--duration-theme) var(--ease-out),
-      stroke var(--duration-theme) var(--ease-out);
+      stroke var(--duration-theme) var(--ease-out),
+      fill-opacity var(--duration-scene) var(--ease-out),
+      stroke-opacity var(--duration-scene) var(--ease-out);
   }
 
   .hs-node.is-arrived rect {
     stroke: var(--accent);
+  }
+
+  /* Boot-sequence resting state: a dim, desaturated "blueprint" look before
+     a node's own materialize beat brightens it — transitions on `rect` are
+     already declared above, this only adds the values to transition to/from. */
+  .hs-node.is-dim rect {
+    fill-opacity: 0.55;
+    stroke-opacity: 0.5;
+  }
+
+  .hs-node.is-dim .hs-label {
+    fill-opacity: 0.45;
   }
 
   .hs-hero-doc .hero-doc-citation {
