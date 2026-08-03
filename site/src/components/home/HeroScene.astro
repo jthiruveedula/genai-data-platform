@@ -659,7 +659,7 @@ const SERVICE_OVERLAYS = [
   .hero-title {
     margin: 0;
     font-family: var(--font-heading);
-    font-weight: 800;
+    font-weight: 700;
     /* Was clamp(2.6rem, 7vw, 5.25rem) — four lines at that size pushed the
        headline block past 700px tall, dominating the fold and crowding the
        schematic it's supposed to introduce. Compact by design now: the
@@ -955,7 +955,12 @@ const SERVICE_OVERLAYS = [
     font-family: var(--font-mono);
     font-size: 0.6rem;
     line-height: 1.35;
-    color: var(--accent-text);
+    /* Quiet secondary detail, not a second layer of shouting accent text —
+       9 of these render simultaneously, and at full --accent-text color
+       they competed with the diagram's own structure for attention instead
+       of reading as "more info if you want it." */
+    color: var(--text-secondary);
+    opacity: 0.75;
     pointer-events: none;
   }
 

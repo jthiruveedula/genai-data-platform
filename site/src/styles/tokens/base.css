@@ -63,9 +63,13 @@
   --glow-strength: 0.22; /* multiplier hint for accent glows */
   --shadow-panel: 0 24px 60px -24px rgba(0, 0, 0, 0.55);
 
-  /* typography */
+  /* typography — Space Grotesk (grotesk-sans) replaces Inter for display/
+     heading roles: a distinctive geometric-grotesk face still legible and
+     enterprise-appropriate, but reads as this platform's own identity
+     rather than the generic dark-tech-with-Inter default. Body/mono
+     unchanged — the pairing only needed a display-role refresh. */
   --font-body: "IBM Plex Sans", system-ui, sans-serif;
-  --font-heading: "Inter", system-ui, sans-serif;
+  --font-heading: "Space Grotesk", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
 
   /* motion */
@@ -334,7 +338,7 @@ article > ul {
 
 .section-title {
   font-size: clamp(1.6rem, 3.4vw, 2.5rem);
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: -0.02em;
   margin: 0.6rem 0 0.75rem;
 }
