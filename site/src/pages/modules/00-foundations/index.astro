@@ -38,48 +38,48 @@ const moduleData = MODULES.find((m) => m.id === moduleId)!;
 
     <h2>Tokens</h2>
     <p>
-      LLMs don't read characters or words — they read <strong>tokens</strong>, sub-word chunks produced by a
-      tokenizer. Pricing, context limits, and latency are all measured in tokens, not characters. A rough rule of
-      thumb for English text: 1 token ≈ 4 characters ≈ ¾ of a word.
+      LLMs read <strong>tokens</strong> — sub-word chunks — not characters or words. Pricing, context limits, and
+      latency are all measured in tokens. Rule of thumb: 1 token ≈ 4 characters ≈ ¾ of a word.
     </p>
 
     <h2>Embeddings &amp; vector similarity</h2>
     <p>
-      An embedding model maps a chunk of text to a fixed-length vector such that semantically similar text lands
-      close together in that vector space. "Similar" is measured with a distance metric — usually cosine similarity
-      or dot product. This is the mechanism that lets retrieval find "the docs about X" without exact keyword
-      matches.
+      An embedding model maps text to a vector so similar meanings land close together, measured by cosine similarity
+      or dot product — the mechanism that lets retrieval find "docs about X" without exact keyword matches.
     </p>
 
     <TokenizeEmbedDemo />
 
     <h2>Context windows</h2>
     <p>
-      The context window is the maximum number of tokens (input + output) a model call can hold. Everything a RAG
-      pipeline retrieves has to fit inside it, alongside the system prompt, the conversation history, and the
-      question itself — which is why chunking and retrieval quality (Module 35) matter more as context grows, not
-      less.
+      The max tokens (input + output) one model call can hold. Everything retrieved has to fit alongside the system
+      prompt, history, and question — why chunking and retrieval quality (Module 35) matter more as context grows.
     </p>
 
     <h2>RAG vs. fine-tuning vs. long-context</h2>
-    <p>
-      Three ways to get a model to "know" your data: <strong>RAG</strong> (retrieve relevant chunks at query time and
-      put them in the prompt), <strong>fine-tuning</strong> (bake knowledge/behavior into model weights), and
-      <strong>long-context stuffing</strong> (paste everything into a huge context window). This curriculum is
-      RAG-first because it's the cheapest to keep fresh — swap the index, not the model — but the trade-offs are
-      revisited at every path level.
-    </p>
+    <p class="concept-comparison-lede">Three ways to get a model to "know" your data:</p>
+    <div class="concept-comparison" role="list">
+      <div class="concept-comparison-item" role="listitem">
+        <span class="chip chip--accent">RAG</span>
+        <p>Retrieve relevant chunks at query time, put them in the prompt.</p>
+      </div>
+      <div class="concept-comparison-item" role="listitem">
+        <span class="chip">FINE-TUNING</span>
+        <p>Bake knowledge/behavior into the model's own weights.</p>
+      </div>
+      <div class="concept-comparison-item" role="listitem">
+        <span class="chip">LONG-CONTEXT</span>
+        <p>Paste everything into a huge context window.</p>
+      </div>
+    </div>
+    <p>This curriculum is RAG-first — cheapest to keep fresh, swap the index, not the model.</p>
 
     <h2>RAG vs. agents: one more foundational fork</h2>
     <p>
-      The three ways to get a model to "know" your data above all assume the task is a single question with a single
-      answer. Some tasks aren't: "find X, then compare it against last quarter's version, then draft a summary" needs
-      several steps, not one retrieval pass. That's what an <strong>agent</strong> (Module 85) is — a loop that plans,
-      acts, and observes across multiple tool calls, one of which is often the RAG call this curriculum spends its
-      next 80-odd modules building. Knowing whether a request needs a single RAG lookup or a multi-step agent loop is
-      itself a foundational decision, alongside RAG vs. fine-tuning vs. long-context above — and the default answer,
-      until proven otherwise, is RAG: it's simpler, cheaper, and faster than reaching for an agent loop on a task that
-      didn't need one.
+      The three options above assume one question, one answer. Some tasks aren't: "find X, compare it against last
+      quarter, draft a summary" needs several steps. That's an <strong>agent</strong> (Module 85) — a loop that
+      plans, acts, and observes across tool calls, often including the RAG call itself. Default answer until proven
+      otherwise: RAG — simpler, cheaper, faster than an agent loop on a task that didn't need one.
     </p>
 
     <h2>Try it in your flavor</h2>

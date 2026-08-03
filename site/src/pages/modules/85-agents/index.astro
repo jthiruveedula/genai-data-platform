@@ -44,89 +44,90 @@ const moduleData = MODULES.find((m) => m.id === moduleId)!;
 
     <h2>Function calling</h2>
     <p>
-      <strong>Function calling</strong> is the mechanism underneath every agent: the model emits a structured
-      description of a tool it wants to call (name and arguments), your runtime executes that tool — often the
-      Module 25 retrieval call itself — and the result goes back into the model's context as new input. The model
-      never runs code directly; it only ever asks, in a structured format your code chooses whether to honor.
+      The mechanism underneath every agent: the model emits a structured request to call a tool (name + arguments),
+      your runtime executes it — often the Module 25 retrieval call — and the result returns as new input. The model
+      never runs code directly, only asks.
     </p>
 
     <h2>Agent loops: plan, act, observe</h2>
     <p>
-      A single function call answers a single-hop question. An <strong>agent loop</strong> repeats plan → act →
-      observe until the task is done: decide what to do next, call a tool, look at the result, and decide again. Left
-      unbounded, a loop stuck on an unsolvable task will keep planning and acting forever — so every agent needs a
-      hard iteration or token budget that forces it to stop and report failure instead of spinning.
+      An <strong>agent loop</strong> repeats plan → act → observe until done. Left unbounded, a loop stuck on an
+      unsolvable task keeps spinning — every agent needs a hard iteration or token budget that forces it to stop and
+      report failure instead.
     </p>
 
     <AgentLoopDemo />
 
     <h2>MCP as a standard interface</h2>
     <p>
-      Early agent frameworks each invented their own way to wire up tools, which meant re-integrating every data
-      source per framework. <strong>MCP (Model Context Protocol)</strong> standardizes that interface: a tool or data
-      source implements one MCP server, and any MCP-aware agent can call it — the same value a database driver
-      provides, applied to agent tooling instead of SQL.
+      <strong>MCP (Model Context Protocol)</strong> standardizes tool wiring: a tool implements one MCP server, any
+      MCP-aware agent can call it — the same value a database driver provides, applied to agent tooling.
     </p>
 
     <h2>Agent development kits: buy the loop, don't build it</h2>
+    <p class="concept-comparison-lede">Almost nobody hand-rolls the loop above. Four picks, four trade-offs:</p>
+    <div class="concept-comparison" role="list">
+      <div class="concept-comparison-item" role="listitem">
+        <span class="chip chip--accent">LANGGRAPH</span>
+        <p>Explicit state graph, deterministic edges, built-in human-approval interrupt, full audit trail.</p>
+      </div>
+      <div class="concept-comparison-item" role="listitem">
+        <span class="chip">CREWAI</span>
+        <p>Role-based agents, fastest multi-agent prototype — less control once workflows outgrow simple roles.</p>
+      </div>
+      <div class="concept-comparison-item" role="listitem">
+        <span class="chip">GOOGLE ADK</span>
+        <p>Cloud-native pick when Vertex AI Agent Builder is the deployment target.</p>
+      </div>
+      <div class="concept-comparison-item" role="listitem">
+        <span class="chip">SEMANTIC KERNEL</span>
+        <p>Cloud-native pick for Bedrock Agents / Microsoft Foundry Agent Service.</p>
+      </div>
+    </div>
     <p>
-      The plan-act-observe loop above is a mechanism, not a product — in practice almost nobody hand-rolls it.
-      <strong>LangGraph</strong> models the loop as an explicit state graph instead of letting the model decide
-      transitions, which is why regulated teams reach for it: deterministic edges, a built-in <code>interrupt()</code>
-      for human approval, and a full audit trail. <strong>CrewAI</strong> trades that determinism for speed — role-based
-      agents that get a multi-agent prototype running fastest, at the cost of less control once the workflow outgrows
-      simple roles. <strong>Google's Agent Development Kit (ADK)</strong> and <strong>Microsoft's Agent Framework /
-      Semantic Kernel</strong> are the cloud-native picks when a managed deployment target (Vertex AI Agent Builder,
-      Bedrock Agents, Microsoft Foundry Agent Service — the same services named in this module's case study above)
-      matters more than framework portability. None of them replace the safety rules below — a framework schedules
-      the loop, it doesn't decide what the loop is allowed to touch.
-    </p>
-    <p>
-      <a href="https://github.com/jthiruveedula/genai-data-platform/tree/main/labs/85-agents-langgraph-loop" target="_blank" rel="noopener noreferrer">A real, runnable lab</a>
-      builds the LangGraph pattern above end to end: a genuine <code>StateGraph</code> with a hard iteration budget
-      and a human-approval gate on side-effecting tool calls, proven with a test suite that actually runs the loop
-      instead of just asserting it compiles.
+      None replace the safety rules below — a framework schedules the loop, it doesn't decide what the loop can
+      touch. <a href="https://github.com/jthiruveedula/genai-data-platform/tree/main/labs/85-agents-langgraph-loop" target="_blank" rel="noopener noreferrer">A real, runnable lab</a> builds
+      the LangGraph pattern end to end — a genuine <code>StateGraph</code> with a hard iteration budget and a
+      human-approval gate, proven by a test suite that actually runs the loop.
     </p>
 
     <h2>Authenticating agents and MCP servers</h2>
+    <div class="concept-flow" role="list" aria-label="Agent credential flow">
+      <span class="chip chip--accent" role="listitem">AGENT</span>
+      <span class="concept-flow-arrow" aria-hidden="true">→</span>
+      <span class="chip" role="listitem">SCOPED BEARER TOKEN</span>
+      <span class="concept-flow-arrow" aria-hidden="true">→</span>
+      <span class="chip" role="listitem">MCP SERVER VALIDATES</span>
+      <span class="concept-flow-arrow" aria-hidden="true">→</span>
+      <span class="chip" role="listitem">TOOL EXECUTES</span>
+    </div>
     <p>
-      An agent's tool calls are only as safe as the credentials behind them. The MCP specification requires any
-      remote MCP server to act as an <strong>OAuth 2.1 resource server</strong>: a separate authorization server
-      issues the token, the MCP server only validates it and checks scopes — authentication and authorization stay
-      two distinct layers, not one. Every tool call over HTTP carries a scoped, short-lived
-      <code>Authorization: Bearer</code> token rather than a long-lived API key baked into the agent's config, so a
-      leaked token expires and can't be replayed for more than its narrow scope allows.
+      MCP requires any remote server to act as an <strong>OAuth 2.1 resource server</strong> — a separate
+      authorization server issues the token, the MCP server only validates it and checks scopes. Every call carries a
+      short-lived <code>Authorization: Bearer</code> token, never a long-lived API key — a leaked token expires and
+      can't be replayed beyond its narrow scope.
     </p>
     <p>
-      This is least privilege from the safety section below, applied to the credential itself: a research agent's
-      token should carry read-only scopes on the one MCP server it needs, never an org-wide service-account key. Per
-      cloud, that token minting is Workload Identity Federation (GCP), an IAM role assumed via STS (AWS), or a
-      managed identity (Azure) — the OSS flavor's LiteLLM gateway plus an external OAuth provider (Keycloak, Auth0)
-      does the same job self-hosted.
-    </p>
-    <p>
-      This isn't just a diagram — <a href="https://github.com/jthiruveedula/genai-data-platform/tree/main/labs/85-agents-mcp-oauth" target="_blank" rel="noopener noreferrer">a real, runnable lab</a>
-      implements this exact gate: a FastAPI MCP server that mints/validates a scoped JWT and rejects an expired or
-      under-scoped token before the tool ever runs, with a test suite that mints real signed tokens to prove it —
-      <code>pip install -r requirements.txt && pytest -v</code>, no external identity provider required to try it.
+      Least privilege applied to the credential itself: read-only scope on the one server a task needs, never an
+      org-wide key. Per cloud: Workload Identity Federation (GCP), an IAM role via STS (AWS), a managed identity
+      (Azure), or LiteLLM + an external OAuth provider (OSS). <a href="https://github.com/jthiruveedula/genai-data-platform/tree/main/labs/85-agents-mcp-oauth" target="_blank" rel="noopener noreferrer">A real, runnable lab</a> implements
+      this exact gate — a FastAPI MCP server that mints/validates a scoped JWT and rejects an expired or
+      under-scoped token, proven with a test suite that mints real signed tokens. <code>pip install -r requirements.txt && pytest -v</code>, no external identity provider required.
     </p>
 
     <h2>When RAG beats agents (and vice versa)</h2>
     <p>
-      If the task is "look this one thing up," Module 25's single-hop RAG is faster, cheaper, and simpler — an agent
-      loop around it just adds latency for no benefit. Agents earn their overhead on genuinely multi-step tasks:
-      "find X, then compare it against last quarter's version, then draft a summary" needs planning across several
-      tool calls that a single retrieval pass can't do. Knowing which one a request needs is itself a design decision,
-      not a default.
+      "Look this one thing up" → Module 25's single-hop RAG, faster and simpler. "Find X, compare it against last
+      quarter, draft a summary" → an agent, planning across tool calls a single retrieval pass can't do. Which one a
+      request needs is a design decision, not a default.
     </p>
 
     <h2>Safety: least privilege and human gates</h2>
     <p>
-      An agent should only ever hold the tools and scopes its task actually needs — a research agent doesn't need
-      write access to a database. And for any tool call with a real side effect (sending an email, deleting a
-      record, spending money), insert a human-approval gate before it executes. Combined with the security lessons
-      from Module 65, this is what keeps a tool-using model from turning a planning mistake, or an injected
-      instruction, into an action with real consequences.
+      An agent holds only the tools and scopes its task needs — a research agent doesn't need database write access.
+      Any tool call with a real side effect (sending, deleting, spending) gets a human-approval gate first. Combined
+      with Module 65's security lessons, this keeps a planning mistake or injected instruction from becoming a real
+      consequence.
     </p>
 
     <h2>Try it in your flavor</h2>
