@@ -14,6 +14,38 @@ html {
   scroll-behavior: smooth;
 }
 
+/* Cloud-bound accent ----------------------------------------------------
+   The cloud selection re-tints the single accent role rather than adding a
+   second one — the system stays mono, it just changes which mono it is.
+   Values are this site's established light-ground cloud accents (see
+   src/styles/tokens/<cloud>.css), which are the brand hues already tuned to
+   carry bg-coloured labels: each clears 4.5:1 against --color-bg, unlike the
+   raw brand colours (#ff9900 is 1.9:1 and would make the primary button and
+   poster field unreadable). The 600/200 steps derive from the base so the
+   ramp stays in step. */
+
+:root[data-pf-cloud="gcp"] {
+  --color-accent: #1a56c4;
+}
+
+:root[data-pf-cloud="aws"] {
+  --color-accent: #a85900;
+}
+
+:root[data-pf-cloud="azure"] {
+  --color-accent: #005a9e;
+}
+
+:root[data-pf-cloud="oss"] {
+  --color-accent: #12712f;
+}
+
+:root[data-pf-cloud] {
+  --color-accent-600: color-mix(in srgb, var(--color-accent) 84%, black);
+  --color-accent-700: color-mix(in srgb, var(--color-accent) 70%, black);
+  --color-accent-200: color-mix(in srgb, var(--color-accent) 26%, var(--color-bg));
+}
+
 *,
 *::before,
 *::after {

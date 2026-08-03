@@ -14,18 +14,36 @@ type Gizmo = { group: THREE.Group; update: (t: number) => void };
 
 type NodeData = { i: number; edge: THREE.LineBasicMaterial; giz: Gizmo };
 
-/** Each block runs the mechanic of its own stage inside the cube. */
-function buildGizmo(i: number, s: number, accent: THREE.Color, ink: THREE.Color): Gizmo {
+/**
+ * Each block runs the mechanic of its own stage inside the cube.
+ *
+ * Accent-coloured materials are registered in `accentMats` so the scene can
+ * re-tint them when the cloud selection changes — THREE copies the colour
+ * into each material, so mutating the shared `accent` alone isn't enough.
+ */
+function buildGizmo(
+  i: number,
+  s: number,
+  accent: THREE.Color,
+  ink: THREE.Color,
+  accentMats: { color: THREE.Color }[],
+): Gizmo {
   const g = new THREE.Group();
   const inkMat = () => new THREE.LineBasicMaterial({ color: ink, transparent: true, opacity: 0.75 });
-  const redMat = () => new THREE.LineBasicMaterial({ color: accent });
+  const redMat = () => {
+    const m = new THREE.LineBasicMaterial({ color: accent });
+    accentMats.push(m);
+    return m;
+  };
   const wire = (w: number, h: number, d: number, mat: THREE.LineBasicMaterial) =>
     new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(w, h, d)), mat);
   const cloud = (n: number, size: number, color: THREE.Color) => {
     const a = new Float32Array(n * 3);
     const geo = new THREE.BufferGeometry();
     geo.setAttribute("position", new THREE.BufferAttribute(a, 3));
-    return new THREE.Points(geo, new THREE.PointsMaterial({ color: color, size: size }));
+    const mat = new THREE.PointsMaterial({ color: color, size: size });
+    if (color === accent) accentMats.push(mat);
+    return new THREE.Points(geo, mat);
   };
   const r = (k: number) => {
     const x = Math.sin(k * 91.7) * 4375.85;
@@ -123,7 +141,9 @@ function buildGizmo(i: number, s: number, accent: THREE.Color, ink: THREE.Color)
     // query probe + expanding search
     const probe = wire(u * 0.3, u * 0.3, u * 0.3, redMat());
     g.add(probe);
-    const ring = wire(u * 2, u * 2, u * 2, new THREE.LineBasicMaterial({ color: accent, transparent: true }));
+    const ringMat = new THREE.LineBasicMaterial({ color: accent, transparent: true });
+    accentMats.push(ringMat);
+    const ring = wire(u * 2, u * 2, u * 2, ringMat);
     g.add(ring);
     const pts = cloud(50, 0.08, ink);
     g.add(pts);
@@ -224,6 +244,9 @@ export function createHeroScene(host: HTMLElement, colors: HeroColors, reduce: b
   grid.position.y = -7;
   group.add(grid);
 
+  /** Every material carrying the accent, re-tinted by `setAccent`. */
+  const accentMats: { color: THREE.Color }[] = [];
+
   const N = 10,
     gap = 4.4;
   const nodes: THREE.Group[] = [];
@@ -241,7 +264,7 @@ export function createHeroScene(host: HTMLElement, colors: HeroColors, reduce: b
     holder.add(box);
     holder.add(edge);
     holder.position.set((i - (N - 1) / 2) * gap, 0, 0);
-    const giz = buildGizmo(i, s, accent, ink);
+    const giz = buildGizmo(i, s, accent, ink, accentMats);
     holder.add(giz.group);
     holder.userData = { i: i, edge: edge.material as THREE.LineBasicMaterial, giz: giz } satisfies NodeData;
     group.add(holder);
@@ -268,7 +291,9 @@ export function createHeroScene(host: HTMLElement, colors: HeroColors, reduce: b
   }
   const pg = new THREE.BufferGeometry();
   pg.setAttribute("position", new THREE.BufferAttribute(pos, 3));
-  const points = new THREE.Points(pg, new THREE.PointsMaterial({ color: accent, size: 0.16 }));
+  const pointsMat = new THREE.PointsMaterial({ color: accent, size: 0.16 });
+  accentMats.push(pointsMat);
+  const points = new THREE.Points(pg, pointsMat);
   group.add(points);
 
   const span = gap * (N - 1);
@@ -352,6 +377,16 @@ export function createHeroScene(host: HTMLElement, colors: HeroColors, reduce: b
     });
   }
 
+  /**
+   * Re-tint the scene when the cloud selection changes. Cube edges read the
+   * shared `accent` every frame, so mutating it covers them; every other
+   * accent material holds its own copy and is updated here.
+   */
+  function setAccent(hex: string) {
+    accent.set(hex);
+    accentMats.forEach((m) => m.color.set(accent));
+  }
+
   function dispose() {
     renderer.dispose();
     renderer.domElement.remove();
@@ -359,5 +394,5 @@ export function createHeroScene(host: HTMLElement, colors: HeroColors, reduce: b
 
   resize();
 
-  return { frame, projectLabels, resize, dispose };
+  return { frame, projectLabels, resize, setAccent, dispose };
 }
