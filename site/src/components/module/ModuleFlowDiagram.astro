@@ -146,7 +146,25 @@ const cloudService = MODULE_CLOUD_SERVICE[moduleId];
     gap: 0.3rem;
     flex: 1 1 0;
     min-width: 9.5rem;
-    padding: 0.15rem 0.6rem;
+    padding: 0.5rem 0.6rem;
+    border-radius: var(--radius);
+    border: 1px solid transparent;
+    transition:
+      border-color var(--duration-micro) var(--ease-out),
+      background var(--duration-micro) var(--ease-out),
+      transform var(--duration-micro) var(--ease-out);
+  }
+
+  .flow-node:hover {
+    border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+    background: color-mix(in srgb, var(--accent) 6%, transparent);
+    transform: translateY(-2px);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .flow-node:hover {
+      transform: none;
+    }
   }
 
   .flow-index {
