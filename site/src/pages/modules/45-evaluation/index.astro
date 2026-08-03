@@ -84,8 +84,7 @@ const moduleData = MODULES.find((m) => m.id === moduleId)!;
 
     <h2>LLM-as-judge and calibration</h2>
     <p>
-      Most of these metrics are themselves computed by asking another LLM to score the response — an
-      <strong>LLM-as-judge</strong>. That's cheap and scales to hundreds of examples, but a judge model has its own
+      Most of these metrics are themselves computed by asking another LLM to score the response — an <strong>LLM-as-judge</strong>. That's cheap and scales to hundreds of examples, but a judge model has its own
       blind spots. Calibrate it: periodically compare judge scores against human ratings on the same examples, and
       fix the judge prompt or model if they disagree often — before trusting it to gate anything.
     </p>

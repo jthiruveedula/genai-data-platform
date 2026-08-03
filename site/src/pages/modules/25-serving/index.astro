@@ -47,10 +47,8 @@ const moduleData = MODULES.find((m) => m.id === moduleId)!;
       <span class="chip" role="listitem">CALL LLM</span>
     </div>
     <p>
-      <strong>Embed</strong> the incoming question with the same model used in Module 20. <strong>Retrieve</strong>
-      the nearest chunks from the vector index. <strong>Construct a prompt</strong> with the question plus the
-      retrieved chunks, structured so the model can cite which chunk supports which claim. <strong>Call the LLM</strong>
-      — a fast model by default, escalating to a reasoning model only when the task needs it (Module 75 covers that
+      <strong>Embed</strong> the incoming question with the same model used in Module 20. <strong>Retrieve</strong> the nearest chunks from the vector index. <strong>Construct a prompt</strong> with the question plus the
+      retrieved chunks, structured so the model can cite which chunk supports which claim. <strong>Call the LLM</strong> — a fast model by default, escalating to a reasoning model only when the task needs it (Module 75 covers that
       trade-off in cost terms).
     </p>
 
@@ -72,8 +70,7 @@ const moduleData = MODULES.find((m) => m.id === moduleId)!;
 
     <h2>Streaming: return tokens as they're generated</h2>
     <p>
-      A blocking call makes users stare at a spinner for the model's full generation time. <strong>Streaming</strong>
-      returns tokens as the model produces them, so the first word appears in a few hundred milliseconds instead of
+      A blocking call makes users stare at a spinner for the model's full generation time. <strong>Streaming</strong> returns tokens as the model produces them, so the first word appears in a few hundred milliseconds instead of
       after the whole answer — the same time-to-first-token idea Module 55 measures, applied here as the response
       mechanism, not just a metric. A citation-bearing answer still streams fine: send the chunk IDs just before the
       streamed text or as a trailing event once generation finishes.

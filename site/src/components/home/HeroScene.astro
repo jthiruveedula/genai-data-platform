@@ -1,6 +1,7 @@
 ---
-import { LIFECYCLE, CONCEPTS, AGENT_LOOP_STAGES } from "../../data/platform";
+import { LIFECYCLE, AGENT_LOOP_STAGES } from "../../data/platform";
 import { CLOUDS, MODULES } from "../../data/modules";
+import HeroPipeline3D from "../HeroPipeline3D";
 
 const base = import.meta.env.BASE_URL;
 
@@ -83,23 +84,11 @@ const SERVICE_OVERLAYS = [
       </div>
       <p class="switch-caption">Click one — the diagram re-maps live.</p>
     </div>
-
-    <div class="concepts" data-rise>
-      <span class="concepts-label">YOU WILL MASTER</span>
-      <ul class="concepts-list" aria-label="Core concepts covered">
-        {
-          CONCEPTS.map((concept) => (
-            <li>
-              <span class="chip">{concept}</span>
-            </li>
-          ))
-        }
-      </ul>
-    </div>
   </div>
 
   <div class="hero-canvas" aria-hidden="true">
     <div class="hero-glow" data-hero-glow></div>
+    <HeroPipeline3D client:visible />
     <div class="canvas-stage" data-canvas-stage>
       <svg viewBox="0 0 640 860" fill="none" xmlns="http://www.w3.org/2000/svg">
         <defs>
@@ -674,29 +663,42 @@ const SERVICE_OVERLAYS = [
 <style>
   .hero {
     position: relative;
-    min-height: calc(100dvh - 60px);
-    display: grid;
-    /* Was 45/55 — the animated schematic is the "wow" moment this scene
-       exists to show off, and a bulkier headline column was crowding it.
-       Shifting the ratio (plus the smaller title size below) gives it
-       noticeably more room without the content column feeling cramped. */
-    grid-template-columns: minmax(0, 38fr) minmax(0, 62fr);
+    min-height: 100dvh;
+    display: flex;
     align-items: center;
-    gap: clamp(1.5rem, 4vw, 3rem);
     /* Homepage <main> is full-bleed (see BaseLayout.astro's
        main.main--full-bleed) so every section supplies its own horizontal
        gutter — this one never did, leaving the H1 flush against the
        viewport's left edge at every breakpoint (confirmed: 0px from the
        edge, not a rendering artifact). */
     padding: 2.5rem clamp(1.5rem, 5vw, 3rem) 3.5rem;
+    /* Clips the full-bleed 3D/glow layer to this section's own box instead
+       of risking page-level horizontal overflow. */
+    overflow: hidden;
   }
 
-  /* ---- Content column (left-aligned) ---- */
+  /* ---- Content column (left-aligned), floating over the full-bleed
+     canvas below — a translucent scrim panel keeps the headline/CTAs
+     readable regardless of what the 3D scene is doing behind it. ---- */
   .hero-content {
+    position: relative;
+    z-index: 1;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
     gap: 1.1rem;
+    max-width: 30rem;
+    padding: 1.75rem clamp(1.1rem, 3vw, 2rem);
+    border-radius: var(--radius);
+    /* Kept just legible enough for text contrast — much lighter than a
+       first pass (78%/45%) that read as blocking most of the 3D scene
+       rather than floating over it. */
+    background: linear-gradient(
+      120deg,
+      color-mix(in srgb, var(--bg) 42%, transparent),
+      color-mix(in srgb, var(--bg) 18%, transparent)
+    );
+    backdrop-filter: blur(3px);
   }
 
   .kicker-row {
@@ -929,13 +931,18 @@ const SERVICE_OVERLAYS = [
     font-size: 0.6rem;
   }
 
-  /* ---- Canvas column ---- */
+  /* ---- Full-bleed background layer: 3D scene (when motion/JS allow it)
+     with the flat SVG schematic as the no-JS/reduced-motion fallback,
+     hidden once the 3D scene actually takes over (data-mode="3d", set by
+     HeroPipeline3D.tsx). Sits behind .hero-content via z-index, covers the
+     entire hero section rather than sharing a grid column with it. ---- */
   .hero-canvas {
-    position: relative;
+    position: absolute;
+    inset: 0;
+    z-index: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    min-height: 420px;
   }
 
   .hero-glow {
@@ -950,6 +957,15 @@ const SERVICE_OVERLAYS = [
     width: 100%;
     max-width: 660px;
     aspect-ratio: 640 / 860;
+    transition: opacity var(--duration-theme) var(--ease-out);
+  }
+
+  /* Once the 3D scene is live, the flat SVG fallback steps back — it stays
+     mounted (no layout thrash toggling it in/out) but visually and from
+     the accessibility tree. */
+  [data-hero-scene][data-mode="3d"] .canvas-stage {
+    opacity: 0;
+    visibility: hidden;
   }
 
   .canvas-stage svg {
@@ -1062,14 +1078,12 @@ const SERVICE_OVERLAYS = [
   /* ---- Mobile: single column, canvas becomes a shorter backdrop band ---- */
   @media (max-width: 767px) {
     .hero {
-      grid-template-columns: 1fr;
-      align-items: start;
-      gap: 2rem;
+      align-items: center;
       padding-bottom: 4.5rem;
     }
 
-    .hero-canvas {
-      min-height: 0;
+    .hero-content {
+      max-width: 100%;
     }
 
     /* 860/640 aspect on a <=22.9rem-wide stage keeps height <= ~492px. */

@@ -64,8 +64,7 @@ const moduleData = MODULES.find((m) => m.id === moduleId)!;
     </div>
     <p>
       <strong>Matryoshka Representation Learning (MRL)</strong> models — most current embedding models — front-load
-      semantic signal into early dimensions, so truncation degrades gracefully instead of breaking.
-      <strong>Quantization</strong> stacks on top: binary quantization needs a rescoring pass against the original
+      semantic signal into early dimensions, so truncation degrades gracefully instead of breaking. <strong>Quantization</strong> stacks on top: binary quantization needs a rescoring pass against the original
       vectors to hold recall above 90%. None of this requires a different model or a rebuilt pipeline — it's a
       storage/precision knob on the embeddings this module already produces.
     </p>
