@@ -30,6 +30,9 @@ const cssVar = (n: string, fb: string) =>
 
 const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
 
+/** Drives the per-cloud accent block in `platform.css`; index matches `cloud`. */
+const CLOUD_SLUGS = ["", "gcp", "aws", "azure", "oss"];
+
 /** Scroll progress of a pinned section: 0 as it pins, 1 as it releases. */
 function progress(el: Element | null) {
   if (!el) return 0;
@@ -43,7 +46,7 @@ export function mountPlatform(root: HTMLElement) {
   const q = <T extends Element = HTMLElement>(sel: string) => root.querySelector<T>(sel);
   const qa = <T extends Element = HTMLElement>(sel: string) => Array.from(root.querySelectorAll<T>(sel));
 
-  const accent = cssVar("--color-accent", "#ec3013");
+  let accent = cssVar("--color-accent", "#ec3013");
   const ink = cssVar("--color-text", "#201e1d");
   const ground = cssVar("--color-bg", "#f3f2f2");
   const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -148,6 +151,11 @@ export function mountPlatform(root: HTMLElement) {
   // — interaction —————————————————————————————————————————————————————
   const setCloud = (i: number) => {
     state.cloud = i;
+    // The accent is a token, so CSS re-tints itself; WebGL and Canvas2D can't
+    // read `var(--*)`, so they're handed the freshly resolved value.
+    document.documentElement.setAttribute("data-pf-cloud", CLOUD_SLUGS[i]);
+    accent = cssVar("--color-accent", accent);
+    gl?.setAccent(accent);
     renderCloud();
   };
   cloudBtns.forEach((b, i) => b.addEventListener("click", () => setCloud(i + 1)));

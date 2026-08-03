@@ -20,13 +20,15 @@ import "../styles/platform.css";
 interface Props {
   title: string;
   description: string;
+  /** Cloud whose accent the page opens on — see the accent block in platform.css. */
+  cloud?: "gcp" | "aws" | "azure" | "oss";
 }
 
-const { title, description } = Astro.props;
+const { title, description, cloud = "gcp" } = Astro.props;
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang="en" data-pf-cloud={cloud}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />

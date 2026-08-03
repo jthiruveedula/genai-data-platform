@@ -35,6 +35,21 @@ test('the cloud switcher re-maps every service label from one selection', async 
   await expect(page.locator('[data-pf-hero-stack]')).toHaveText('vLLM + Qdrant on K8s');
 });
 
+test('the accent re-tints to the selected cloud', async ({ page }) => {
+  await page.goto('platform/');
+  const accent = () =>
+    page.evaluate(() =>
+      getComputedStyle(document.documentElement).getPropertyValue('--color-accent').trim(),
+    );
+
+  expect(await accent()).toBe('#1a56c4');
+  await page.locator('[data-pf-cloud="2"]').click();
+  expect(await page.evaluate(() => document.documentElement.dataset.pfCloud)).toBe('aws');
+  expect(await accent()).toBe('#a85900');
+  await page.locator('[data-pf-cloud="4"]').click();
+  expect(await accent()).toBe('#12712f');
+});
+
 test('clicking an agent row takes manual control of the loop', async ({ page }) => {
   await page.goto('platform/');
   await page.locator('#agent').scrollIntoViewIfNeeded();
