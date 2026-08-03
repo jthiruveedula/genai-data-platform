@@ -664,26 +664,30 @@ const SERVICE_OVERLAYS = [
     min-height: 100dvh;
     display: flex;
     align-items: center;
+    /* Real two-column layout, not content-floating-over-a-full-bleed-canvas
+       — that overlay approach (a translucent-then-solid scrim) either
+       garbled the diagram's text labels behind it or hid SOURCES/RETRIEVE/
+       PLAN outright, however the scrim was tuned, because the canvas was
+       centered across the *whole* section width regardless of where the
+       content column actually sat. A flex row with the canvas as a normal
+       sibling (not position:absolute) guarantees zero overlap at any width
+       down to the stacking breakpoint below, instead of guessing at scrim
+       opacity or a magic-number offset. */
+    gap: clamp(1rem, 3vw, 2.5rem);
     /* Homepage <main> is full-bleed (see BaseLayout.astro's
        main.main--full-bleed) so every section supplies its own horizontal
        gutter — this one never did, leaving the H1 flush against the
        viewport's left edge at every breakpoint (confirmed: 0px from the
        edge, not a rendering artifact). */
     padding: 2.5rem clamp(1.5rem, 5vw, 3rem) 3.5rem;
-    /* Clips the full-bleed 3D/glow layer to this section's own box instead
-       of risking page-level horizontal overflow. */
+    /* Clips the full-bleed glow layer to this section's own box instead of
+       risking page-level horizontal overflow. */
     overflow: hidden;
   }
 
-  /* ---- Content column (left-aligned), floating over the full-bleed
-     canvas below. A translucent scrim was tuned for the old 3D scene's
-     abstract wireframe shapes, where a bit of bleed-through still read
-     fine; the flat SVG schematic behind it now has literal text labels
-     (SOURCES/RETRIEVE/PLAN sit under this column), and any translucency
-     showed as garbled half-legible text at the seam. Solid --bg-card,
-     matching every other panel on the site (.glass-panel), removes that
-     entirely instead of trying to tune an opacity/blur value against text
-     it can never fully hide. ---- */
+  /* ---- Content column: a real flex item now (see .hero above), not an
+     absolutely-positioned overlay — so it never needs a scrim to stay
+     legible over the diagram, solid or translucent. ---- */
   .hero-content {
     position: relative;
     z-index: 1;
@@ -691,7 +695,8 @@ const SERVICE_OVERLAYS = [
     flex-direction: column;
     align-items: flex-start;
     gap: 1.1rem;
-    max-width: 30rem;
+    flex: 0 1 30rem;
+    min-width: 0;
     padding: 1.75rem clamp(1.1rem, 3vw, 2rem);
     border-radius: var(--radius);
     background: var(--bg-card);
@@ -928,14 +933,15 @@ const SERVICE_OVERLAYS = [
     font-size: 0.6rem;
   }
 
-  /* ---- Full-bleed background layer: the animated SVG schematic (GSAP
-     boot sequence + guided document + ambient packets). Sits behind
-     .hero-content via z-index, covers the entire hero section rather than
-     sharing a grid column with it. ---- */
+  /* ---- Diagram column: the animated SVG schematic (GSAP boot sequence +
+     guided document + ambient packets), a normal flex sibling of
+     .hero-content (see .hero above) so it takes whatever width is left
+     over rather than sharing space with — or hiding behind — the content
+     column. ---- */
   .hero-canvas {
-    position: absolute;
-    inset: 0;
-    z-index: 0;
+    position: relative;
+    flex: 1 1 0%;
+    min-width: 0;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1062,15 +1068,28 @@ const SERVICE_OVERLAYS = [
     background: var(--accent);
   }
 
-  /* ---- Mobile: single column, canvas becomes a shorter backdrop band ---- */
-  @media (max-width: 767px) {
+  /* ---- Mobile: stack into one column — content, then the diagram below
+     it — instead of the two-column row above. 900px (not the site's usual
+     767px breakpoint): below it, the two-column row squeezes the diagram's
+     11 node labels into overlapping, unreadable text before the content
+     column itself gets uncomfortably narrow — verified in-browser at
+     several widths between the two. */
+  @media (max-width: 900px) {
     .hero {
+      flex-direction: column;
       align-items: center;
       padding-bottom: 4.5rem;
     }
 
     .hero-content {
+      flex-basis: auto;
+      width: 100%;
       max-width: 100%;
+    }
+
+    .hero-canvas {
+      flex: 0 1 auto;
+      width: 100%;
     }
 
     /* 860/640 aspect on a <=22.9rem-wide stage keeps height <= ~492px. */
