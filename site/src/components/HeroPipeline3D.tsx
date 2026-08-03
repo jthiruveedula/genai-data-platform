@@ -167,7 +167,7 @@ function PipelineNode({
         onPointerOver={(e) => { e.stopPropagation(); onHover(node.id); }}
         onPointerOut={() => onHover(null)}
       >
-        <icosahedronGeometry args={[isHovered ? node.size * 1.2 : node.size, 0]} />
+        <icosahedronGeometry args={[isHovered ? node.size * 1.2 : node.size, 1]} />
         <meshBasicMaterial color={color} wireframe transparent opacity={opacity} />
       </mesh>
       {node.shape !== "poly" && (
@@ -248,27 +248,35 @@ function Scene({ accent, accent2 }: { accent: string; accent2: string }) {
   return (
     <>
       <CameraDrift />
+      {/* One color for the whole ring + its edges — `accent2` is a
+          brand-pairing color (e.g. GCP's blue/red), not a second "channel"
+          meant to cover half a dense wireframe scene; alternating it
+          per-node/per-edge read as two clashing diagrams overlaid rather
+          than one pipeline. `accent2` is now reserved for the single
+          VECTOR DB hub (the one thing that should visually stand out) and
+          the traveling particles (small enough to add color variety
+          without competing with the wireframes for attention). */}
       {PIPELINE_EDGES.map(([fromId, toId], i) => {
         const from = nodeById.get(fromId)!;
         const to = nodeById.get(toId)!;
         return (
           <group key={`${fromId}-${toId}`}>
-            <Edge from={from.position} to={to.position} color={i % 2 === 0 ? accent : accent2} />
+            <Edge from={from.position} to={to.position} color={accent} />
             <EdgeParticle
               from={from.position}
               to={to.position}
-              color={i % 2 === 0 ? accent : accent2}
+              color={accent2}
               speed={0.12 + (i % 3) * 0.04}
               offset={i / PIPELINE_EDGES.length}
             />
           </group>
         );
       })}
-      {NODES.map((node, i) => (
+      {NODES.map((node) => (
         <PipelineNode
           key={node.id}
           node={node}
-          color={i % 2 === 0 ? accent : accent2}
+          color={node.id === "index" ? accent2 : accent}
           hoveredId={hoveredId}
           onHover={setHoveredId}
         />
