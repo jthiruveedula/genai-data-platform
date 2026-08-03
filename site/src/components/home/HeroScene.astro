@@ -223,11 +223,6 @@ const SERVICE_OVERLAYS = [
         <circle class="hs-packet" r="3" fill="var(--accent)" opacity="0"></circle>
         <circle class="hs-packet" r="3" fill="var(--accent)" opacity="0"></circle>
 
-        <!-- Boot-sequence scanner: one reusable bright line, repositioned by
-             JS to each node's own bounding box and swept top-to-bottom as
-             that node "powers on" during the cinematic entrance below. -->
-        <rect class="hs-scanner" x="0" y="0" width="0" height="2" opacity="0"></rect>
-
         <!-- One-shot guided document: on first load, this rides flow-a → b → c
              in sequence (the same three routes the ambient packets loop on
              independently) so a first-time visitor watches one real document
@@ -420,18 +415,19 @@ const SERVICE_OVERLAYS = [
 
       // ---- Boot-sequence: "the system powering on" ----------------------
       // A single staggered tween across all 11 nodes (one GSAP tween
-      // instance, not 11) plus one scanner pass down the whole diagram —
-      // an earlier version gave every node its own timeline + scanner
-      // sub-timeline (~40 tween instances total), which read fine locally
-      // but pushed real CI's total-blocking-time from ~600ms to 758ms
-      // (over the 700ms budget) on its slower/throttled runner. This does
-      // the same "power on in sequence" read for a fraction of the
-      // main-thread cost. `is-dim` is removed per node via a plain
-      // `delayedCall` (a scheduled callback, not a tweened property) so
-      // the CSS transition already declared on `.hs-node rect`/`.hs-label`
-      // still carries the dim -> bright fade smoothly.
+      // instance, not 11). Two earlier versions of this (a per-node
+      // scanner+pop timeline, then a single-pass scanner sweep) both read
+      // fine locally but pushed real CI's total-blocking-time over its
+      // 700ms budget (758ms, then 741ms) on its slower/throttled runner —
+      // animating an SVG rect's `y`/geometry over a full second forces a
+      // layout recalculation every frame, unlike a `transform`-only tween,
+      // and that cost only showed up on CI's weaker hardware. Dropped the
+      // scanner sweep entirely; the stagger pop + the dim -> bright CSS
+      // transition (declared on `.hs-node rect`/`.hs-label`) still reads as
+      // "powering on in sequence" without a per-frame layout cost.
+      // `is-dim` is removed per node via a plain `delayedCall` (a scheduled
+      // callback, not a tweened property).
       const BOOT_ORDER = ["sources", "ingest", "chunk", "embed", "index", "retrieve", "llm", "answer", "plan", "act", "observe"];
-      const scanner = rootEl.querySelector<SVGRectElement>(".hs-scanner");
       const BOOT_STAGGER = 0.09;
 
       function bootSequence() {
@@ -451,15 +447,6 @@ const SERVICE_OVERLAYS = [
             stagger: BOOT_STAGGER,
           },
         );
-        if (scanner) {
-          gsap.set(scanner, { x: 10, width: 620, y: 60, opacity: 0.85 });
-          gsap.to(scanner, {
-            y: 690,
-            duration: BOOT_ORDER.length * BOOT_STAGGER + 0.35,
-            ease: "none",
-            onComplete: () => gsap.set(scanner, { opacity: 0 }),
-          });
-        }
       }
 
       const heroDoc = rootEl.querySelector<SVGGElement>("[data-hs-hero-doc]");
@@ -1019,12 +1006,6 @@ const SERVICE_OVERLAYS = [
 
   .hs-node.is-dim .hs-label {
     fill-opacity: 0.45;
-  }
-
-  .hs-scanner {
-    fill: var(--text);
-    opacity: 0;
-    pointer-events: none;
   }
 
   .hs-hero-doc .hero-doc-citation {
