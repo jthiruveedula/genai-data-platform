@@ -9,6 +9,12 @@ export default defineConfig({
   site: 'https://jthiruveedula.github.io',
   base: '/genai-data-platform/',
   integrations: [react(), sitemap()],
+  // The scroll-driven page shipped at /platform first and was reviewed there;
+  // it is now the homepage, so the old address keeps working rather than 404ing
+  // for anyone holding the link.
+  redirects: {
+    '/platform': '/',
+  },
   build: {
     // Default ("auto") only inlines stylesheets <=4kB, so BaseLayout's
     // page-wide CSS (~19kB) shipped as a render-blocking <link> on every

@@ -319,7 +319,11 @@ export function mountPlatform(root: HTMLElement) {
           const el = c as HTMLElement;
           el.style.transform =
             "translateZ(" + -ad * 130 + "px) rotateY(" + d * -8 + "deg) translateY(" + ad * 12 + "px)";
-          el.style.opacity = String(Math.max(0.22, 1 - ad * 0.26));
+          // The handoff floors this at 0.22. These cards are links to real
+          // module pages — a faded link is still tabbable, so its text has to
+          // clear AA at rest. Depth reads from translateZ/rotateY/translateY
+          // instead; the fade only takes the edge off the furthest cards.
+          el.style.opacity = String(Math.max(0.9, 1 - ad * 0.26));
           el.style.borderColor = ad < 0.5 ? ACCENT_VAR : INK_VAR;
         });
         if (curProgress) curProgress.style.width = p * 100 + "%";

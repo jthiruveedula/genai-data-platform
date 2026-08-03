@@ -1,55 +1,561 @@
 ---
-import BaseLayout from "../layouts/BaseLayout.astro";
-import HeroScene from "../components/home/HeroScene.astro";
-import ResumeChip from "../components/home/ResumeChip.astro";
-import ArchitectureStory from "../components/home/ArchitectureStory.astro";
-import AgentLoopDiagram from "../components/home/AgentLoopDiagram.astro";
-import IntegrationMap from "../components/home/IntegrationMap.astro";
-import CloudFlavorDeck from "../components/home/CloudFlavorDeck.astro";
-import OperateControlRoom from "../components/home/OperateControlRoom.astro";
-import CurriculumJourney from "../components/home/CurriculumJourney.astro";
-import CostConsole from "../components/home/CostConsole.astro";
-import WhyItMatters from "../components/home/WhyItMatters.astro";
-import FAQSection from "../components/home/FAQSection.astro";
-import FinalCTA from "../components/home/FinalCTA.astro";
+/**
+ * The scroll-driven platform page: one continuous story from a raw document
+ * to a governed agent runtime. Sticky sections pin and animate in place;
+ * every service label on the page re-maps from one cloud selection.
+ *
+ * All motion is driven from a single RAF loop in
+ * `src/scripts/platform/index.ts` — this file is structure and type only.
+ */
+import ModernistLayout from "../layouts/ModernistLayout.astro";
+import {
+  AGENT,
+  CLOUD_NAMES,
+  COSTS,
+  CURRICULUM,
+  FLAVORS,
+  HERO_STACK,
+  MAPPINGS,
+  NAV_LINKS,
+  PANELS,
+  PIPE_NOTES,
+  STAGES,
+  STATS,
+  SYSTEMS,
+  TICKER_WORDS,
+  TIERS,
+} from "../data/platformScroll";
+import { MODULES } from "../data/modules";
+
+const base = import.meta.env.BASE_URL;
+
+/** The twelve curriculum cards are the twelve modules, in order. */
+const moduleHrefs = [...MODULES]
+  .sort((a, b) => a.order - b.order)
+  .map((m) => `${base}modules/${m.id}/`);
+
+/** Site routes the scroll page hands off to, listed in the footer. */
+const SITE_LINKS = [
+  { href: `${base}paths/beginner/`, label: "Beginner path" },
+  { href: `${base}paths/intermediate/`, label: "Intermediate path" },
+  { href: `${base}paths/advanced/`, label: "Advanced path" },
+  { href: `${base}matrix/`, label: "Service matrix" },
+  { href: `${base}calculator/`, label: "Cost console" },
+  { href: `${base}case-studies/`, label: "Case studies" },
+  { href: `${base}glossary/`, label: "Glossary" },
+  { href: `${base}freshness/`, label: "Freshness" },
+];
+
+/** Initial state, mirrored by the client controller. */
+const cloud = 1;
+const stage = 0;
+const agentStep = 0;
+const sys = 0;
+const tier = 1;
+
+const nn = (i: number) => String(i + 1).padStart(2, "0");
 ---
 
-<BaseLayout
+<ModernistLayout
   title="Home"
-  description="Design, build, integrate, and operate enterprise GenAI agent systems — RAG foundations through orchestration, governance, and production ops, on GCP, AWS, Azure, or OSS."
-  fullBleed
+  description="Design, build, integrate, and operate enterprise GenAI agent systems — a ten-stage RAG lifecycle, an agent runtime, and unit economics, mapped across GCP, AWS, Azure, and OSS."
 >
-  <HeroScene />
-  <ResumeChip />
-  <ArchitectureStory />
-  <AgentLoopDiagram />
-  <IntegrationMap />
-  <CloudFlavorDeck />
-  <OperateControlRoom />
-  <CurriculumJourney />
-  <CostConsole />
-  <WhyItMatters />
-  <FAQSection />
-  <FinalCTA />
-</BaseLayout>
+  <div class="pf-root" data-pf-root data-pagefind-body>
+    <!-- 1 — Nav -->
+    <nav class="pf-nav">
+      <div class="pf-nav__left">
+        <a class="pf-nav__brand" href="#top">GenAI Data Platform</a>
+        <div class="pf-nav__links">
+          {NAV_LINKS.map((l) => <a href={l.href}>{l.label}</a>)}
+        </div>
+      </div>
+      <div class="pf-nav__right">
+        <div class="pf-meter" data-pf-meter aria-hidden="true">0 TOKENS · $0.0000</div>
+        {
+          CLOUD_NAMES.slice(1).map((name, i) => (
+            <button
+              type="button"
+              class:list={["pf-cloud-btn", { "is-active": cloud === i + 1 }]}
+              data-pf-cloud={i + 1}
+              aria-label={`Show services for ${name}`}
+            >
+              {name}
+            </button>
+          ))
+        }
+      </div>
+    </nav>
 
-<style is:global>
-  /* Homepage scene rhythm: every scene manages its own internal layout, the
-     page provides the shared width + vertical cadence. Scenes alternate
-     between --bg and --bg-deep via their own backgrounds. */
-  .main--full-bleed > section {
-    padding: 6rem 0;
-  }
+    <!-- 2 — Hero -->
+    <section id="top" class="pf-hero">
+      <div class="pf-hero__sticky">
+        <div class="pf-hero__canvas" aria-hidden="true"></div>
+        <div class="pf-hero__labels" aria-hidden="true">
+          {
+            STAGES.map((s, i) => (
+              <div class="pf-pipe-label" data-pf-pipe-label>
+                <div class="pf-pipe-label__inner">
+                  <div class="pf-pipe-label__bar" />
+                  <div class="pf-pipe-label__text">
+                    <div class="pf-pipe-label__title">
+                      {nn(i)} · {s.name}
+                    </div>
+                    <div class="pf-pipe-label__note">{PIPE_NOTES[i]}</div>
+                  </div>
+                </div>
+              </div>
+            ))
+          }
+        </div>
+        <div class="pf-hero__front">
+          <div class="pf-hero__copy">
+            <div class="pf-hero__status">
+              <span class="pf-blink-9" aria-hidden="true"></span>
+              <span class="pf-hero__status-label">MULTI-CLOUD CURRICULUM</span>
+              <span class="pf-hero__stack" data-pf-hero-stack>{HERO_STACK[cloud]}</span>
+            </div>
+            <h1 class="pf-hero__h1">
+              Engineer the agents your enterprise can trust in <span class="pf-accent">production.</span>
+            </h1>
+            <p class="pf-hero__body">
+              Starts where RAG ends. Watch the pipeline become an agent runtime, live, on your cloud.
+            </p>
+            <div class="pf-hero__ctas">
+              <a href="#lifecycle" class="pf-btn pf-btn--primary">
+                Follow the pipeline <span class="pf-btn__arrow" aria-hidden="true">↓</span>
+              </a>
+              <a href="#stacks" class="pf-btn pf-btn--secondary">
+                See the architecture <span class="pf-btn__arrow" aria-hidden="true">→</span>
+              </a>
+            </div>
+          </div>
+          <div class="pf-hero__footer">
+            <span>SCROLL</span>
+            <span class="pf-hero__phase" data-pf-hero-phase>PIPELINE // LIVE</span>
+          </div>
+        </div>
+      </div>
+    </section>
 
-  .main--full-bleed .scene-inner {
-    max-width: 72rem;
-    margin: 0 auto;
-    padding: 0 1.5rem;
-  }
+    <!-- 3 — Ticker -->
+    <div class="pf-ticker" aria-hidden="true">
+      <div class="pf-ticker__rail">
+        {
+          [0, 1].map(() => (
+            <div class="pf-ticker__run">
+              {TICKER_WORDS.map((w) => (
+                <span class="pf-ticker__word">
+                  {w} <span class="pf-ticker__dot" />
+                </span>
+              ))}
+            </div>
+          ))
+        }
+      </div>
+    </div>
 
-  @media (max-width: 768px) {
-    .main--full-bleed > section {
-      padding: 4rem 0;
-    }
-  }
-</style>
+    <!-- 4 — Lifecycle -->
+    <section id="lifecycle" class="pf-life">
+      <div class="pf-life__sticky">
+        <div class="pf-life__grid">
+          <div class="pf-life__left">
+            <div class="pf-kicker">THE LIFECYCLE</div>
+            <h2 class="pf-life__h2">One document.<br />Ten stages.<br />Any cloud.</h2>
+            <div class="pf-life__bottom">
+              <div class="pf-life__numrow">
+                <div class="pf-life__num" data-pf-life-num>{nn(stage)}</div>
+                <div class="pf-life__den">/ 10</div>
+              </div>
+              <div class="pf-life__name" data-pf-life-name>{STAGES[stage].name}</div>
+              <p class="pf-life__desc" data-pf-life-desc>{STAGES[stage].desc}</p>
+              <div class="pf-life__on">
+                <div class="pf-life__on-label" data-pf-life-onlabel>ON {CLOUD_NAMES[cloud]} →</div>
+                <div class="pf-life__on-value" data-pf-life-stack>{STAGES[stage].stack[cloud]}</div>
+              </div>
+              <div class="pf-life__ticks" aria-hidden="true">
+                {
+                  STAGES.map((_, i) => (
+                    <div class:list={["pf-life__tick", { "is-on": i <= stage }]} data-pf-life-tick />
+                  ))
+                }
+              </div>
+            </div>
+          </div>
+          <div class="pf-life__right">
+            <div class="pf-life__stage">
+              <div class="pf-grid-bg" aria-hidden="true"></div>
+              <canvas class="pf-life__canvas" data-pf-life-canvas aria-hidden="true"></canvas>
+              <div class="pf-life__readout">
+                <span class="pf-blink-7" aria-hidden="true"></span>
+                <span class="pf-life__phase" data-pf-life-phase>{STAGES[stage].tag} // LIVE</span>
+              </div>
+            </div>
+            {/* A visual index of the ten stages, faded by distance from the
+                active one. Every card's content is already announced by the
+                live narrative column, so the ribbon is decorative — and its
+                distance fade would otherwise read as failing contrast. */}
+            <div class="pf-life__stripwrap" aria-hidden="true" data-a11y-decorative>
+              <div class="pf-life__strip" data-pf-life-strip>
+                {
+                  STAGES.map((s, i) => (
+                    <div class="pf-life__card" data-pf-life-card>
+                      <div class="pf-life__card-top">
+                        <span class="pf-life__card-n">{nn(i)}</span>
+                        <span class="pf-life__card-tag">{s.tag}</span>
+                      </div>
+                      <div class="pf-life__card-name">{s.name}</div>
+                      <div class="pf-life__card-bits" aria-hidden="true">
+                        {Array.from({ length: 6 }, (_, k) => (
+                          <div class:list={["pf-life__bit", { "is-on": k <= i * 0.6 }]} />
+                        ))}
+                      </div>
+                    </div>
+                  ))
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5 — Agent loop -->
+    <section id="agent" class="pf-agent">
+      <div class="pf-agent__grid">
+        <div class="pf-agent__left">
+          <div class="pf-kicker">HOW AN ENTERPRISE AGENT WORKS</div>
+          <h2 class="pf-agent__h2">Plan. Act. Observe.<br />Repeat — with a leash.</h2>
+          <p class="pf-agent__body">
+            Decide. Call a tool. Read the result. Decide again — capped, not infinite.
+          </p>
+          <div class="pf-agent__rows">
+            {
+              AGENT.map((a, i) => (
+                <button
+                  type="button"
+                  class:list={["pf-agent__row", { "is-active": agentStep === i }]}
+                  data-pf-agent-row={i}
+                >
+                  <span class="pf-agent__row-n">{nn(i)}</span>
+                  <span>
+                    <span class="pf-agent__row-name">{a.name}</span>
+                    <span class="pf-agent__row-desc">{a.desc}</span>
+                    <span class="pf-agent__row-stack" data-pf-agent-stack>
+                      {a.stack[cloud]}
+                    </span>
+                  </span>
+                </button>
+              ))
+            }
+          </div>
+          <a href={`${base}modules/85-agents/`} class="pf-link">Module 85: Agents &amp; tool use →</a>
+        </div>
+        <div class="pf-loop">
+          <div class="pf-grid-bg" aria-hidden="true"></div>
+          <div class="pf-loop__plane" data-pf-loop-plane>
+            <div class="pf-loop__ring">
+              <div class="pf-loop__circle" aria-hidden="true"></div>
+              <div class="pf-loop__orbit" aria-hidden="true">
+                <div class="pf-loop__token"></div>
+              </div>
+              {
+                AGENT.map((a, i) => (
+                  <div
+                    class:list={["pf-loop__node", { "is-active": agentStep === i }]}
+                    data-pf-loop-node={i}
+                    style={`--pf-deg: ${i * 120}deg`}
+                  >
+                    <div class="pf-loop__card">
+                      <div class="pf-loop__card-name">{a.name}</div>
+                      <div class="pf-loop__card-short" data-pf-loop-short>
+                        {a.stack[cloud]}
+                      </div>
+                    </div>
+                  </div>
+                ))
+              }
+              <div class="pf-loop__center">
+                <div class="pf-loop__iterrow">
+                  <span class="pf-loop__iter" data-pf-iter>1</span>
+                  <span class="pf-loop__iterlabel">/ 4 ITERATIONS</span>
+                </div>
+                <div class="pf-loop__bar">
+                  <div class="pf-loop__barfill" data-pf-iter-bar></div>
+                </div>
+                <div class="pf-loop__note" data-pf-iter-note>
+                  CAPPED ITERATION BUDGET — IT STOPS, IT DOESN'T LOOP FOREVER
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6 — Integrate -->
+    <section id="integrate" class="pf-int">
+      <div class="pf-int__head">
+        <div>
+          <div class="pf-kicker">INTEGRATE WITH YOUR STACK</div>
+          <h2 class="pf-int__h2">Agents don't live in a notebook.</h2>
+        </div>
+        <p class="pf-int__body">
+          Function calling and MCP are the two doors in. Every call carries a scoped credential — never
+          the agent's own identity.
+        </p>
+      </div>
+      <div class="pf-int__grid">
+        {
+          SYSTEMS.map((s, i) => (
+            <button type="button" class:list={["pf-sys", { "is-active": sys === i }]} data-pf-sys={i}>
+              <span class="pf-sys__proto">{s.proto}</span>
+              <span class="pf-sys__name">{s.name}</span>
+              <span class="pf-sys__bar" />
+            </button>
+          ))
+        }
+      </div>
+      <div class="pf-int__callrow">
+        <span class="pf-int__calllabel">AGENT RUNTIME CALL →</span>
+        <code class="pf-int__call" data-pf-call>{SYSTEMS[sys].call}</code>
+      </div>
+    </section>
+
+    <!-- 7 — Stacks -->
+    <section id="stacks" class="pf-stacks">
+      <div class="pf-stacks__head">
+        <div class="pf-kicker">FOUR FLAVORS, ONE PLATFORM</div>
+        <h2 class="pf-stacks__h2">Same architecture. Your stack.</h2>
+      </div>
+      <div class="pf-flavors">
+        {
+          FLAVORS.map((f, i) => (
+            <button
+              type="button"
+              class:list={["pf-flavor", { "is-active": cloud === i + 1 }]}
+              data-pf-flavor={i + 1}
+            >
+              <span class="pf-flavor__top">
+                <span>{f.kicker}</span>
+                <span class="pf-flavor__state" data-pf-flavor-state>
+                  {cloud === i + 1 ? "ACTIVE" : f.short}
+                </span>
+              </span>
+              <span class="pf-flavor__name">{f.name}</span>
+              <span class="pf-flavor__desc">{f.desc}</span>
+              <span class="pf-flavor__chips">
+                {f.services.map((svc) => (
+                  <span class="pf-chip">{svc}</span>
+                ))}
+              </span>
+              <span class="pf-flavor__best">{f.best}</span>
+            </button>
+          ))
+        }
+      </div>
+      <div class="pf-map">
+        {
+          MAPPINGS.map((m) => (
+            <div class="pf-map__cell">
+              <div class="pf-map__role">{m.role}</div>
+              <div class="pf-map__value" data-pf-map-value>
+                {m.values[cloud - 1]}
+              </div>
+            </div>
+          ))
+        }
+        <div class="pf-map__note">
+          <span>LIVE MAPPING — SWITCHES WITH YOUR SELECTION</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 8 — Operate -->
+    <section id="operate" class="pf-ops">
+      <div class="pf-ops__head">
+        <div>
+          <div class="pf-kicker">OPERATE IN PRODUCTION</div>
+          <h2 class="pf-ops__h2">Ship it. Watch it.<br />Roll it back in one command.</h2>
+        </div>
+        <p class="pf-ops__body">Trace, eval, govern, deploy — one discipline, four panels.</p>
+      </div>
+      <div class="pf-ops__grid">
+        {
+          PANELS.map((p) => (
+            <div class="pf-ops__panel">
+              <div class="pf-ops__panelhead">
+                <span class="pf-ops__panelname">{p.name}</span>
+                <span class="pf-ops__panelmeta">{p.meta}</span>
+              </div>
+              <div class="pf-ops__rows">
+                {p.rows.map((r) => (
+                  <div class="pf-ops__row">
+                    <span class="pf-ops__rowleft">
+                      <span>{r.label}</span>
+                      <span
+                        class:list={["pf-ops__bar", { "is-hot": r.ratio > 0.8 }]}
+                        style={`width: ${Math.round(r.ratio * 100)}%`}
+                      />
+                    </span>
+                    <span class:list={["pf-ops__val", { "is-hot": r.ratio > 0.8 }]}>{r.val}</span>
+                  </div>
+                ))}
+              </div>
+              <div class="pf-ops__note">{p.note}</div>
+            </div>
+          ))
+        }
+      </div>
+    </section>
+
+    <!-- 9 — Curriculum -->
+    <section id="curriculum" class="pf-cur">
+      <div class="pf-cur__sticky">
+        <div class="pf-cur__head">
+          <div>
+            <div class="pf-kicker">THE JOURNEY</div>
+            <h2 class="pf-cur__h2">Core → deepen → scale.</h2>
+          </div>
+          <div class="pf-cur__meta">
+            <span>12 MISSIONS</span><span>~6H 20M</span><span class="pf-accent">ALL LIVE</span>
+          </div>
+        </div>
+        <div class="pf-cur__viewport">
+          <div class="pf-cur__track" data-pf-cur-track>
+            {
+              CURRICULUM.map((m, i) => (
+                <a class="pf-cur__card" data-pf-cur-card href={moduleHrefs[i]}>
+                  <div class="pf-cur__cardtop">
+                    <span class="pf-cur__cardn">{m.n}</span>
+                    <span class:list={["pf-cur__lane", `pf-cur__lane--${m.lane.toLowerCase()}`]}>
+                      {m.lane}
+                    </span>
+                  </div>
+                  <div class="pf-cur__cardtitle">{m.title}</div>
+                  <div class="pf-cur__cardblurb">{m.blurb}</div>
+                  <div class="pf-cur__cardfoot">
+                    <span>{m.kind}</span>
+                    <span>{m.time}</span>
+                  </div>
+                </a>
+              ))
+            }
+          </div>
+        </div>
+        <div class="pf-cur__foot">
+          <div class="pf-cur__track-progress">
+            <div class="pf-cur__progress" data-pf-cur-progress></div>
+          </div>
+          <span class="pf-cur__count" data-pf-cur-count>01 / 12</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 10 — Cost -->
+    <section id="cost" class="pf-cost">
+      <div class="pf-cost__grid">
+        <div class="pf-cost__left">
+          <div class="pf-kicker">UNIT ECONOMICS</div>
+          <h2 class="pf-cost__h2">Operate the platform before you build it.</h2>
+          <p class="pf-cost__body">
+            Token pricing, embedding costs, and serving compute — tied to the exact services your cloud
+            selection chose upstream.
+          </p>
+          <div class="pf-tiers">
+            {
+              TIERS.map((t, i) => (
+                <button type="button" class:list={["pf-tier", { "is-active": tier === i }]} data-pf-tier={i}>
+                  <span class="pf-tier__name">{t.name}</span>
+                  <span class="pf-tier__sub">{t.sub}</span>
+                </button>
+              ))
+            }
+          </div>
+          <p class="pf-cost__tiernote" data-pf-tiernote>{TIERS[tier].note}</p>
+          <a href={`${base}calculator/`} class="pf-link">Open the full cost console →</a>
+        </div>
+        <div class="pf-cost__right">
+          <div class="pf-cost__consolehead">
+            <span>COST CONSOLE // ESTIMATE</span>
+            <span class="pf-cost__disclaimer">UNVERIFIED PRICING · NOT A QUOTE</span>
+          </div>
+          {
+            COSTS.map((c, i) => (
+              <div class:list={["pf-cost__row", { "is-active": cloud === i + 1 }]} data-pf-cost-row>
+                <div>
+                  <div class="pf-cost__cloud">{c.cloud}</div>
+                  <div class="pf-cost__model">{c.model}</div>
+                  <div class="pf-cost__bartrack">
+                    <div class="pf-cost__bar" style={`width: ${Math.round(c.ratio * 100)}%`} />
+                  </div>
+                </div>
+                <div class="pf-cost__figures">
+                  <div class="pf-cost__monthly">{c.monthly}</div>
+                  <div class="pf-cost__perquery">{c.perQuery} / QUERY</div>
+                </div>
+              </div>
+            ))
+          }
+        </div>
+      </div>
+    </section>
+
+    <!-- 11 — Stats -->
+    <section class="pf-stats">
+      {
+        STATS.map((s) => (
+          <div class="pf-stats__cell">
+            <div
+              class="pf-stats__val"
+              data-pf-stat
+              data-target={s.target}
+              data-suffix={s.suffix}
+              data-prefix={s.prefix}
+            >
+              {s.initial}
+            </div>
+            <div class="pf-stats__label">{s.label}</div>
+          </div>
+        ))
+      }
+    </section>
+
+    <!-- 12 — Poster close -->
+    <section class="pf-poster">
+      <div class="pf-poster__kicker">SYSTEM READY</div>
+      <h2 class="pf-poster__h2">Start with RAG. Leave running production agents.</h2>
+      <p class="pf-poster__body">
+        Every module ships runnable code, real cloud services, and a working demo — not slides.
+      </p>
+      <div class="pf-poster__ctas">
+        <a href={`${base}paths/beginner/`} class="pf-btn pf-poster__btn pf-poster__btn--fill">
+          Enter the curriculum <span class="pf-btn__arrow" aria-hidden="true">→</span>
+        </a>
+        <a href={`${base}calculator/`} class="pf-btn pf-poster__btn pf-poster__btn--outline">
+          Estimate your costs <span class="pf-btn__arrow" aria-hidden="true">→</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- 13 — Footer -->
+    <footer>
+      <nav class="pf-sitelinks" aria-label="Site">
+        {SITE_LINKS.map((l) => <a href={l.href}>{l.label}</a>)}
+      </nav>
+      <div class="pf-footer">
+        <span class="pf-footer__disclaimer">
+          Not affiliated with Amazon Web Services, Microsoft Azure, or Google Cloud. Names used for
+          identification only.
+        </span>
+        <span class="pf-footer__freshness">CONTENT FRESHNESS: 52 OF 52 CLAIMS VERIFIED</span>
+      </div>
+    </footer>
+  </div>
+</ModernistLayout>
+
+<script>
+  import { mountPlatform } from "../scripts/platform/index";
+
+  const root = document.querySelector<HTMLElement>("[data-pf-root]");
+  if (root) mountPlatform(root);
+</script>

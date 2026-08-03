@@ -113,6 +113,12 @@ a:hover {
   }
 }
 
+:root {
+  /* The sticky nav's height — pinned sections offset by exactly this, so the
+     bar and the panels below it can't drift apart. */
+  --pf-nav-h: 58px;
+}
+
 .pf-root {
   position: relative;
 }
@@ -226,7 +232,7 @@ a:hover {
   align-items: center;
   gap: 28px;
   padding: 0 20px;
-  min-height: 58px;
+  min-height: var(--pf-nav-h);
   flex-wrap: wrap;
 }
 
@@ -240,6 +246,8 @@ a:hover {
 
 .pf-nav__links {
   display: flex;
+  flex-wrap: wrap;
+  min-width: 0;
   gap: 20px;
   font-size: 11.5px;
   letter-spacing: 0.1em;
@@ -309,8 +317,8 @@ a:hover {
 
 .pf-hero__sticky {
   position: sticky;
-  top: 58px;
-  height: calc(100vh - 58px);
+  top: var(--pf-nav-h);
+  height: calc(100vh - var(--pf-nav-h));
   overflow: hidden;
 }
 
@@ -505,8 +513,8 @@ a:hover {
 
 .pf-life__sticky {
   position: sticky;
-  top: 58px;
-  height: calc(100vh - 58px);
+  top: var(--pf-nav-h);
+  height: calc(100vh - var(--pf-nav-h));
   overflow: hidden;
 }
 
@@ -803,7 +811,9 @@ a:hover {
   font-size: 14px;
   line-height: 1.45;
   margin-top: 5px;
-  opacity: 0.78;
+  /* 0.78 in the handoff — raised so the selected row's description clears AA
+     against the accent fill it inverts to. */
+  opacity: 0.92;
 }
 
 .pf-agent__row-stack {
@@ -897,7 +907,9 @@ a:hover {
 .pf-loop__card-short {
   font-size: 11px;
   margin-top: 7px;
-  opacity: 0.75;
+  /* 0.75 in the handoff — dropped so the active node's service line clears
+     AA against the accent fill it inverts to. */
+  opacity: 1;
   line-height: 1.35;
 }
 
@@ -1325,8 +1337,8 @@ a:hover {
 
 .pf-cur__sticky {
   position: sticky;
-  top: 58px;
-  height: calc(100vh - 58px);
+  top: var(--pf-nav-h);
+  height: calc(100vh - var(--pf-nav-h));
   overflow: hidden;
   display: grid;
   grid-template-rows: auto 1fr auto;
@@ -1389,6 +1401,17 @@ a:hover {
   flex-direction: column;
   gap: 12px;
   transform-style: preserve-3d;
+}
+
+/* Each card is the module it names — the track is the real curriculum. */
+a.pf-cur__card {
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+a.pf-cur__card:hover {
+  background: color-mix(in srgb, var(--color-accent) 6%, var(--color-bg));
+  color: var(--color-text);
 }
 
 .pf-cur__cardtop {
@@ -1544,7 +1567,9 @@ a:hover {
   display: block;
   font-size: 11px;
   margin-top: 5px;
-  opacity: 0.75;
+  /* 0.75 in the handoff — raised so the selected tier's sub-label clears AA
+     against the accent fill it inverts to. */
+  opacity: 0.92;
 }
 
 .pf-cost__tiernote {
@@ -1728,6 +1753,32 @@ a:hover {
   background: color-mix(in srgb, var(--color-bg) 12%, transparent);
 }
 
+/* Site links — the scroll page's hand-off to the rest of the site. */
+
+.pf-sitelinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  border-bottom: 2px solid var(--color-text);
+}
+
+.pf-sitelinks a {
+  flex: 1 1 auto;
+  min-width: 180px;
+  padding: 18px 20px;
+  border-right: 2px solid var(--color-text);
+  color: var(--color-text);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.pf-sitelinks a:hover {
+  background: color-mix(in srgb, var(--color-accent) 8%, transparent);
+  color: var(--color-accent);
+}
+
 /* 13 — Footer ----------------------------------------------------------- */
 
 .pf-footer {
@@ -1751,6 +1802,110 @@ a:hover {
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.14em;
+}
+
+/* Narrow viewports ------------------------------------------------------
+   Desktop-first by design — the 3D deserves the room. Below 760px the two
+   fixed-ratio two-column grids would hold a 300px minimum against a smaller
+   viewport and push the page sideways, so they stack: narrative first, then
+   the animated panel. Nothing is dropped, only re-ordered. */
+
+@media (max-width: 760px) {
+  :root {
+    /* The bar stops sticking below this width — two sticky layers on a short
+       viewport leaves the panels no room to tell their story. */
+    --pf-nav-h: 0px;
+  }
+
+  .pf-nav {
+    position: static;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .pf-nav__left {
+    flex-wrap: nowrap;
+    gap: 18px;
+    overflow-x: auto;
+    padding: 14px 20px;
+  }
+
+  .pf-nav__brand,
+  .pf-nav__links {
+    white-space: nowrap;
+    flex-wrap: nowrap;
+  }
+
+  .pf-nav__right {
+    border-left: 0;
+    border-top: 2px solid var(--color-text);
+  }
+
+  .pf-cloud-btn {
+    flex: 1;
+    padding: 12px 16px;
+  }
+
+  .pf-life__grid,
+  .pf-agent__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .pf-life__left,
+  .pf-agent__left {
+    border-right: 0;
+    border-bottom: 2px solid var(--color-text);
+  }
+
+  /* The pinned lifecycle panel splits its height between the two stacked
+     halves rather than letting either collapse to nothing. */
+  .pf-life__grid {
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  .pf-life__left {
+    padding: 22px 18px;
+  }
+
+  .pf-life__desc {
+    min-height: 0;
+  }
+
+  .pf-loop {
+    min-height: 420px;
+  }
+
+  .pf-cost__grid {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+  }
+
+  .pf-cost__left {
+    border-right: 0;
+    border-bottom: 2px solid var(--color-text);
+  }
+
+  .pf-tiers {
+    flex-wrap: wrap;
+  }
+
+  .pf-tier {
+    min-width: 0;
+    flex: 1 1 33%;
+  }
+
+  .pf-hero__copy {
+    width: 100%;
+  }
+
+  /* With the copy at full width there is no clear ground beside the pipeline
+     to push it into, so the scene drops back behind the headline instead of
+     competing with it. */
+  .pf-hero__canvas {
+    opacity: 0.35;
+  }
+
+  .pf-sitelinks a {
+    min-width: 140px;
+  }
 }
 
 /* Reduced motion --------------------------------------------------------
