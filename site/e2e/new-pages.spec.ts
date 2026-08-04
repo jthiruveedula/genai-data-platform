@@ -65,7 +65,10 @@ test('footer links to the freshness page with a verified count', async ({ page }
 });
 
 test('search opens via keyboard shortcut and shows the built-index state', async ({ page }) => {
-  await page.goto('');
+  // Run against an inner page: the homepage is the Modernist scroll story and
+  // carries its own chrome, so the site navbar and its search live on the
+  // pages that still use BaseLayout.
+  await page.goto('matrix/');
   await page.keyboard.press('/');
   const dialog = page.locator('dialog[aria-label="Site search"]');
   await expect(dialog).toBeVisible();
@@ -81,7 +84,7 @@ test('search opens via keyboard shortcut and shows the built-index state', async
 });
 
 test('navbar links to the matrix page', async ({ page }) => {
-  await page.goto('');
+  await page.goto('glossary/');
   await expect(page.locator('header.navbar a[href*="matrix/"]')).toBeVisible();
 });
 
