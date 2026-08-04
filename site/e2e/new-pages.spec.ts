@@ -83,9 +83,9 @@ test('search opens via keyboard shortcut and shows the built-index state', async
   ).toBeVisible({ timeout: 5000 });
 });
 
-test('navbar links to the matrix page', async ({ page }) => {
+test('the site bar links to the matrix page', async ({ page }) => {
   await page.goto('glossary/');
-  await expect(page.locator('header.navbar a[href*="matrix/"]')).toBeVisible();
+  await expect(page.locator('header a[href*="matrix/"]').first()).toBeVisible();
 });
 
 test('an unmatched path renders the themed 404 page, not a blank/default one', async ({ page }) => {

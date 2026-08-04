@@ -60,7 +60,7 @@ const orderLabel = String(mod.order).padStart(2, "0");
     gap: 0.85rem;
     padding-bottom: 1.75rem;
     margin-bottom: 1.75rem;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 2px solid var(--border);
     /* Contains the ::before glow's horizontal bleed below — without this,
        its negative left/right inset pushes past the box edge and forces
        page-level horizontal overflow (caught by the 320-768px sweep). */
@@ -76,7 +76,7 @@ const orderLabel = String(mod.order).padStart(2, "0");
     position: absolute;
     inset: -20% -10% auto -10%;
     height: 14rem;
-    background: radial-gradient(closest-side, color-mix(in srgb, var(--accent) 10%, transparent), transparent 72%);
+    background: none;
     pointer-events: none;
     z-index: -1;
   }

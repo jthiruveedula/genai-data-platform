@@ -1,0 +1,107 @@
+---
+/**
+ * Site footer: a ruled rail of routes over the disclaimer and the live
+ * verified-claim count. Same construction as the homepage's footer so the two
+ * shells end the page identically.
+ */
+interface Props {
+  verifiedClaimCount: number;
+  totalClaimCount: number;
+}
+
+const { verifiedClaimCount, totalClaimCount } = Astro.props;
+const base = import.meta.env.BASE_URL;
+
+const links = [
+  { href: base, label: "Home" },
+  { href: `${base}paths/beginner/`, label: "Beginner path" },
+  { href: `${base}paths/intermediate/`, label: "Intermediate path" },
+  { href: `${base}paths/advanced/`, label: "Advanced path" },
+  { href: `${base}matrix/`, label: "Service matrix" },
+  { href: `${base}calculator/`, label: "Cost console" },
+  { href: `${base}case-studies/`, label: "Case studies" },
+  { href: `${base}glossary/`, label: "Glossary" },
+  { href: `${base}freshness/`, label: "Freshness" },
+];
+---
+
+<footer class="sf">
+  <nav class="sf__links" aria-label="Site">
+    {links.map((l) => <a href={l.href}>{l.label}</a>)}
+  </nav>
+  <div class="sf__meta">
+    <span class="sf__disclaimer">
+      Not affiliated with Amazon Web Services, Microsoft Azure, or Google Cloud. Names used for
+      identification only.
+    </span>
+    <a class="sf__freshness" href={`${base}freshness/`}>
+      Content freshness: {verifiedClaimCount} of {totalClaimCount} claims verified
+    </a>
+  </div>
+</footer>
+
+<style>
+  .sf {
+    border-top: 2px solid var(--color-text);
+  }
+
+  .sf__links {
+    display: flex;
+    flex-wrap: wrap;
+    border-bottom: 2px solid var(--color-text);
+  }
+
+  .sf__links a {
+    flex: 1 1 auto;
+    min-width: 160px;
+    padding: 18px 20px;
+    border-right: 2px solid var(--color-text);
+    color: var(--color-text);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  .sf__links a:hover {
+    background: color-mix(in srgb, var(--color-accent) 8%, transparent);
+    color: var(--color-accent);
+    text-decoration: none;
+  }
+
+  .sf__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px 40px;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 34px 20px 44px;
+  }
+
+  .sf__disclaimer {
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    color: var(--color-neutral-700);
+    max-width: 46em;
+    line-height: 1.6;
+  }
+
+  .sf__freshness {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--color-text);
+  }
+
+  .sf__freshness:hover {
+    color: var(--color-accent);
+    text-decoration: none;
+  }
+
+  @media (max-width: 760px) {
+    .sf__links a {
+      min-width: 140px;
+    }
+  }
+</style>

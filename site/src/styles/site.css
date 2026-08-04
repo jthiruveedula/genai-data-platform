@@ -1,0 +1,144 @@
+/**
+ * Shared page furniture for the Modernist shell: the measure, the reading
+ * rail, article rhythm, and the panel/table constructions the content pages
+ * reuse. Component-specific styling stays in the components.
+ */
+
+.reading-progress {
+  position: sticky;
+  top: 0;
+  z-index: 61;
+  height: 2px;
+  background: transparent;
+}
+
+.reading-progress__bar {
+  height: 100%;
+  width: 100%;
+  background: var(--color-accent);
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+}
+
+main {
+  display: block;
+}
+
+/* One measure for prose; everything ruled, tabular or diagrammatic runs the
+   full width, because in this system the grid is the layout. Only running text
+   is capped — capping structure is what clipped the matrix's fourth column. */
+article {
+  padding: 0 20px 80px;
+}
+
+article > :is(p, ul, ol, blockquote, h4, h5, h6) {
+  max-width: 72ch;
+}
+
+article > h2 {
+  border-top: 2px solid var(--color-text);
+  padding-top: 18px;
+  margin-top: 64px;
+  margin-bottom: 18px;
+}
+
+article > h3 {
+  margin-top: 40px;
+  margin-bottom: 10px;
+}
+
+article > p {
+  margin: 0 0 18px;
+}
+
+article > ul,
+article > ol {
+  margin: 0 0 22px;
+  padding-left: 20px;
+}
+
+article > ul > li,
+article > ol > li {
+  margin-bottom: 8px;
+}
+
+/* Tables: themed header, 2px header rule, 1px row rules — the one place a
+   lighter rule is correct, because the header rule has to dominate. */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+
+th {
+  text-align: left;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-neutral-700);
+  padding: 10px 12px;
+  border-bottom: 2px solid var(--color-text);
+}
+
+td {
+  padding: 12px;
+  border-bottom: 1px solid var(--color-neutral-300);
+  vertical-align: top;
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+/* Code: on the ground, behind a rule, never a tinted card. */
+pre {
+  margin: 0 0 22px;
+  padding: 16px 18px;
+  border: 2px solid var(--color-text);
+  background: var(--color-bg);
+  overflow-x: auto;
+  font-size: 12.5px;
+  line-height: 1.55;
+}
+
+:not(pre) > code {
+  padding: 1px 4px;
+  border: 1px solid var(--color-neutral-300);
+  font-size: 0.92em;
+}
+
+/* Kicker/eyebrow, shared by every page header. */
+.kicker {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+}
+
+/* Page header block: kicker, title, one supporting line, over a 2px rule. */
+.page-head {
+  padding: 56px 20px 26px;
+  border-bottom: 2px solid var(--color-text);
+}
+
+.page-head h1 {
+  margin: 14px 0 0;
+}
+
+.page-head p {
+  margin: 20px 0 0;
+  max-width: 46em;
+  font-size: 15px;
+}
+
+@media (max-width: 760px) {
+  .page-head {
+    padding: 34px 18px 22px;
+  }
+
+  article {
+    padding: 0 18px 56px;
+  }
+}

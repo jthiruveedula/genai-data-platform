@@ -1,12 +1,12 @@
 ---
-import BaseLayout from "../layouts/BaseLayout.astro";
+import SiteLayout from "../layouts/SiteLayout.astro";
 import CostConsole from "../components/home/CostConsole.astro";
 ---
 
-<BaseLayout
+<SiteLayout
   title="Cost calculator"
   description="Estimate monthly GenAI data platform cost across AWS, Azure, GCP, and OSS."
   fullBleed
 >
   <CostConsole linkToFullConsole={false} />
-</BaseLayout>
+</SiteLayout>

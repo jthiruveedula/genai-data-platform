@@ -1,5 +1,5 @@
 ---
-import BaseLayout from "../../../layouts/BaseLayout.astro";
+import SiteLayout from "../../../layouts/SiteLayout.astro";
 import FlavorTabs from "../../../components/FlavorTabs.astro";
 import ModuleHero from "../../../components/module/ModuleHero.astro";
 import ModuleScenario from "../../../components/module/ModuleScenario.astro";
@@ -23,7 +23,7 @@ const entries = {
 const moduleData = MODULES.find((m) => m.id === moduleId)!;
 ---
 
-<BaseLayout title="10 · Ingestion" description={moduleData.summary}>
+<SiteLayout title="10 · Ingestion" description={moduleData.summary}>
   <article>
     <ModuleHero moduleId={moduleId}>
       <p>
@@ -97,4 +97,4 @@ const moduleData = MODULES.find((m) => m.id === moduleId)!;
   </article>
   <ModuleRecap moduleId={moduleId} />
   <ModuleFooterNav moduleId={moduleId} />
-</BaseLayout>
+</SiteLayout>

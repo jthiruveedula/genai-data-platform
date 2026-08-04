@@ -1,0 +1,213 @@
+---
+/**
+ * The site bar for inner pages, in the same idiom as the homepage's own nav:
+ * brand and routes left, search and the cloud switcher right behind a 2px
+ * rule, one accent for the active state.
+ */
+import Search from "./Search.astro";
+import { CLOUDS } from "../data/modules";
+
+const base = import.meta.env.BASE_URL;
+
+const links = [
+  { href: `${base}paths/beginner/`, label: "Paths" },
+  { href: `${base}matrix/`, label: "Matrix" },
+  { href: `${base}calculator/`, label: "Cost" },
+  { href: `${base}case-studies/`, label: "Case studies" },
+  { href: `${base}glossary/`, label: "Glossary" },
+  { href: `${base}freshness/`, label: "Freshness" },
+];
+---
+
+<header class="sn">
+  <div class="sn__left">
+    <a class="sn__brand" href={base}>GenAI Data Platform</a>
+    <nav class="sn__links" aria-label="Main">
+      {links.map((l) => <a href={l.href}>{l.label}</a>)}
+    </nav>
+  </div>
+  <div class="sn__right">
+    <div class="sn__search"><Search /></div>
+    <div class="sn__clouds" role="group" aria-label="Choose cloud flavor">
+      {
+        CLOUDS.map((c) => (
+          <button type="button" class="sn__cloud" data-cloud-btn={c.id} aria-pressed="false">
+            {c.label}
+          </button>
+        ))
+      }
+    </div>
+  </div>
+</header>
+
+<style>
+  .sn {
+    position: sticky;
+    top: 0;
+    z-index: 60;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: stretch;
+    background: var(--color-bg);
+    border-bottom: 2px solid var(--color-text);
+  }
+
+  .sn__left {
+    display: flex;
+    align-items: center;
+    gap: 28px;
+    padding: 0 20px;
+    min-height: 58px;
+    min-width: 0;
+  }
+
+  .sn__brand {
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    font-size: 15px;
+    color: var(--color-text);
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .sn__brand:hover {
+    color: var(--color-accent);
+    text-decoration: none;
+  }
+
+  .sn__links {
+    display: flex;
+    gap: 20px;
+    min-width: 0;
+    font-size: 11.5px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+
+  .sn__links a {
+    color: var(--color-text);
+    white-space: nowrap;
+  }
+
+  .sn__links a:hover,
+  .sn__links a[aria-current="page"] {
+    color: var(--color-accent);
+    text-decoration: none;
+  }
+
+  .sn__right {
+    display: flex;
+    align-items: stretch;
+    border-left: 2px solid var(--color-text);
+  }
+
+  .sn__search {
+    display: flex;
+    align-items: center;
+    padding: 0 14px;
+    border-right: 2px solid var(--color-text);
+  }
+
+  .sn__clouds {
+    display: flex;
+    align-items: stretch;
+  }
+
+  .sn__cloud {
+    appearance: none;
+    border: 0;
+    border-right: 1px solid var(--color-neutral-300);
+    background: transparent;
+    color: var(--color-text);
+    font-family: var(--font-body);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    padding: 0 16px;
+    cursor: pointer;
+  }
+
+  .sn__cloud:hover {
+    background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+  }
+
+  .sn__cloud[aria-pressed="true"] {
+    background: var(--color-accent);
+    color: var(--color-bg);
+  }
+
+  .sn__cloud[aria-pressed="true"]:hover {
+    background: var(--color-accent-600);
+  }
+
+  /* Desktop-first, same as the homepage: below 760px the bar stops sticking,
+     the routes scroll horizontally on one line, and the switcher takes its
+     own full-width row rather than squeezing. */
+  @media (max-width: 760px) {
+    .sn {
+      position: static;
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .sn__left {
+      overflow-x: auto;
+      padding: 14px 20px;
+      gap: 18px;
+    }
+
+    .sn__right {
+      border-left: 0;
+      border-top: 2px solid var(--color-text);
+    }
+
+    .sn__clouds {
+      flex: 1;
+    }
+
+    .sn__cloud {
+      /* flex-basis 0 with min-width 0: four labels at 16px padding and 0.14em
+         tracking are 9px wider than a 320px viewport. */
+      flex: 1 1 0;
+      min-width: 0;
+      padding: 12px 6px;
+      letter-spacing: 0.08em;
+      text-align: center;
+    }
+  }
+</style>
+
+<script>
+  // One cloud selection drives two attributes: `data-cloud` (what the existing
+  // per-flavor content and `.cloud-swap` blocks read) and `data-pf-cloud`
+  // (which accent the Modernist token sheet resolves). Persisted so the choice
+  // survives navigation across the site.
+  const root = document.documentElement;
+
+  function setCloud(id: string) {
+    root.setAttribute("data-cloud", id);
+    root.setAttribute("data-pf-cloud", id);
+    localStorage.setItem("gdp.cloud", id);
+    const url = new URL(location.href);
+    url.searchParams.set("cloud", id);
+    history.replaceState(null, "", url);
+    document.querySelectorAll<HTMLButtonElement>("[data-cloud-btn]").forEach((btn) => {
+      btn.setAttribute("aria-pressed", String(btn.dataset.cloudBtn === id));
+    });
+    document.dispatchEvent(new CustomEvent("gdp:cloud-change", { detail: { cloud: id } }));
+  }
+
+  function bindCloudControls() {
+    document.querySelectorAll<HTMLButtonElement>("[data-cloud-btn]").forEach((btn) => {
+      if (btn.dataset.cloudBound) return;
+      btn.dataset.cloudBound = "true";
+      btn.addEventListener("click", () => setCloud(btn.dataset.cloudBtn!));
+    });
+    const current = root.getAttribute("data-cloud");
+    if (current) setCloud(current);
+  }
+
+  bindCloudControls();
+  document.addEventListener("astro:page-load", bindCloudControls);
+</script>

@@ -120,7 +120,7 @@ function claimLabel(status: ClaimStatus, verifiedOn: string | null): string {
   .flavor-tabs {
     display: flex;
     gap: 0.35rem;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 2px solid var(--border);
     margin-bottom: 1.25rem;
   }
 
@@ -152,7 +152,7 @@ function claimLabel(status: ClaimStatus, verifiedOn: string | null): string {
   [data-panel-cloud] {
     padding: 1.5rem;
     background: var(--glass-bg);
-    border: 1px solid var(--glass-border);
+    border: 2px solid var(--border);
     border-radius: calc(var(--radius) + 4px);
     backdrop-filter: blur(var(--glass-blur));
     -webkit-backdrop-filter: blur(var(--glass-blur));
@@ -211,11 +211,13 @@ function claimLabel(status: ClaimStatus, verifiedOn: string | null): string {
   }
 
   .snippet {
+    /* Ink on the ground behind a 2px rule — the old light-on-dark terminal
+       block inverted the page's one ground. */
     background: var(--code-bg);
-    color: #e8e8e8;
+    color: var(--text);
     padding: 1rem;
-    border-radius: var(--radius);
-    border-left: 2px solid var(--code-highlight, var(--accent));
+    border: 2px solid var(--border);
+    border-left: 4px solid var(--code-highlight, var(--accent));
     overflow-x: auto;
     font-size: 0.82rem;
     line-height: 1.55;

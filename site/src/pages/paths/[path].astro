@@ -1,5 +1,5 @@
 ---
-import BaseLayout from "../../layouts/BaseLayout.astro";
+import SiteLayout from "../../layouts/SiteLayout.astro";
 import { MODULES } from "../../data/modules";
 import { PATHS, type PathInfo } from "../../data/paths";
 
@@ -21,7 +21,7 @@ const modules = MODULES.filter((m) => m.path === path.id).sort((a, b) => a.order
 const moduleIds = modules.map((m) => m.id);
 ---
 
-<BaseLayout title={`${path.label} path`} description={`${path.description} Ends with ${path.outcome}.`}>
+<SiteLayout title={`${path.label} path`} description={`${path.description} Ends with ${path.outcome}.`}>
   <article class="path-page">
     <header class="path-hero">
       <div class="path-hero-chips">
@@ -80,7 +80,7 @@ const moduleIds = modules.map((m) => m.id);
       }
     </ol>
   </article>
-</BaseLayout>
+</SiteLayout>
 
 <script>
   import { MODULES } from "../../data/modules";
@@ -208,7 +208,7 @@ const moduleIds = modules.map((m) => m.id);
     overflow-x: auto;
     padding-bottom: 0.75rem;
     margin-bottom: 1.75rem;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 2px solid var(--border);
   }
 
   .milestone-chip {
@@ -218,7 +218,7 @@ const moduleIds = modules.map((m) => m.id);
     gap: 0.4rem;
     padding: 0.45rem 0.75rem;
     background: var(--bg-card);
-    border: 1px solid var(--border);
+    border: 2px solid var(--border);
     border-radius: var(--radius);
     color: var(--text-secondary);
     font-size: 0.75rem;
