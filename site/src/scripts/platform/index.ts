@@ -238,7 +238,10 @@ export function mountPlatform(root: HTMLElement) {
         lifeCards.forEach((c, i) => {
           const ad = Math.abs(i - f);
           const el = c as HTMLElement;
-          el.style.opacity = String(Math.max(0.3, 1 - ad * 0.3));
+          // The handoff floors this at 0.3. That fade is visible text at
+          // ~1.9:1, which fails AA whether or not the ribbon is exposed to
+          // assistive tech — depth reads from translateZ/rotateY instead.
+          el.style.opacity = String(Math.max(0.9, 1 - ad * 0.3));
           el.style.borderColor = ad < 0.6 ? ACCENT_VAR : INK_VAR;
           el.style.transform = "translateZ(" + -ad * 40 + "px) rotateY(" + (i - f) * -4 + "deg)";
         });

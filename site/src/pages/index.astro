@@ -190,11 +190,11 @@ const nn = (i: number) => String(i + 1).padStart(2, "0");
                 <span class="pf-life__phase" data-pf-life-phase>{STAGES[stage].tag} // LIVE</span>
               </div>
             </div>
-            {/* A visual index of the ten stages, faded by distance from the
-                active one. Every card's content is already announced by the
-                live narrative column, so the ribbon is decorative — and its
-                distance fade would otherwise read as failing contrast. */}
-            <div class="pf-life__stripwrap" aria-hidden="true" data-a11y-decorative>
+            {/* A visual index of the ten stages, receding with distance from
+                the active one. Every card repeats what the narrative column
+                states in full, so it is hidden from assistive tech rather than
+                read out ten times. */}
+            <div class="pf-life__stripwrap" aria-hidden="true">
               <div class="pf-life__strip" data-pf-life-strip>
                 {
                   STAGES.map((s, i) => (
