@@ -674,7 +674,7 @@ const SERVICE_OVERLAYS = [
        down to the stacking breakpoint below, instead of guessing at scrim
        opacity or a magic-number offset. */
     gap: clamp(1rem, 3vw, 2.5rem);
-    /* Homepage <main> is full-bleed (see BaseLayout.astro's
+    /* Homepage <main> is full-bleed (see SiteLayout.astro's
        main.main--full-bleed) so every section supplies its own horizontal
        gutter — this one never did, leaving the H1 flush against the
        viewport's left edge at every breakpoint (confirmed: 0px from the
@@ -811,7 +811,7 @@ const SERVICE_OVERLAYS = [
   }
 
   .btn-ghost {
-    border: 1px solid var(--border);
+    border: 2px solid var(--border);
     color: var(--text);
     background: transparent;
   }

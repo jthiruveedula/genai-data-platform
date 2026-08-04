@@ -4,7 +4,7 @@
 // ModuleScenario. Every module already ships this data (scenarios.ts); this
 // page is purely a different view over the same source of truth — no new
 // facts, no invented numbers, same honest-copy rule as scenarios.ts itself.
-import BaseLayout from "../layouts/BaseLayout.astro";
+import SiteLayout from "../layouts/SiteLayout.astro";
 import { MODULES } from "../data/modules";
 import { CASE_STUDIES } from "../data/scenarios";
 
@@ -65,7 +65,7 @@ const INDUSTRY_SNAPSHOT = [
 ] as const;
 ---
 
-<BaseLayout
+<SiteLayout
   title="Enterprise case studies"
   description={`${totalStories} real, publicly cited enterprise case studies across all ${rows.length} curriculum modules and 4 clouds — no invented numbers, every figure sourced.`}
 >
@@ -173,7 +173,7 @@ const INDUSTRY_SNAPSHOT = [
       }
     </div>
   </article>
-</BaseLayout>
+</SiteLayout>
 
 <script>
   import { countUp } from "../lib/motion/primitives";
@@ -218,7 +218,7 @@ const INDUSTRY_SNAPSHOT = [
   .cs-hero {
     padding-bottom: 1.5rem;
     margin-bottom: 2rem;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 2px solid var(--border);
   }
 
   .hero-meta {
@@ -245,7 +245,7 @@ const INDUSTRY_SNAPSHOT = [
   .cs-snapshot {
     margin-bottom: 2.5rem;
     padding: 1.5rem;
-    border: 1px solid var(--border);
+    border: 2px solid var(--border);
     border-left: 3px solid var(--accent);
     border-radius: var(--radius);
     background: var(--bg-raised);
@@ -275,7 +275,7 @@ const INDUSTRY_SNAPSHOT = [
     flex-direction: column;
     gap: 0.3rem;
     padding: 0.9rem 1rem;
-    border: 1px solid var(--border);
+    border: 2px solid var(--border);
     border-radius: var(--radius);
     background: var(--bg-card);
   }

@@ -1,0 +1,270 @@
+/**
+ * Modernist bridge.
+ *
+ * The site's components speak one semantic vocabulary (`--bg`, `--text`,
+ * `--accent`, `--border`, `--radius`, `--glass-*`, `--shadow-panel`, …) that
+ * `tokens/base.css` used to point at a dark "control room" palette with
+ * rounded corners, glass blur and accent glow. This file re-points that same
+ * vocabulary at the Modernist tokens instead, so every existing component
+ * lands on the light ground, in Archivo, with zero radius and no decoration —
+ * without each one having to be rewritten first.
+ *
+ * Imported after `base.css` and `component.css`; the per-cloud token files
+ * (`tokens/gcp.css` etc.) and `tokens/atmosphere.css` are NOT imported by the
+ * Modernist shell — cloud identity now rides the single accent role, set by
+ * `[data-pf-cloud]` in `modernist.css`.
+ *
+ * Structure that still reads as glass panels or hairline cards is converted
+ * page by page; this layer makes sure nothing reads as *dark* glass in the
+ * meantime.
+ */
+
+:root {
+  /* Surfaces — Modernist is one ground. Separation comes from 2px rules, not
+     from a stack of raised fills, so every surface role resolves to the same
+     ground and cards stop floating. */
+  --bg: var(--color-bg);
+  --bg-deep: var(--color-bg);
+  --bg-card: var(--color-bg);
+  --bg-raised: var(--color-bg);
+  --border: var(--color-text);
+
+  --text: var(--color-text);
+  --text-secondary: var(--color-neutral-700);
+
+  /* One accent, re-tinted by the cloud selection. `--accent` itself has to be
+     re-pointed: base.css's default is the old steel-cyan HUD colour and every
+     component reads this name. `--accent-text` is the paragraph-size step —
+     the accent-to-ground pair is tuned for interface chrome, not body copy. */
+  --accent: var(--color-accent);
+  --accent-2: var(--color-accent);
+  --accent-text: var(--color-accent-700);
+  --accent-contrast: var(--color-bg);
+  --accent-strong: var(--color-accent-600);
+
+  /* Radius is 0 everywhere. No exceptions. */
+  --radius: 0px;
+  --p-radius: 0px;
+  --btn-radius: 0px;
+
+  /* Rules, never hairlines. */
+  --card-border-width: 2px;
+  --tab-indicator-height: 2px;
+
+  /* Nothing floats and nothing is decorated: no blur, no elevation, no glow. */
+  --glass-bg: var(--color-bg);
+  --glass-border: var(--color-text);
+  --glass-blur: 0px;
+  --glow-strength: 0;
+  --shadow-panel: none;
+  --card-shadow: none;
+  --shadow-sm: none;
+  --shadow-md: none;
+  --shadow-lg: none;
+
+  /* Set entirely in Archivo. Monospace stays a real monospace — it carries
+     identifiers, call signatures and figures, not display type. */
+  --font-body: "Archivo", system-ui, sans-serif;
+  --font-heading: "Archivo", system-ui, sans-serif;
+  --font-mono: ui-monospace, monospace;
+  --font-heading-weight: 800;
+
+  /* Code blocks sit on the ground with a rule, like every other panel. */
+  --code-bg: var(--color-bg);
+  --code-highlight: var(--color-accent);
+
+  /* Claim status keeps three distinguishable hues — status is information, not
+     decoration, so it is the one place a second colour is allowed. Stepped
+     dark enough to carry small text on the light ground. */
+  --status-verified: #12712f;
+  --status-unverified: #8a5a00;
+  --status-stale: #b3261e;
+}
+
+/* Modernist is a light-ground system; the old dark-first default and its
+   `[data-theme]` inversion are gone, so any leftover attribute resolves to
+   the same one ground rather than a half-converted dark surface. */
+:root[data-theme="dark"],
+:root[data-theme="light"] {
+  --bg: var(--color-bg);
+  --bg-deep: var(--color-bg);
+  --bg-card: var(--color-bg);
+  --bg-raised: var(--color-bg);
+  --border: var(--color-text);
+  --text: var(--color-text);
+  --text-secondary: var(--color-neutral-700);
+  --glass-bg: var(--color-bg);
+  --glass-border: var(--color-text);
+  --shadow-panel: none;
+}
+
+/* Corners, blur and elevation are removed at the source rather than chased
+   through each component's scoped styles. Radius has no legitimate use in
+   this system except a genuine circle, which authors as `50%`. */
+:where(body *):not(svg *) {
+  border-radius: 0;
+}
+
+:where(body *):not(svg *):not(canvas) {
+  box-shadow: none;
+  backdrop-filter: none;
+  text-shadow: none;
+}
+
+/* — base type ————————————————————————————————————————————————————————
+   Flush left, tight, structural. */
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-heading);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 0.98;
+  text-align: left;
+  text-wrap: balance;
+}
+
+h1 {
+  font-size: clamp(32px, 3.6vw, 62px);
+  letter-spacing: -0.035em;
+  line-height: 0.94;
+}
+
+h2 {
+  font-size: clamp(24px, 2.6vw, 40px);
+  margin-top: 2.4em;
+}
+
+h3 {
+  font-size: clamp(18px, 1.6vw, 24px);
+  letter-spacing: -0.02em;
+  margin-top: 2em;
+}
+
+p,
+li {
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--color-neutral-800);
+}
+
+strong {
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+/* Links in running text are underlined: the accent step alone sits at 1.6:1
+   against body copy, well under the 3:1 a link needs to be distinguishable by
+   colour, so the underline carries it. Chrome — nav, footer rails, chips,
+   buttons — is positional and opts out. */
+a {
+  color: var(--color-accent-700);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+a:hover {
+  color: var(--color-accent);
+}
+
+:is(header, nav, footer) a,
+a:is(.chip, .btn, [class*="btn"], [class*="card"], [class*="tab"]) {
+  text-decoration: none;
+}
+
+code,
+pre,
+.mono {
+  font-family: var(--font-mono);
+}
+
+hr {
+  height: 2px;
+  border: 0;
+  background: var(--color-text);
+}
+
+::selection {
+  background: var(--color-accent-200);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* Accent glow is not part of this system: any leftover bloom layer resolves
+   to nothing rather than tinting the ground. */
+[class*="glow"],
+[class*="bloom"] {
+  background: none;
+  filter: none;
+  opacity: 0;
+}
+
+/* — chips ————————————————————————————————————————————————————————————
+   The site's one small-label component: 1px bordered, uppercase, flush left.
+   The old version carried bracket pseudo-elements and an accent glow. */
+
+.chip {
+  /* Labels are set in Archivo like everything else — monospace is reserved
+     for values (identifiers, figures, call signatures). */
+  font-family: var(--font-body);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  border: 1px solid var(--color-neutral-300);
+  background: transparent;
+  color: var(--color-text);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.chip::before,
+.chip::after {
+  content: none;
+}
+
+.chip--accent {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-bg);
+}
+
+.chip--pending {
+  border-style: dashed;
+}
+
+/* — skip link ————————————————————————————————————————————————————————— */
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 100;
+  padding: 12px 16px;
+  background: var(--color-accent);
+  color: var(--color-bg);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.skip-link:focus {
+  left: 0;
+}

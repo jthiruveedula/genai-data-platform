@@ -2,7 +2,7 @@
 // Per-module "micro-pipeline" diagram: the mechanism specific to this
 // module, distinct from the homepage's whole-platform 10-stage schematic.
 // A static component (no GSAP of its own) — as a direct <article> child it
-// already gets BaseLayout's generic `article > *` scroll-reveal for free,
+// already gets SiteLayout's generic `article > *` scroll-reveal for free,
 // so it stays visually consistent with every other block on the page
 // without a second animation system to maintain across 11 module pages.
 // The connector's traveling dot is a plain CSS keyframe, gated behind
@@ -83,7 +83,7 @@ const cloudService = MODULE_CLOUD_SERVICE[moduleId];
     content: "";
     position: absolute;
     inset: -15% 10%;
-    background: radial-gradient(closest-side, color-mix(in srgb, var(--accent) 7%, transparent), transparent 72%);
+    background: none;
     pointer-events: none;
     z-index: -1;
   }
@@ -133,7 +133,7 @@ const cloudService = MODULE_CLOUD_SERVICE[moduleId];
     display: flex;
     align-items: stretch;
     gap: 0;
-    border: 1px solid var(--border);
+    border: 2px solid var(--border);
     border-radius: var(--radius);
     background: var(--bg-raised);
     padding: 1.1rem 1rem;
@@ -214,7 +214,7 @@ const cloudService = MODULE_CLOUD_SERVICE[moduleId];
     height: 1.1rem;
     border-radius: 999px;
     background: var(--bg-card);
-    border: 1px solid var(--border);
+    border: 2px solid var(--border);
     color: var(--text-secondary);
     font-size: 0.85rem;
     line-height: 1;

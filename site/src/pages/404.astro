@@ -3,7 +3,7 @@
 // under the project's base — https://jthiruveedula.github.io/genai-data-platform/
 // — instead of GitHub's generic, unthemed 404. Astro's static build emits
 // dist/404.html from this route automatically; no extra config needed.
-import BaseLayout from "../layouts/BaseLayout.astro";
+import SiteLayout from "../layouts/SiteLayout.astro";
 import Button from "../components/ui/Button.astro";
 import { MODULES } from "../data/modules";
 
@@ -11,7 +11,7 @@ const base = import.meta.env.BASE_URL;
 const orderedModules = [...MODULES].sort((a, b) => a.order - b.order);
 ---
 
-<BaseLayout title="Page not found" description="This page doesn't exist. Find your way back to the curriculum." noIndex>
+<SiteLayout title="Page not found" description="This page doesn't exist. Find your way back to the curriculum." noIndex>
   <article class="not-found">
     <span class="chip mono">404 NOT FOUND</span>
     <h1>This page took a wrong turn somewhere in the pipeline.</h1>
@@ -34,7 +34,7 @@ const orderedModules = [...MODULES].sort((a, b) => a.order - b.order);
       }
     </ul>
   </article>
-</BaseLayout>
+</SiteLayout>
 
 <style>
   .not-found {
@@ -64,7 +64,7 @@ const orderedModules = [...MODULES].sort((a, b) => a.order - b.order);
   .module-list a {
     display: block;
     padding: 0.5rem 0;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 2px solid var(--border);
     color: var(--text);
     text-decoration: none;
   }

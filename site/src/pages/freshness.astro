@@ -1,5 +1,5 @@
 ---
-import BaseLayout from "../layouts/BaseLayout.astro";
+import SiteLayout from "../layouts/SiteLayout.astro";
 import { loadClaims, claimStatus, moduleHref, type Claim, type ClaimStatus } from "../lib/claims";
 
 const base = import.meta.env.BASE_URL;
@@ -33,7 +33,7 @@ function statusLabel(status: ClaimStatus, verifiedOn: string | null): string {
 
 ---
 
-<BaseLayout title="Content freshness" description="The claim registry behind every service and pricing claim on this site, and its current verification state.">
+<SiteLayout title="Content freshness" description="The claim registry behind every service and pricing claim on this site, and its current verification state.">
   <article>
     <h1>Content freshness</h1>
     <p>
@@ -127,7 +127,7 @@ function statusLabel(status: ClaimStatus, verifiedOn: string | null): string {
       </table>
     </div>
   </article>
-</BaseLayout>
+</SiteLayout>
 
 <script>
   function setup() {
@@ -172,8 +172,8 @@ function statusLabel(status: ClaimStatus, verifiedOn: string | null): string {
     gap: 1.25rem;
     padding: 1.25rem 0;
     margin: 1rem 0 2rem;
-    border-top: 1px solid var(--border);
-    border-bottom: 1px solid var(--border);
+    border-top: 2px solid var(--border);
+    border-bottom: 2px solid var(--border);
   }
 
   .stat-block {
@@ -216,7 +216,7 @@ function statusLabel(status: ClaimStatus, verifiedOn: string | null): string {
     height: 1.1rem;
     margin-right: 0.3rem;
     padding: 0;
-    border: 1px solid var(--border);
+    border: 2px solid var(--border);
     border-radius: 3px;
     background: transparent;
     color: var(--text-secondary);
@@ -241,7 +241,7 @@ function statusLabel(status: ClaimStatus, verifiedOn: string | null): string {
 
   .table-wrap {
     overflow-x: auto;
-    border: 1px solid var(--border);
+    border: 2px solid var(--border);
     border-radius: var(--radius);
   }
 
@@ -257,7 +257,7 @@ function statusLabel(status: ClaimStatus, verifiedOn: string | null): string {
   .freshness-table td {
     padding: 0.75rem 1rem;
     text-align: left;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 2px solid var(--border);
     vertical-align: top;
     /* .chip's --text-secondary color is contrast-audited against --bg-card,
        not the page's darker --bg — td cells need the same background as th
