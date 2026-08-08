@@ -41,7 +41,7 @@
     "@axe-core/playwright": "^4.12.1",
     "@lhci/cli": "^0.15.1",
     "@playwright/test": "^1.62.0",
-    "@storybook-astro/framework": "^1.9.0",
+    "@storybook-astro/framework": "^1.10.0",
     "@storybook/builder-vite": "^10.5.5",
     "@tailwindcss/vite": "^4.3.3",
     "pagefind": "^1.5.2",
