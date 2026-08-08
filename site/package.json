@@ -42,7 +42,7 @@
     "@lhci/cli": "^0.15.1",
     "@playwright/test": "^1.62.0",
     "@storybook-astro/framework": "^1.9.0",
-    "@storybook/builder-vite": "^10.5.5",
+    "@storybook/builder-vite": "^10.5.6",
     "@tailwindcss/vite": "^4.3.3",
     "pagefind": "^1.5.2",
     "storybook": "^10.5.2",
