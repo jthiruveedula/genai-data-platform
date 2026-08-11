@@ -20,15 +20,20 @@ import "../styles/platform.css";
 interface Props {
   title: string;
   description: string;
-  /** Cloud whose accent the page opens on — see the accent block in platform.css. */
-  cloud?: "gcp" | "aws" | "azure" | "oss";
+  /**
+   * Cloud whose accent the page opens on — see the accent block in platform.css.
+   * `"neutral"` emits no `data-pf-cloud` at all, leaving the base Modernist
+   * vermilion in place: for pages whose artwork is baked in one accent and so
+   * cannot follow a cloud switch (e.g. `/world/`, whose film is pre-rendered).
+   */
+  cloud?: "gcp" | "aws" | "azure" | "oss" | "neutral";
 }
 
 const { title, description, cloud = "gcp" } = Astro.props;
 ---
 
 <!doctype html>
-<html lang="en" data-pf-cloud={cloud}>
+<html lang="en" data-pf-cloud={cloud === "neutral" ? undefined : cloud}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -46,6 +51,7 @@ const { title, description, cloud = "gcp" } = Astro.props;
     <link rel="preload" href={archivo400} as="font" type="font/woff2" crossorigin />
     <link rel="preload" href={archivo800} as="font" type="font/woff2" crossorigin />
     <title>{title} · GenAI Data Platform</title>
+    <slot name="head" />
   </head>
   <body>
     <slot />

@@ -7,7 +7,8 @@
       "url": [
         "http://localhost:4321/genai-data-platform/",
         "http://localhost:4321/genai-data-platform/modules/45-evaluation/",
-        "http://localhost:4321/genai-data-platform/calculator/"
+        "http://localhost:4321/genai-data-platform/calculator/",
+        "http://localhost:4321/genai-data-platform/world/"
       ],
       "numberOfRuns": 5
     },

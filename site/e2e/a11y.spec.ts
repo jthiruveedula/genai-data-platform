@@ -18,6 +18,7 @@ const KEY_PAGES = [
   'freshness/',
   'paths/beginner/',
   'calculator/',
+  'world/',
   'this-page-does-not-exist/',
 ];
 
