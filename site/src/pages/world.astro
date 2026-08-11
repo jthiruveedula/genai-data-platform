@@ -283,9 +283,14 @@ const config = {
     color: var(--color-bg);
   }
 
-  .sw-root .sw-btn--primary {
-    background: var(--color-accent);
-    color: #fff;
+  /* Paper on raw vermilion is 4.2:1 — fine for Modernist's own large-text
+     buttons, under AA for the engine's 13-15px chrome. The 700 step of the
+     same ramp clears 4.5:1 at these sizes without leaving the accent family.
+     Applies to the active nav pill and the route label too. */
+  .sw-root .sw-btn--primary,
+  .sw-root .sw-nav__item.is-active {
+    background: var(--color-accent-700);
+    color: var(--color-bg);
   }
 
   .sw-root .sw-btn--ghost {
