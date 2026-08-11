@@ -1,0 +1,391 @@
+---
+/**
+ * The scroll world: a camera flight through the platform, scrubbed by scroll.
+ *
+ * The six clips under `public/world/` are legs of ONE continuous three.js
+ * render (Remotion, driven through OpenMontage's atelier composition path —
+ * `docs/scroll-world-pipeline.md`). Because they are slices of a single take
+ * rather than separately generated shots, consecutive legs share a frame at
+ * every boundary and the flight never cuts.
+ *
+ * This page is structure and copy only. The scrub mechanics live in
+ * `src/scripts/world-scrub-engine.js` (vendored from the scroll-world skill).
+ */
+import ModernistLayout from "../layouts/ModernistLayout.astro";
+
+const base = import.meta.env.BASE_URL;
+const asset = (file: string) => `${base}world/${file}`;
+
+type WorldSection = {
+  id: string;
+  label: string;
+  eyebrow: string;
+  title: string;
+  body: string;
+  tags: string[];
+  scroll?: number;
+  linger?: number;
+  cta?: { primary: { label: string; href: string }; secondary: { label: string; href: string } };
+};
+
+/** The ten pipeline stages of `data/platformScroll.ts`, grouped into the six
+ *  rooms the camera actually flies through. Same story, one telling. */
+const SECTIONS: WorldSection[] = [
+  {
+    id: "01-sources",
+    label: "Sources",
+    eyebrow: "01 · Raw",
+    title: "Knowledge arrives messy.",
+    body: "A scanned PDF, a ticket thread, a crawled page. Nothing is clean, nothing is labelled, and every decision downstream inherits whatever you do about it here.",
+    tags: ["Documents", "Tickets", "Crawls"],
+    scroll: 1.5,
+    linger: 0.35,
+  },
+  {
+    id: "02-ingest",
+    label: "Ingest",
+    eyebrow: "02 · Split",
+    title: "Landed, parsed, chunked.",
+    body: "Idempotent pipelines land every document in object storage with its metadata. Layout-aware parsing then splits it at semantic boundaries — chunk size echoes all the way out to answer quality.",
+    tags: ["Object storage", "Layout-aware parse", "Incremental"],
+  },
+  {
+    id: "03-embed",
+    label: "Embed",
+    eyebrow: "03 · Vectors",
+    title: "Meaning becomes geometry.",
+    body: "Each chunk collapses into a vector. Related things end up near each other, and search stops being string matching and starts being a distance problem you can reason about.",
+    tags: ["Embeddings", "Similarity", "Dimensionality"],
+    linger: 0.3,
+  },
+  {
+    id: "04-index",
+    label: "Index",
+    eyebrow: "04 · Retrieve",
+    title: "Ask, and the index answers.",
+    body: "The question becomes a vector too. The store returns its nearest neighbours in milliseconds, and hybrid search puts keyword precision back alongside semantic recall.",
+    tags: ["Vector DB", "Hybrid search", "Metadata filters"],
+  },
+  {
+    id: "05-reason",
+    label: "Reason",
+    eyebrow: "05 · Rank",
+    title: "Evidence, ranked before it is read.",
+    body: "A reranker reorders what came back, the assembler fits the survivors into the context window, and only then does the model speak. The agent loop — plan, call a tool, observe — runs on the same floor.",
+    tags: ["Rerank", "Context assembly", "Agent loop"],
+    linger: 0.35,
+  },
+  {
+    id: "06-answer",
+    label: "Answer",
+    eyebrow: "06 · Grounded",
+    title: "An answer with receipts.",
+    body: "Every claim traces to a chunk, every chunk to a document, and every call through one governed runtime: evaluated, observable, and accounted for down to the query.",
+    tags: ["Citations", "Evals", "Observability"],
+    scroll: 1.8,
+    linger: 0.4,
+    cta: {
+      primary: { label: "Start the curriculum", href: `${base}modules/00-foundations/` },
+      secondary: { label: "See the platform", href: base },
+    },
+  },
+];
+
+const config = {
+  brand: { name: "GenAI Data Platform", href: base },
+  hint: "scroll to fly",
+  nav: true,
+  atmosphere: false,
+  diveScroll: 1.35,
+  // The legs are consecutive frames of one render, so a seam needs only enough
+  // dissolve to cover swapping one <video> element for the next — a wide
+  // crossfade would blur two frames that already line up exactly.
+  crossfade: 0.05,
+  sections: SECTIONS.map((s) => ({
+    id: s.id,
+    label: s.label,
+    eyebrow: s.eyebrow,
+    title: s.title,
+    body: s.body,
+    tags: s.tags,
+    scroll: s.scroll,
+    linger: s.linger,
+    cta: s.cta,
+    still: asset(`${s.id}.jpg`),
+    stillMobile: asset(`${s.id}-m.jpg`),
+    clip: asset(`${s.id}.mp4`),
+    clipMobile: asset(`${s.id}-m.mp4`),
+  })),
+  // Architecture A (one continuous forward take): the legs are the journey,
+  // so there is nothing to connect them with.
+  connectors: [],
+};
+---
+
+<ModernistLayout
+  title="The world"
+  description="Scroll through a GenAI data platform as one continuous camera flight: raw documents, chunking, embeddings, the index, reranking, and a grounded answer."
+  cloud="neutral"
+>
+  {/* The first scene's poster IS the largest contentful paint, and the engine
+      only injects its <img> after the module script has run. Preloading it
+      per breakpoint (the engine picks portrait or landscape at mount) takes
+      that paint off the JavaScript's critical path. */}
+  <link
+    slot="head"
+    rel="preload"
+    as="image"
+    href={asset("01-sources.jpg")}
+    media="(min-width: 861px)"
+    fetchpriority="high"
+  />
+  <link
+    slot="head"
+    rel="preload"
+    as="image"
+    href={asset("01-sources-m.jpg")}
+    media="(max-width: 860px)"
+    fetchpriority="high"
+  />
+
+  <div class="world" data-world></div>
+
+  <!-- Everything above is built by JavaScript. This is the page without it:
+       the same six sections, the same copy, each clip's own first frame as the
+       image. Search engines and no-JS visitors get the story; the flight is
+       the enhancement, not the content. -->
+  <div class="world-fallback" data-world-fallback>
+    <header class="world-fallback__head">
+      <p class="world-fallback__kicker">The world</p>
+      <h1>One document, six rooms, one continuous flight.</h1>
+      <p class="world-fallback__lede">
+        The scrolling camera version of this page needs JavaScript. Here is the same journey as stills.
+      </p>
+    </header>
+    {
+      SECTIONS.map((s, i) => (
+        <section class="world-fallback__section">
+          <img
+            src={asset(`${s.id}.jpg`)}
+            alt={`Frame from the ${s.label.toLowerCase()} stage of the platform flight`}
+            width="1280"
+            height="720"
+            loading="lazy"
+            decoding="async"
+          />
+          <p class="world-fallback__eyebrow">{s.eyebrow}</p>
+          <h2>{s.title}</h2>
+          <p>{s.body}</p>
+          <ul class="world-fallback__tags">
+            {s.tags.map((t) => (
+              <li>{t}</li>
+            ))}
+          </ul>
+          {s.cta && (
+            <p class="world-fallback__cta">
+              <a href={s.cta.primary.href}>{s.cta.primary.label}</a>
+              <a href={s.cta.secondary.href}>{s.cta.secondary.label}</a>
+            </p>
+          )}
+        </section>
+      ))
+    }
+  </div>
+
+  <script type="application/json" id="world-config" set:html={JSON.stringify(config)} />
+
+  <script>
+    import { mountScrollWorld } from "../scripts/world-scrub-engine.js";
+
+    const host = document.querySelector<HTMLElement>("[data-world]");
+    const raw = document.getElementById("world-config")?.textContent;
+    if (host && raw) {
+      const config = JSON.parse(raw);
+      mountScrollWorld(host, config);
+
+      // The engine's route dots carry their label in a tooltip span that the
+      // phone breakpoint hides, which leaves the button with no accessible
+      // name there. Naming them from the same config keeps the fix on this
+      // side of the vendor boundary, so the engine file stays re-copyable.
+      host.querySelectorAll<HTMLElement>(".sw-route__dot").forEach((dot, i) => {
+        const label = config.sections[i]?.label;
+        if (label) dot.setAttribute("aria-label", `Fly to ${label}`);
+      });
+      // Only once the engine has actually built its DOM does the static
+      // version get taken down — a thrown mount leaves the readable page up
+      // rather than a blank screen. It is REMOVED, not just hidden: six more
+      // posters left in a display:none subtree still get fetched, which is
+      // ~400KB of bandwidth competing with the first clip.
+      document.documentElement.setAttribute("data-world-mounted", "");
+      document.querySelector("[data-world-fallback]")?.remove();
+    }
+  </script>
+</ModernistLayout>
+
+<style is:global>
+  /* The engine ships light-mode defaults in an @layer, so unlayered variables
+     here win. Bind them to the page's own Modernist tokens rather than to
+     copies of them: the accent follows the cloud selection for free. */
+  .sw-root {
+    --sw-bg: var(--color-bg);
+    --sw-ink: var(--color-text);
+    --sw-ink-soft: var(--color-neutral-700);
+    --sw-accent: var(--color-accent);
+    --sw-font-display: var(--font-heading);
+    --sw-font-body: var(--font-body);
+  }
+
+  /* Modernist has no rounded anything and one hard accent — square off the
+     engine's default pill chrome instead of restyling it component by
+     component. */
+  .sw-root .sw-nav,
+  .sw-root .sw-nav__item,
+  .sw-root .sw-topcta,
+  .sw-root .sw-btn,
+  .sw-root .sw-copy__tags li,
+  .sw-root .sw-route__label {
+    border-radius: 0;
+  }
+
+  .sw-root .sw-brand__mark {
+    border-radius: 0;
+    background: var(--color-accent);
+    box-shadow: none;
+  }
+
+  .sw-root .sw-copy__title,
+  .sw-root .sw-brand__name {
+    font-weight: var(--font-heading-weight);
+    letter-spacing: -0.02em;
+  }
+
+  .sw-root .sw-nav {
+    background: color-mix(in srgb, var(--color-bg) 82%, transparent);
+    border: 1px solid var(--color-divider);
+  }
+
+  /* The engine's default tag chip mixes the accent into white; on this
+     ground that lands under 4.5:1. Ink on surface, accent as the rule. */
+  .sw-root .sw-copy__tags li {
+    color: var(--color-text);
+    background: color-mix(in srgb, var(--color-bg) 88%, transparent);
+    border: 1px solid var(--color-accent);
+  }
+
+  .sw-root .sw-route__label {
+    background: color-mix(in srgb, var(--color-bg) 88%, transparent);
+    border: 1px solid var(--color-divider);
+    color: var(--color-text);
+  }
+
+  .sw-root .sw-topcta {
+    background: var(--color-text);
+    color: var(--color-bg);
+  }
+
+  /* Paper on raw vermilion is 4.2:1 — fine for Modernist's own large-text
+     buttons, under AA for the engine's 13-15px chrome. The 700 step of the
+     same ramp clears 4.5:1 at these sizes without leaving the accent family.
+     Applies to the active nav pill and the route label too. */
+  .sw-root .sw-btn--primary,
+  .sw-root .sw-nav__item.is-active {
+    background: var(--color-accent-700);
+    color: var(--color-bg);
+  }
+
+  .sw-root .sw-btn--ghost {
+    border: 2px solid var(--color-text);
+    color: var(--color-text);
+  }
+
+  [data-world-mounted] .world-fallback {
+    display: none;
+  }
+</style>
+
+<style>
+  .world {
+    position: relative;
+  }
+
+  .world-fallback {
+    max-width: 68rem;
+    margin: 0 auto;
+    padding: clamp(24px, 6vw, 72px) clamp(18px, 5vw, 64px) 6rem;
+  }
+
+  .world-fallback__kicker,
+  .world-fallback__eyebrow {
+    font-size: 0.8rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--color-accent);
+    margin: 0;
+  }
+
+  .world-fallback h1 {
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    line-height: 1.03;
+    margin: 0.5rem 0 1rem;
+  }
+
+  .world-fallback__lede {
+    color: var(--color-neutral-700);
+    max-width: 46ch;
+  }
+
+  .world-fallback__section {
+    margin-top: clamp(2.5rem, 6vw, 4.5rem);
+    border-top: 2px solid var(--color-text);
+    padding-top: 1.5rem;
+  }
+
+  .world-fallback__section img {
+    display: block;
+    width: 100%;
+    height: auto;
+    margin-bottom: 1.25rem;
+    border: 1px solid var(--color-divider);
+  }
+
+  .world-fallback__section h2 {
+    font-size: clamp(1.5rem, 3vw, 2.25rem);
+    margin: 0.5rem 0 0.75rem;
+  }
+
+  .world-fallback__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    list-style: none;
+    padding: 0;
+    margin: 1rem 0 0;
+  }
+
+  .world-fallback__tags li {
+    font-size: 0.82rem;
+    padding: 0.35rem 0.7rem;
+    border: 1px solid var(--color-accent);
+  }
+
+  .world-fallback__cta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+  }
+
+  .world-fallback__cta a {
+    padding: 0.8rem 1.4rem;
+    border: 2px solid var(--color-text);
+    text-decoration: none;
+    color: var(--color-text);
+    font-weight: 600;
+  }
+
+  .world-fallback__cta a:first-child {
+    background: var(--color-accent);
+    border-color: var(--color-accent);
+    color: #fff;
+  }
+</style>

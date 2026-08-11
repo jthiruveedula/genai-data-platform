@@ -10,14 +10,18 @@ import * as THREE from "three";
 // literal visualization of a sequence, positions chosen only to keep 12
 // waypoints readably spread out along a gentle curve.
 //
-// Scroll-linked camera (free alternative to a paid pre-rendered scroll-world
-// build): the camera doesn't auto-orbit — it flies ALONG this same curve as
-// the section scrolls through the viewport, computed once per frame from the
-// container's own getBoundingClientRect() rather than a pinned/extended
+// Scroll-linked camera: it doesn't auto-orbit — it flies ALONG this same curve
+// as the section scrolls through the viewport, computed once per frame from
+// the container's own getBoundingClientRect() rather than a pinned/extended
 // scroll distance, so it never changes the page's scroll length or trips the
-// existing no-horizontal-overflow layout tests. Same underlying idea as
-// scroll-world's "scroll drives a camera" contract, built on tech already in
-// this codebase (React Three Fiber) instead of pre-rendered video.
+// existing no-horizontal-overflow layout tests.
+//
+// This is the *live* version of the "scroll drives a camera" idea: a small
+// canvas embedded in a normal page, cheap enough to sit inside a section. The
+// full-page treatment — a pre-rendered flight through the whole platform,
+// scrubbed frame by frame — is `/world/` (see tools/scroll-world/README.md).
+// Same contract, different budget: this one renders live and stays interactive
+// (hover a waypoint), that one buys cinematic depth by shipping video.
 
 export type FlightWaypoint = {
   id: string;
