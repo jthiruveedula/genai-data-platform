@@ -11,3 +11,7 @@ __pycache__/
 .pytest_cache/
 *.pyc
 .venv/
+
+# Playwright MCP scratch output (page snapshots, console logs)
+.playwright-mcp/
+test-results/
