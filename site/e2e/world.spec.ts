@@ -75,6 +75,63 @@ test('without JavaScript the six sections are still readable', async ({ browser 
   await context.close();
 });
 
+test('each room links to the modules that teach it', async ({ page }) => {
+  await page.goto('world/');
+
+  // Six rooms, twelve modules, each placed exactly once (worldRooms.test.ts
+  // enforces the mapping; this checks it actually reaches the page).
+  await expect(page.locator('.world-taught')).toHaveCount(SECTIONS);
+  const hrefs = await page.locator('.world-taught__list a').evaluateAll((links) =>
+    links.map((l) => (l as HTMLAnchorElement).getAttribute('href')),
+  );
+  expect(hrefs).toHaveLength(12);
+  expect(new Set(hrefs).size).toBe(12);
+  expect(hrefs.every((h) => /\/modules\/[\w-]+\/$/.test(h ?? ''))).toBe(true);
+});
+
+test('a finished module is marked done in its room', async ({ page }) => {
+  await page.goto('world/');
+  // Written by ModuleRecap via lib/progress.ts — the same contract the
+  // curriculum journey reads, so progress made anywhere shows up here.
+  await page.evaluate(() =>
+    localStorage.setItem('gdp.recap.20-embeddings', JSON.stringify({ viewedAt: Date.now() })),
+  );
+  await page.reload();
+
+  const done = page.locator('.world-taught__list a[data-complete]');
+  await expect(done).toHaveCount(1);
+  await expect(done).toHaveAttribute('href', /\/modules\/20-embeddings\/$/);
+  // The embed room owns exactly that one module, so its header reads all-done.
+  await expect(page.locator('.world-taught__head').nth(2)).toContainText('all 1 done');
+});
+
+test('a room is a deep link, and the hash follows the flight', async ({ page }) => {
+  await page.goto('world/#reason');
+  // Landing on a hash should put the camera in that room, not at the start.
+  await expect
+    .poll(async () => page.evaluate(() => window.scrollY / window.innerHeight), { timeout: 10_000 })
+    .toBeGreaterThan(5);
+  await expect(page.locator('.sw-route__dot').nth(4)).toHaveClass(/is-active/);
+
+  // Flying on rewrites the hash, so any position is shareable.
+  await page.evaluate(() => window.scrollTo(0, window.innerHeight * 0.4));
+  await expect.poll(async () => new URL(page.url()).hash, { timeout: 10_000 }).toBe('#sources');
+});
+
+test('keyboard alone flies the whole route', async ({ page }) => {
+  await page.goto('world/');
+  await expect(page.locator('.sw-route__dot').first()).toHaveClass(/is-active/);
+
+  await page.keyboard.press('End');
+  await expect(page.locator('.sw-route__dot').last()).toHaveClass(/is-active/);
+
+  await page.keyboard.press('ArrowUp');
+  await expect(page.locator('.sw-route__dot').nth(SECTIONS - 2)).toHaveClass(/is-active/);
+
+  await page.keyboard.press('Home');
+  await expect(page.locator('.sw-route__dot').first()).toHaveClass(/is-active/);
+});
+
 test('the page never scrolls sideways', async ({ page }) => {
   for (const width of [1440, 390]) {
     await page.setViewportSize({ width, height: 900 });
