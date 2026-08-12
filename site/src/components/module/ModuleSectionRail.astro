@@ -1,0 +1,206 @@
+---
+/**
+ * A section rail for long module pages: the page's own headings, tracked as you
+ * read, clickable to jump.
+ *
+ * The headings are not duplicated into data — they are read out of the rendered
+ * article, so the rail cannot disagree with the page. It builds itself only when
+ * there are enough sections to be worth a rail (3+), and only on viewports wide
+ * enough to hold it beside the column, so nothing is crowded on the way down to
+ * a phone.
+ *
+ * The site already has a reading-progress rule (SiteLayout); this answers the
+ * other question — not "how far through am I" but "what is in here, and where
+ * am I in it".
+ */
+---
+
+<nav class="section-rail" data-section-rail aria-label="Sections in this module" hidden>
+  <ol class="rail-list" data-rail-list></ol>
+</nav>
+
+<style>
+  /* A tick rail, not a panel: the reading column on this site runs nearly the
+     full width at large sizes, so a box of section titles would sit on top of
+     the prose. Ticks live in the page edge and cost ~10px; the title appears
+     on hover or keyboard focus, which is when it is actually wanted. */
+  .section-rail {
+    position: fixed;
+    top: 50%;
+    right: max(0.4rem, env(safe-area-inset-right));
+    z-index: 30;
+    transform: translateY(-50%);
+    padding: 0.4rem 0.25rem;
+  }
+
+  /* Below this there is no edge to spare, and the page is a single column. */
+  @media (max-width: 1023px) {
+    .section-rail {
+      display: none;
+    }
+  }
+
+  .rail-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+  }
+
+  .rail-list :global(button) {
+    position: relative;
+    display: block;
+    width: 1.4rem;
+    height: 0.85rem;
+    font: inherit;
+    background: none;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+  }
+
+  /* The tick itself. */
+  .rail-list :global(button::before) {
+    content: "";
+    position: absolute;
+    right: 0;
+    top: 50%;
+    height: 2px;
+    width: 0.75rem;
+    transform: translateY(-50%);
+    background: var(--border);
+    transition:
+      width var(--duration-micro) var(--ease-out),
+      background var(--duration-micro) var(--ease-out);
+  }
+
+  .rail-list :global(button:hover::before),
+  .rail-list :global(button:focus-visible::before) {
+    width: 1.4rem;
+    background: var(--accent);
+  }
+
+  .rail-list :global(button[aria-current="true"]::before) {
+    width: 1.4rem;
+    background: var(--accent);
+  }
+
+  /* The label, revealed beside the tick on hover/focus. */
+  .rail-list :global(.rail-label) {
+    position: absolute;
+    right: 1.75rem;
+    top: 50%;
+    transform: translateY(-50%) translateX(0.3rem);
+    white-space: nowrap;
+    max-width: 22rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 0.75rem;
+    line-height: 1.2;
+    color: var(--text);
+    background: color-mix(in srgb, var(--bg-card) 94%, transparent);
+    border: 1px solid var(--border);
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--radius);
+    opacity: 0;
+    pointer-events: none;
+    transition:
+      opacity var(--duration-micro) var(--ease-out),
+      transform var(--duration-micro) var(--ease-out);
+  }
+
+  .rail-list :global(button:hover .rail-label),
+  .rail-list :global(button:focus-visible .rail-label),
+  .rail-list :global(button[aria-current="true"] .rail-label) {
+    opacity: 1;
+    transform: translateY(-50%) translateX(0);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .rail-list :global(button::before),
+    .rail-list :global(.rail-label) {
+      transition: none;
+    }
+  }
+</style>
+
+<script>
+  function buildRail() {
+    const rail = document.querySelector<HTMLElement>("[data-section-rail]");
+    const list = rail?.querySelector<HTMLElement>("[data-rail-list]");
+    const article = document.querySelector("article");
+    if (!rail || !list || !article) return;
+
+    const headings = [...article.querySelectorAll<HTMLElement>("h2")].filter(
+      (h) => (h.textContent ?? "").trim().length > 0,
+    );
+    // Two sections do not need a rail; they need a scroll.
+    if (headings.length < 3) return;
+
+    list.textContent = "";
+    const buttons: HTMLButtonElement[] = [];
+
+    headings.forEach((heading, i) => {
+      if (!heading.id) heading.id = `section-${i + 1}`;
+      const li = document.createElement("li");
+      const title = (heading.textContent ?? "").trim();
+      const button = document.createElement("button");
+      button.type = "button";
+      // The tick is the control; the title is its accessible name and its
+      // hover label, so the button is never an unnamed dot.
+      button.setAttribute("aria-label", title);
+      const label = document.createElement("span");
+      label.className = "rail-label";
+      label.setAttribute("aria-hidden", "true");
+      label.textContent = title;
+      button.appendChild(label);
+      button.addEventListener("click", () => {
+        heading.scrollIntoView({
+          behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+          block: "start",
+        });
+        // Give the heading focus as well as the scroll, so keyboard and
+        // screen-reader users land where the page just moved to.
+        heading.tabIndex = -1;
+        heading.focus({ preventScroll: true });
+      });
+      li.appendChild(button);
+      list.appendChild(li);
+      buttons.push(button);
+    });
+
+    rail.hidden = false;
+
+    // Track the heading nearest the top of the viewport rather than whatever is
+    // merely intersecting: with several short sections on screen at once,
+    // "intersecting" flickers between them.
+    let ticking = false;
+    const mark = () => {
+      ticking = false;
+      const cutoff = window.innerHeight * 0.35;
+      let current = 0;
+      headings.forEach((heading, i) => {
+        if (heading.getBoundingClientRect().top <= cutoff) current = i;
+      });
+      buttons.forEach((button, i) => {
+        if (i === current) button.setAttribute("aria-current", "true");
+        else button.removeAttribute("aria-current");
+      });
+    };
+    window.addEventListener(
+      "scroll",
+      () => {
+        if (ticking) return;
+        ticking = true;
+        requestAnimationFrame(mark);
+      },
+      { passive: true },
+    );
+    mark();
+  }
+
+  buildRail();
+  document.addEventListener("astro:page-load", buildRail);
+</script>

@@ -1,5 +1,6 @@
 ---
 import { MODULES } from "../../data/modules";
+import ModuleSectionRail from "./ModuleSectionRail.astro";
 
 interface Props {
   moduleId: string;
@@ -29,6 +30,10 @@ const ACT_LABEL: Record<string, string> = {
 
 const orderLabel = String(mod.order).padStart(2, "0");
 ---
+
+<!-- Fixed-position, so it escapes the article flow: rendered from here only
+     because every module page already includes this component. -->
+<ModuleSectionRail />
 
 <header class="module-hero">
   <nav class="breadcrumb" aria-label="Breadcrumb">
