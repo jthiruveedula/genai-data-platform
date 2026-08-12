@@ -55,6 +55,8 @@ try {
 const body = releases
   .map((r) => {
     const summary = existing[r.tag] ?? "";
+    // A tag GitHub reports is a tag that exists: any `pending` flag on it is
+    // now stale, so it is simply not re-emitted.
     return `  {
     tag: ${JSON.stringify(r.tag)},
     date: ${JSON.stringify(r.date)},
