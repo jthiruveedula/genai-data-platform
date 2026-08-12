@@ -32,9 +32,12 @@ test('every entry says what changed, and links to its tag', async ({ page }) => 
     // A summary is the point: a row with a version and no explanation is a
     // git log, which the reader could already have read.
     await expect(item.locator('.cl-summary')).not.toBeEmpty();
+    // A tagged release links to its tag; an entry written ahead of its tag
+    // links to the release index, because its own tag is still a 404 and the
+    // link checker is right to fail on one.
     await expect(item.locator('.cl-tag')).toHaveAttribute(
       'href',
-      /github\.com\/.+\/releases\/tag\/v\d/,
+      /github\.com\/.+\/releases(\/tag\/v\d[\d.]*)?$/,
     );
     await expect(item.locator('time')).toHaveAttribute('datetime', /^\d{4}-\d{2}-\d{2}$/);
   }

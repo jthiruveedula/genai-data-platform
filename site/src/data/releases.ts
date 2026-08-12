@@ -20,15 +20,31 @@ export interface Release {
   /** One or two sentences on what it changed and why. Authored, not generated. */
   summary: string;
   isLatest?: boolean;
+  /**
+   * Written ahead of its tag. The ledger builds from committed data, so an
+   * entry has to exist BEFORE the tag is cut for the resulting deploy to list
+   * the release doing the deploying — but at that moment
+   * `/releases/tag/<tag>` is still a 404, and the link checker is right to say
+   * so. A pending entry therefore links to the release index instead, and
+   * `sync-releases.mjs` clears the flag once GitHub reports the tag.
+   */
+  pending?: boolean;
 }
 
 export const RELEASES: Release[] = [
+  {
+    tag: "v1.9.0",
+    date: "2026-08-12",
+    title: "a film of the money, and a ledger of the work",
+    pending: true,
+    summary: "Module 75 gained a 24-second film of where a query's money goes, rendered locally from the site's own cost model so it cannot quote a figure the pages don't. And the release history became a page: fifteen releases, each with what it changed and why, instead of a claim count being the only sign anyone still maintains this.",
+    isLatest: true,
+  },
   {
     tag: "v1.8.0",
     date: "2026-08-12",
     title: "the homepage gets a visual made of real numbers",
     summary: "The homepage stopped animating invented numbers. One query is now priced from the verified rate card, with the answer's share of the bill computed rather than asserted — and a unit test that fails if real prices ever stop supporting the claim.",
-    isLatest: true,
   },
   {
     tag: "v1.7.0",

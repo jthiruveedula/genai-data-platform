@@ -53,8 +53,10 @@ const majorish = (tag: string) => tag.endsWith(".0");
       <p class="cl-lede">
         {RELEASES.length} releases. Every one of them went out through the same gate: tests and
         accessibility checks green on the pull request, then a published tag — nothing reaches the
-        site without one. The newest is <a href={`${REPO}/releases/tag/${LATEST.tag}`}>{LATEST.tag}</a>, published{" "}
-        {fmtDate(LATEST.date)}.
+        site without one. The newest is{" "}
+        <a href={LATEST.pending ? `${REPO}/releases` : `${REPO}/releases/tag/${LATEST.tag}`}>
+          {LATEST.tag}
+        </a>, {LATEST.pending ? "shipping" : "published"} {fmtDate(LATEST.date)}.
       </p>
     </header>
 
@@ -68,7 +70,10 @@ const majorish = (tag: string) => tag.endsWith(".0");
             {group.items.map((release) => (
               <li class:list={["cl-item", { "is-major": majorish(release.tag) }]}>
                 <div class="cl-meta">
-                  <a class="cl-tag mono" href={`${REPO}/releases/tag/${release.tag}`}>
+                  <a
+                    class="cl-tag mono"
+                    href={release.pending ? `${REPO}/releases` : `${REPO}/releases/tag/${release.tag}`}
+                  >
                     {release.tag}
                   </a>
                   <time class="cl-date mono" datetime={release.date}>
