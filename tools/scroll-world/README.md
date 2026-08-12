@@ -75,6 +75,44 @@ cut and encode — so it needs no API key, no credits, and no network.
 - `encode-legs.sh` — cuts the 900-frame render into six 150-frame legs and
   encodes desktop + phone variants and their posters.
 
+## What "through OpenMontage" means here, exactly
+
+Two different things, worth separating:
+
+1. **The composer.** `remotion-composer/` supplies the Remotion toolchain and
+   `node_modules`, and OpenMontage's *atelier* contract is what says a
+   hand-authored composition lives at `remotion-composer/projects/<slug>/`
+   rather than going through its stock scene registry. That is the convention
+   this project follows.
+2. **The tool layer.** `tools/video/video_compose.py` is what actually
+   dispatches an atelier render, with its own governance — it refuses to run
+   without `render_runtime` locked, rather than defaulting it. Driving the
+   render through that is `render-via-openmontage.py` in this directory.
+
+The clips currently in `site/public/world/` were produced from the PNG-sequence
+route below (the page ships six cut legs, and `--sequence` is what makes an
+exact frame cut possible). `render-via-openmontage.py` renders the same
+composition as one continuous file through the tool layer, which is the check
+that the pipeline still works end to end:
+
+```bash
+cd /path/to/OpenMontage
+PYTHONPATH=$PWD .venv/bin/python \
+  /path/to/genai-data-platform/tools/scroll-world/render-via-openmontage.py \
+  /tmp/scroll-world/world.mp4
+# → 1280x720, 900 frames, 30.06s, plus OpenMontage's own .final_review_frames/
+```
+
+**One gotcha it exposes:** the atelier path builds its own `npx remotion render`
+argv and has no `--gl` passthrough, so a WebGL composition fails with
+`THREE.WebGLRenderer: Error creating WebGL context`. Fix it where every invoker
+picks it up — `remotion-composer/remotion.config.ts`:
+
+```ts
+import { Config } from "@remotion/cli/config";
+Config.setChromiumOpenGlRenderer("angle");
+```
+
 ## Re-running it
 
 Requires an [OpenMontage](https://github.com/calesthio/OpenMontage) checkout
