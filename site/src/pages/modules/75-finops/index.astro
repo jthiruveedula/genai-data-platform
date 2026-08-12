@@ -5,6 +5,7 @@ import ModuleHero from "../../../components/module/ModuleHero.astro";
 import ModuleScenario from "../../../components/module/ModuleScenario.astro";
 import ModuleFlowDiagram from "../../../components/module/ModuleFlowDiagram.astro";
 import CostBreakdownDemo from "../../../components/module/demos/CostBreakdownDemo.astro";
+import QueryCostFilm from "../../../components/module/QueryCostFilm.astro";
 import AgentCostTickerDemo from "../../../components/module/demos/AgentCostTickerDemo.astro";
 import ModuleFooterNav from "../../../components/module/ModuleFooterNav.astro";
 import ModuleRecap from "../../../components/module/ModuleRecap.astro";
@@ -53,6 +54,8 @@ const moduleData = MODULES.find((m) => m.id === moduleId)!;
       with your own event-log join, rather than assuming it — that's what tells you where to spend optimization
       effort.
     </p>
+
+    <QueryCostFilm />
 
     <CostBreakdownDemo />
 

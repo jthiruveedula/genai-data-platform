@@ -1,0 +1,100 @@
+---
+/**
+ * The 24-second film of one query's economics.
+ *
+ * `/#query-cost` on the homepage is the interactive version: hover a segment,
+ * read its numbers. A film does the thing an interactive cannot — put the beats
+ * in an order and leave time between them: the request assembles, the money
+ * rises against it and disagrees, the query escalates to a reasoning tier, and
+ * finally the same query self-hosted, where tokens stop being the meter.
+ *
+ * Rendered locally and deterministically (Remotion via OpenMontage's atelier
+ * path — tools/query-cost-film/), from the SITE'S OWN cost model: render.sh
+ * stages `lib/queryCost.ts` and `data/pricing.json` beside the composition, so
+ * the film cannot quote a figure the page doesn't. Re-verifying a price and
+ * re-rendering is the entire update path.
+ *
+ * Plays only on request. It is an explainer, not decoration, and a video that
+ * autoplays behind prose is neither.
+ */
+const base = import.meta.env.BASE_URL;
+const film = (file: string) => `${base}film/${file}`;
+---
+
+<figure class="cost-film" data-cost-film>
+  <figcaption class="film-kicker">
+    <span class="chip chip--accent">WHERE THE MONEY GOES</span>
+    <span class="film-meta mono">24s · no sound · every figure from the verified price list</span>
+  </figcaption>
+
+  <div class="film-frame">
+    <video
+      data-film-video
+      class="film-video"
+      poster={film("query-cost.jpg")}
+      preload="none"
+      playsinline
+      controls
+      width="1600"
+      height="900"
+    >
+      <source src={film("query-cost.mp4")} type="video/mp4" media="(min-width: 641px)" />
+      <source src={film("query-cost-portrait.mp4")} type="video/mp4" />
+      <p>
+        Your browser can't play this film. The same numbers are in the table on the
+        <a href={base}>homepage</a>, and in this module's own charts below.
+      </p>
+    </video>
+  </div>
+
+  <p class="film-note">
+    The beats: what one query sends, what it costs, what escalation to a reasoning tier does to
+    that, and why a self-hosted deployment can't be quoted per query at all.
+  </p>
+</figure>
+
+<style>
+  .cost-film {
+    margin: 2rem 0 2.5rem;
+    padding: 0;
+  }
+
+  .film-kicker {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.6rem;
+    margin: 0 0 1rem;
+  }
+
+  .film-kicker .chip {
+    font-size: 0.68rem;
+  }
+
+  .film-meta {
+    font-size: 0.68rem;
+    letter-spacing: 0.04em;
+    color: var(--text-secondary);
+  }
+
+  .film-frame {
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-raised);
+    overflow: hidden;
+  }
+
+  .film-video {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  .film-note {
+    margin: 0.9rem 0 0;
+    font-size: 0.84rem;
+    line-height: 1.55;
+    color: var(--text-secondary);
+    max-width: 46rem;
+  }
+</style>
