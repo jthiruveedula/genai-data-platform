@@ -4,20 +4,28 @@
  *
  * The six clips under `public/world/` are legs of ONE continuous three.js
  * render (Remotion, driven through OpenMontage's atelier composition path —
- * `docs/scroll-world-pipeline.md`). Because they are slices of a single take
+ * `tools/scroll-world/README.md`). Because they are slices of a single take
  * rather than separately generated shots, consecutive legs share a frame at
  * every boundary and the flight never cuts.
+ *
+ * Each room also carries the curriculum modules that teach it (data/worldRooms.ts),
+ * which is what keeps the page a way into the site rather than a showpiece beside
+ * it: every room is a deep link (`/world/#embed`), reachable by keyboard, and
+ * marked with what you have already finished.
  *
  * This page is structure and copy only. The scrub mechanics live in
  * `src/scripts/world-scrub-engine.js` (vendored from the scroll-world skill).
  */
 import ModernistLayout from "../layouts/ModernistLayout.astro";
+import { roomModules, type RoomId } from "../data/worldRooms";
 
 const base = import.meta.env.BASE_URL;
 const asset = (file: string) => `${base}world/${file}`;
+/** `01-sources` → `sources`: the ordinal is a render/encode detail, the hash is a name. */
+const slugOf = (id: string) => id.replace(/^\d+-/, "");
 
 type WorldSection = {
-  id: string;
+  id: RoomId;
   label: string;
   eyebrow: string;
   title: string;
@@ -103,6 +111,7 @@ const config = {
   crossfade: 0.05,
   sections: SECTIONS.map((s) => ({
     id: s.id,
+    slug: slugOf(s.id),
     label: s.label,
     eyebrow: s.eyebrow,
     title: s.title,
@@ -115,6 +124,14 @@ const config = {
     stillMobile: asset(`${s.id}-m.jpg`),
     clip: asset(`${s.id}.mp4`),
     clipMobile: asset(`${s.id}-m.mp4`),
+    // The engine escapes every copy string it renders, so links can't be
+    // smuggled through `body`. They are attached to the mounted copy instead
+    // (and server-rendered into the fallback below, where crawlers find them).
+    modules: roomModules(s.id).map((m) => ({
+      id: m.id,
+      title: m.title,
+      href: `${base}modules/${m.id}/`,
+    })),
   })),
   // Architecture A (one continuous forward take): the legs are the journey,
   // so there is nothing to connect them with.
@@ -163,8 +180,8 @@ const config = {
       </p>
     </header>
     {
-      SECTIONS.map((s, i) => (
-        <section class="world-fallback__section">
+      SECTIONS.map((s) => (
+        <section class="world-fallback__section" id={slugOf(s.id)}>
           <img
             src={asset(`${s.id}.jpg`)}
             alt={`Frame from the ${s.label.toLowerCase()} stage of the platform flight`}
@@ -179,6 +196,14 @@ const config = {
           <ul class="world-fallback__tags">
             {s.tags.map((t) => (
               <li>{t}</li>
+            ))}
+          </ul>
+          <p class="world-fallback__taught">Learn this room:</p>
+          <ul class="world-fallback__modules">
+            {roomModules(s.id).map((m) => (
+              <li>
+                <a href={`${base}modules/${m.id}/`}>{m.title}</a>
+              </li>
             ))}
           </ul>
           {s.cta && (
@@ -196,21 +221,129 @@ const config = {
 
   <script>
     import { mountScrollWorld } from "../scripts/world-scrub-engine.js";
+    import { isModuleComplete } from "../lib/progress";
+
+    type RoomModule = { id: string; title: string; href: string };
+    type Room = { slug: string; label: string; modules: RoomModule[] };
 
     const host = document.querySelector<HTMLElement>("[data-world]");
     const raw = document.getElementById("world-config")?.textContent;
     if (host && raw) {
-      const config = JSON.parse(raw);
+      const config = JSON.parse(raw) as { sections: Room[] };
+      const rooms = config.sections;
       mountScrollWorld(host, config);
+
+      const dots = [...host.querySelectorAll<HTMLButtonElement>(".sw-route__dot")];
+      const copies = [...host.querySelectorAll<HTMLElement>(".sw-copy")];
 
       // The engine's route dots carry their label in a tooltip span that the
       // phone breakpoint hides, which leaves the button with no accessible
       // name there. Naming them from the same config keeps the fix on this
       // side of the vendor boundary, so the engine file stays re-copyable.
-      host.querySelectorAll<HTMLElement>(".sw-route__dot").forEach((dot, i) => {
-        const label = config.sections[i]?.label;
+      dots.forEach((dot, i) => {
+        const label = rooms[i]?.label;
         if (label) dot.setAttribute("aria-label", `Fly to ${label}`);
       });
+
+      // --- each room's curriculum modules, with what you've already finished ---
+      // The engine escapes its copy strings, so this is attached after mount
+      // rather than passed through `body`. Progress comes from the same
+      // localStorage contract the module recaps write (lib/progress.ts), so a
+      // room reflects work done anywhere on the site.
+      copies.forEach((copy, i) => {
+        const room = rooms[i];
+        if (!room?.modules?.length) return;
+        const done = room.modules.filter((m) => isModuleComplete(m.id)).length;
+
+        const wrap = document.createElement("div");
+        wrap.className = "world-taught";
+        const head = document.createElement("p");
+        head.className = "world-taught__head";
+        head.textContent =
+          done === room.modules.length
+            ? `Learn this room · all ${room.modules.length} done`
+            : `Learn this room · ${done}/${room.modules.length} done`;
+        wrap.appendChild(head);
+
+        const list = document.createElement("ul");
+        list.className = "world-taught__list";
+        for (const m of room.modules) {
+          const li = document.createElement("li");
+          const a = document.createElement("a");
+          a.href = m.href;
+          a.textContent = m.title;
+          if (isModuleComplete(m.id)) {
+            a.dataset.complete = "";
+            // A checkmark glyph alone would read as punctuation to a screen
+            // reader, so the state is in the accessible name too.
+            a.setAttribute("aria-label", `${m.title} — complete`);
+          }
+          li.appendChild(a);
+          list.appendChild(li);
+        }
+        wrap.appendChild(list);
+        copy.appendChild(wrap);
+      });
+
+      // --- deep links: /world/#embed lands in that room, and the hash keeps up ---
+      const slugs = rooms.map((r) => r.slug);
+      const initial = slugs.indexOf(decodeURIComponent(location.hash.replace(/^#/, "")));
+      if (initial >= 0) {
+        // After layout, or the engine's own scroll targets are still zero.
+        requestAnimationFrame(() => dots[initial]?.click());
+      }
+
+      // The engine already tracks the active room by toggling `is-active` on
+      // the dots; observing that is cheaper (and always consistent with the
+      // rail) than recomputing the scroll math here.
+      let lastSlug = "";
+      const routeObserver = new MutationObserver(() => {
+        const i = dots.findIndex((d) => d.classList.contains("is-active"));
+        const slug = slugs[i];
+        if (!slug || slug === lastSlug) return;
+        lastSlug = slug;
+        history.replaceState(null, "", `#${slug}`);
+      });
+      for (const dot of dots) {
+        routeObserver.observe(dot, { attributes: true, attributeFilter: ["class"] });
+      }
+
+      // --- keyboard: fly room to room without a mouse or a scroll wheel ---
+      document.addEventListener("keydown", (event) => {
+        if (event.metaKey || event.ctrlKey || event.altKey) return;
+        const el = event.target as HTMLElement | null;
+        if (el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))) return;
+
+        const current = Math.max(
+          0,
+          dots.findIndex((d) => d.classList.contains("is-active")),
+        );
+        let next: number | null = null;
+        switch (event.key) {
+          case "ArrowRight":
+          case "ArrowDown":
+          case "PageDown":
+            next = Math.min(dots.length - 1, current + 1);
+            break;
+          case "ArrowLeft":
+          case "ArrowUp":
+          case "PageUp":
+            next = Math.max(0, current - 1);
+            break;
+          case "Home":
+            next = 0;
+            break;
+          case "End":
+            next = dots.length - 1;
+            break;
+        }
+        if (next === null || next === current) return;
+        // Only now claim the key — an arrow press that doesn't move a room
+        // should still scroll the page normally.
+        event.preventDefault();
+        dots[next]?.click();
+      });
+
       // Only once the engine has actually built its DOM does the static
       // version get taken down — a thrown mount leaves the readable page up
       // rather than a blank screen. It is REMOVED, not just hidden: six more
@@ -301,6 +434,77 @@ const config = {
   [data-world-mounted] .world-fallback {
     display: none;
   }
+
+  /* Per-room curriculum links. Global, not scoped: these nodes are created by
+     the client script inside the engine's copy layer, so Astro's scoping
+     attribute never lands on them. */
+  .sw-root .world-taught {
+    margin-top: 1.5rem;
+  }
+
+  .sw-root .world-taught__head {
+    margin: 0 0 0.5rem;
+    font-family: var(--font-heading);
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--color-neutral-700);
+  }
+
+  .sw-root .world-taught__list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .sw-root .world-taught__list a {
+    display: inline-block;
+    padding: 0.45rem 0.75rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+    text-decoration: none;
+    /* The 700 step, not the raw accent: at this size paper-on-vermilion is
+       under 4.5:1 (see the button rule above). */
+    color: var(--color-accent-700);
+    border: 1px solid var(--color-accent-700);
+    background: color-mix(in srgb, var(--color-bg) 88%, transparent);
+  }
+
+  .sw-root .world-taught__list a:hover,
+  .sw-root .world-taught__list a:focus-visible {
+    background: var(--color-accent-700);
+    color: var(--color-bg);
+  }
+
+  /* Finished modules read as ticked. The glyph is decorative — the state is
+     also in the link's accessible name. */
+  .sw-root .world-taught__list a[data-complete]::before {
+    content: "✓ ";
+    font-weight: 700;
+  }
+
+  .sw-root .world-taught__list a[data-complete] {
+    color: var(--color-text);
+    border-color: var(--color-text);
+  }
+
+  .sw-root .world-taught__list a[data-complete]:hover,
+  .sw-root .world-taught__list a[data-complete]:focus-visible {
+    background: var(--color-text);
+    color: var(--color-bg);
+  }
+
+  /* The copy layer is pointer-events:none until a room's copy is prominent
+     (the engine gates it), so a focused link must be visibly focused. */
+  .sw-root .world-taught__list a:focus-visible,
+  .sw-root .sw-route__dot:focus-visible,
+  .sw-root .sw-nav__item:focus-visible {
+    outline: 2px solid var(--color-text);
+    outline-offset: 2px;
+  }
 </style>
 
 <style>
@@ -366,6 +570,33 @@ const config = {
     font-size: 0.82rem;
     padding: 0.35rem 0.7rem;
     border: 1px solid var(--color-accent);
+  }
+
+  .world-fallback__taught {
+    margin: 1.25rem 0 0.5rem;
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--color-neutral-700);
+  }
+
+  .world-fallback__modules {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .world-fallback__modules a {
+    display: inline-block;
+    padding: 0.45rem 0.75rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+    text-decoration: none;
+    color: var(--color-accent-700);
+    border: 1px solid var(--color-accent-700);
   }
 
   .world-fallback__cta {
