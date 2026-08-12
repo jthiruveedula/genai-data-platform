@@ -1,0 +1,144 @@
+---
+/**
+ * What this module depends on, and what depends on it.
+ *
+ * The claims here were always in the prose ("Output of Module 15's splitter",
+ * "Module 75's entire cost model is a join against this event log"), where they
+ * were readable but not navigable. This renders the same claims from
+ * `data/moduleEdges.ts` as links, in curriculum order, with the reason on each
+ * one — so a reader who wants the upstream mechanism can go get it, and a module
+ * cannot quietly stop matching what another module says about it.
+ *
+ * Rendered by ModuleFooterNav (which every module page already includes), so
+ * "where next" stays in one place instead of being pasted into twelve pages.
+ */
+import { feedsFrom, readsInto, moduleOrder, moduleTitle } from "../../data/moduleEdges";
+import { MODULES } from "../../data/modules";
+
+interface Props {
+  moduleId: string;
+}
+
+const { moduleId } = Astro.props;
+const base = import.meta.env.BASE_URL;
+
+const byOrder = (a: { id: string }, b: { id: string }) => moduleOrder(a.id) - moduleOrder(b.id);
+
+const upstream = feedsFrom(moduleId)
+  .map((e) => ({ id: e.from, why: e.why }))
+  .sort(byOrder);
+const downstream = readsInto(moduleId)
+  .map((e) => ({ id: e.to, why: e.why }))
+  .sort(byOrder);
+
+const orderOf = (id: string) => String(MODULES.find((m) => m.id === id)?.order ?? 0).padStart(2, "0");
+---
+
+{
+  (upstream.length > 0 || downstream.length > 0) && (
+    <section class="module-wiring" aria-labelledby={`wiring-${moduleId}`}>
+      <h2 id={`wiring-${moduleId}`} class="wiring-title">
+        How this module is wired
+      </h2>
+      <div class="wiring-cols">
+        {upstream.length > 0 && (
+          <div class="wiring-col">
+            <p class="wiring-kicker mono">Builds on</p>
+            <ul class="wiring-list">
+              {upstream.map((edge) => (
+                <li>
+                  <a href={`${base}modules/${edge.id}/`}>
+                    <span class="wiring-index mono">{orderOf(edge.id)}</span>
+                    <span class="wiring-name">{moduleTitle(edge.id)}</span>
+                  </a>
+                  <p class="wiring-why">{edge.why}</p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {downstream.length > 0 && (
+          <div class="wiring-col">
+            <p class="wiring-kicker mono">Feeds</p>
+            <ul class="wiring-list">
+              {downstream.map((edge) => (
+                <li>
+                  <a href={`${base}modules/${edge.id}/`}>
+                    <span class="wiring-index mono">{orderOf(edge.id)}</span>
+                    <span class="wiring-name">{moduleTitle(edge.id)}</span>
+                  </a>
+                  <p class="wiring-why">{edge.why}</p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+    </section>
+  )
+}
+
+<style>
+  .module-wiring {
+    margin-top: 3rem;
+    padding-top: 1.75rem;
+    border-top: 2px solid var(--border);
+  }
+
+  .wiring-title {
+    margin: 0 0 1.25rem;
+    font-size: clamp(1.15rem, 2.4vw, 1.45rem);
+  }
+
+  .wiring-cols {
+    display: grid;
+    gap: 1.75rem;
+    grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+  }
+
+  .wiring-kicker {
+    margin: 0 0 0.6rem;
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+  }
+
+  .wiring-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+  }
+
+  .wiring-list a {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    text-decoration: none;
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  .wiring-list a:hover .wiring-name,
+  .wiring-list a:focus-visible .wiring-name {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    color: var(--accent-text, var(--accent));
+  }
+
+  .wiring-index {
+    font-size: 0.7rem;
+    color: var(--accent-text, var(--accent));
+  }
+
+  .wiring-why {
+    margin: 0.25rem 0 0;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    color: var(--text-secondary);
+    max-width: 34rem;
+  }
+</style>
