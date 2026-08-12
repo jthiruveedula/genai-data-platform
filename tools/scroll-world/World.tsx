@@ -34,6 +34,58 @@ function lineMat(color: number, opacity: number) {
   return new THREE.LineBasicMaterial({ color, transparent: true, opacity });
 }
 
+/**
+ * A bump centred on station `i`'s arrival, zero everywhere near a seam.
+ *
+ * This is what lets the camera be expressive without breaking the chain. A leg
+ * may orbit, crane or breathe its lens as much as it likes *in the middle*,
+ * where there is no seam to break; the moment the flight approaches a cut the
+ * bump has decayed to nothing, so both sides of the boundary are back on the
+ * same plain forward glide. Seam safety stops being something to check for and
+ * becomes a property of the function.
+ */
+function bump(t: number, index: number, width = 0.16): number {
+  const centre = (index + 0.5) / STATIONS.length;
+  const d = (t - centre) / width;
+  return Math.exp(-d * d * 4);
+}
+
+/** Blueprint dimension line: |<——— span ———>| with tick serifs. */
+function dimensionLine(
+  from: THREE.Vector3,
+  to: THREE.Vector3,
+  color: number,
+  opacity: number,
+  tick = 0.6,
+) {
+  const pts: number[] = [];
+  pts.push(from.x, from.y, from.z, to.x, to.y, to.z);
+  const dir = new THREE.Vector3().subVectors(to, from).normalize();
+  const perp = new THREE.Vector3(-dir.y, dir.x, 0).normalize().multiplyScalar(tick);
+  for (const p of [from, to]) {
+    pts.push(p.x - perp.x, p.y - perp.y, p.z - perp.z, p.x + perp.x, p.y + perp.y, p.z + perp.z);
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.Float32BufferAttribute(pts, 3));
+  return new THREE.LineSegments(geo, lineMat(color, opacity));
+}
+
+/** Registration marks — four corner brackets, the drafting frame of a plate. */
+function cropMarks(w: number, h: number, arm: number, color: number, opacity: number) {
+  const pts: number[] = [];
+  for (const sx of [-1, 1]) {
+    for (const sy of [-1, 1]) {
+      const x = (w / 2) * sx;
+      const y = (h / 2) * sy;
+      pts.push(x, y, 0, x - arm * sx, y, 0);
+      pts.push(x, y, 0, x, y - arm * sy, 0);
+    }
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.Float32BufferAttribute(pts, 3));
+  return new THREE.LineSegments(geo, lineMat(color, opacity));
+}
+
 function edges(geo: THREE.BufferGeometry, color: number, opacity: number) {
   return new THREE.LineSegments(new THREE.EdgesGeometry(geo), lineMat(color, opacity));
 }
@@ -60,13 +112,13 @@ type Animated = { group: THREE.Group; tick: (u: number, t: number) => void };
 function buildSources(rand: () => number): Animated {
   const group = new THREE.Group();
   const docs: THREE.Group[] = [];
-  for (let i = 0; i < 30; i++) {
-    const a = (i / 30) * Math.PI * 2 * 3.1;
+  for (let i = 0; i < 21; i++) {
+    const a = (i / 21) * Math.PI * 2 * 3.1;
     // A helix rather than a ring: the camera starts outside it and threads
     // through, so documents pass on both sides instead of sitting off-frame.
-    const r = 6.5 + (i % 5) * 2.4;
+    const r = 7.5 + (i % 5) * 3.1;
     const d = docPlane(3, 4.2, i % 5 === 0 ? PALETTE.accent : PALETTE.fog, 0.75);
-    d.position.set(Math.cos(a) * r, Math.sin(a) * r * 0.7, 24 - i * 1.7);
+    d.position.set(Math.cos(a) * r, Math.sin(a) * r * 0.7, 26 - i * 2.5);
     d.rotation.set((rand() - 0.5) * 1.1, (rand() - 0.5) * 1.4, (rand() - 0.5) * 0.8);
     d.userData.spin = (rand() - 0.5) * 0.5;
     group.add(d);
@@ -141,7 +193,7 @@ function buildIngest(rand: () => number): Animated {
 /** 03 — EMBED: chunks collapse into a cloud of vectors. Meaning as geometry. */
 function buildEmbed(rand: () => number): Animated {
   const group = new THREE.Group();
-  const COUNT = 520;
+  const COUNT = 680;
   const from = new Float32Array(COUNT * 3);
   const to = new Float32Array(COUNT * 3);
   for (let i = 0; i < COUNT; i++) {
@@ -169,7 +221,7 @@ function buildEmbed(rand: () => number): Animated {
     // the frame with one blue square.
     new THREE.PointsMaterial({
       color: PALETTE.ink,
-      size: 0.16,
+      size: 0.115,
       transparent: true,
       opacity: 0.95,
       depthWrite: false,
@@ -184,6 +236,33 @@ function buildEmbed(rand: () => number): Animated {
   const ag = new THREE.BufferGeometry();
   ag.setAttribute("position", new THREE.Float32BufferAttribute(ax, 3));
   group.add(new THREE.LineSegments(ag, lineMat(PALETTE.line, 1)));
+
+  // Neighbourhood: a handful of points close enough to be one meaning, joined
+  // and bracketed. Without it the cloud is a texture; with it, it is an
+  // argument about what "similar" means.
+  const hood = new THREE.Group();
+  const centre = new THREE.Vector3(3.4, 1.6, -6);
+  const near: THREE.Vector3[] = [];
+  for (let i = 0; i < 6; i++) {
+    const a = (i / 6) * Math.PI * 2;
+    near.push(
+      new THREE.Vector3(
+        centre.x + Math.cos(a) * (1.5 + (i % 3) * 0.5),
+        centre.y + Math.sin(a) * (1.3 + (i % 2) * 0.6),
+        centre.z + Math.sin(a * 2) * 1.2,
+      ),
+    );
+  }
+  const hoodPts: number[] = [];
+  for (const p of near) hoodPts.push(centre.x, centre.y, centre.z, p.x, p.y, p.z);
+  const hg = new THREE.BufferGeometry();
+  hg.setAttribute("position", new THREE.Float32BufferAttribute(hoodPts, 3));
+  const hoodLines = new THREE.LineSegments(hg, lineMat(PALETTE.accent, 0.8));
+  hood.add(hoodLines);
+  const hoodMarks = cropMarks(7.5, 7, 1.1, PALETTE.accent, 0.8);
+  hoodMarks.position.copy(centre);
+  hood.add(hoodMarks);
+  group.add(hood);
 
   return {
     group,
@@ -200,6 +279,14 @@ function buildEmbed(rand: () => number): Animated {
       }
       pos.needsUpdate = true;
       group.rotation.y = Math.sin(t * 1.6) * 0.12;
+      // The neighbourhood only resolves once the cloud has finished forming —
+      // it is a claim about the space, so it can't precede the space.
+      const h = ramp(u, -0.1, 0.35);
+      hood.children.forEach((c) => {
+        const m = (c as THREE.LineSegments).material as THREE.LineBasicMaterial;
+        m.opacity = 0.8 * h;
+      });
+      hood.scale.setScalar(0.9 + h * 0.1);
     },
   };
 }
@@ -236,6 +323,28 @@ function buildIndex(rand: () => number): Animated {
     ),
   );
   group.add(edges(new THREE.BoxGeometry(25, 25, 25), PALETTE.deepen, 0.7));
+  // Dimensioned like a drawing, not a prop: the index is a measured volume.
+  group.add(
+    dimensionLine(
+      new THREE.Vector3(-12.5, -14.5, 12.5),
+      new THREE.Vector3(12.5, -14.5, 12.5),
+      PALETTE.fog,
+      0.7,
+      0.9,
+    ),
+  );
+  group.add(
+    dimensionLine(
+      new THREE.Vector3(-14.5, -12.5, 12.5),
+      new THREE.Vector3(-14.5, 12.5, 12.5),
+      PALETTE.fog,
+      0.7,
+      0.9,
+    ),
+  );
+  const frameMarks = cropMarks(29, 29, 2.4, PALETTE.accent, 0.55);
+  frameMarks.position.z = 12.5;
+  group.add(frameMarks);
 
   // The query ray, and the k it finds.
   const rayGeo = new THREE.BufferGeometry();
@@ -246,13 +355,13 @@ function buildIndex(rand: () => number): Animated {
   // Neighbours are picked from the far half of the index only: a "hit" beside
   // the lens is a cyan blob covering a quarter of the frame, not a result.
   const far = cells.filter((c) => c.z < -3 && c.length() < 11);
-  const hits: THREE.Mesh[] = [];
+  const hits: THREE.Object3D[] = [];
   for (let i = 0; i < 7; i++) {
     const target = far[Math.floor(rand() * far.length)];
-    const m = new THREE.Mesh(
-      new THREE.SphereGeometry(0.38, 12, 12),
-      new THREE.MeshBasicMaterial({ color: PALETTE.accent, transparent: true, opacity: 0.9 }),
-    );
+    // Brackets, not blobs: a solid sphere passing near the lens is a red disc
+    // over a quarter of the frame, and a filled primitive is the one shape
+    // this whole drawing doesn't otherwise contain.
+    const m = cropMarks(1.6, 1.6, 0.5, PALETTE.accent, 0.95);
     m.position.copy(target);
     group.add(m);
     hits.push(m);
@@ -358,6 +467,19 @@ function buildAnswer(): Animated {
   halo.position.z = -55;
   group.add(halo);
 
+  // The last frame of the film is a plate: the answer, measured and registered.
+  const plate = cropMarks(26, 17, 2.6, PALETTE.accent, 0.8);
+  plate.position.z = -59;
+  group.add(plate);
+  const measure = dimensionLine(
+    new THREE.Vector3(-10, -8, -59),
+    new THREE.Vector3(10, -8, -59),
+    PALETTE.fog,
+    0.75,
+    0.7,
+  );
+  group.add(measure);
+
   // Citations: hairlines running back from the answer to the sources it used.
   const cites: THREE.Line[] = [];
   for (let i = 0; i < 5; i++) {
@@ -436,17 +558,65 @@ function buildWorld() {
   fg.setAttribute("position", new THREE.Float32BufferAttribute(floor, 3));
   scene.add(new THREE.LineSegments(fg, lineMat(PALETTE.line, 0.85)));
 
+  // A ruler down both walls. Ticks passing the lens at a known spacing are the
+  // cheapest, most legible speed cue there is — the eye reads velocity off
+  // regular marks far better than off an open grid.
+  const ticks: number[] = [];
+  let ti = 0;
+  for (let z = Z_START + 10; z > Z_END - 40; z -= 2, ti++) {
+    const long = ti % 5 === 0;
+    const len = long ? 2.4 : 1.1;
+    for (const sx of [-1, 1]) {
+      ticks.push(sx * 26, -13, z, sx * 26, -13 + len, z);
+    }
+  }
+  const tg = new THREE.BufferGeometry();
+  tg.setAttribute("position", new THREE.Float32BufferAttribute(ticks, 3));
+  scene.add(new THREE.LineSegments(tg, lineMat(PALETTE.fog, 0.55)));
+
   // Gates: a rectangle every few metres, breathing in size. Flying through
-  // them is most of the perceived motion.
+  // them is most of the perceived motion. Every sixth carries the accent and a
+  // set of registration marks, so the corridor has a beat rather than a texture.
   const gates = new THREE.Group();
   let gi = 0;
   for (let z = Z_START + 8; z > Z_END - 30; z -= 7, gi++) {
     const s = 1 + Math.sin(gi * 0.42) * 0.18;
-    const g = edges(new THREE.PlaneGeometry(34 * s, 21 * s), gi % 6 === 0 ? PALETTE.accent : PALETTE.line, gi % 6 === 0 ? 0.5 : 0.8);
-    g.position.set(Math.sin(gi * 0.31) * 1.4, -1.5 + Math.cos(gi * 0.27) * 0.8, z);
+    const marked = gi % 6 === 0;
+    const w = 34 * s;
+    const h = 21 * s;
+    const g = edges(new THREE.PlaneGeometry(w, h), marked ? PALETTE.accent : PALETTE.line, marked ? 0.5 : 0.8);
+    const x = Math.sin(gi * 0.31) * 1.4;
+    const y = -1.5 + Math.cos(gi * 0.27) * 0.8;
+    g.position.set(x, y, z);
     gates.add(g);
+    if (marked) {
+      const marks = cropMarks(w + 3, h + 3, 1.6, PALETTE.accent, 0.45);
+      marks.position.set(x, y, z);
+      gates.add(marks);
+    }
   }
   scene.add(gates);
+
+  // Foreground rules: a few hairlines strung close to the flight path. They
+  // whip past the lens between rooms, and near-field parallax is what makes a
+  // slow camera feel fast.
+  const near = new THREE.Group();
+  const nrand = mulberry32(52711);
+  for (let i = 0; i < 11; i++) {
+    const z = Z_START - 10 - i * ((Z_START - Z_END) / 11);
+    const a = nrand() * Math.PI * 2;
+    const r = 4.5 + nrand() * 3;
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute(
+      "position",
+      new THREE.Float32BufferAttribute(
+        [Math.cos(a) * r, Math.sin(a) * r, z, Math.cos(a) * (r + 9), Math.sin(a) * (r + 9), z - 3],
+        3,
+      ),
+    );
+    near.add(new THREE.Line(geo, lineMat(i % 5 === 0 ? PALETTE.accent : PALETTE.fog, 0.5)));
+  }
+  scene.add(near);
 
   return { scene, animated };
 }
@@ -503,9 +673,38 @@ export const World: React.FC<{ portrait?: boolean }> = ({ portrait = false }) =>
     const ahead = sway.getPoint(Math.min(1, t + 0.05));
     const zAhead = Z_START + (Z_END - Z_START) * Math.min(1, t + 0.05);
 
-    camera.position.set(s.x, s.y, z);
-    camera.up.set(Math.sin(t * Math.PI * 2.2) * 0.05, 1, 0);
-    camera.lookAt(ahead.x * 0.55, ahead.y * 0.55, zAhead - 6);
+    // Camera grammar. Each room gets a move chosen from what happens in it,
+    // and every move is carried on a `bump()` that has decayed to zero by the
+    // time the flight reaches a cut — expressive in the middle of a leg, plain
+    // forward glide at both seams. z is untouched: the camera never reverses.
+    const drift = bump(t, 0) * 1.1; // sources — settle into the helix
+    const track = bump(t, 1) * 3.4; // ingest — lateral track along the mill
+    const swell = bump(t, 2); // embed — lens opens into the cloud
+    const crane = bump(t, 3) * 2.6; // index — rise over the lattice, then drop
+    const orbit = bump(t, 4); // reason — swing around the model ring
+    const settle = bump(t, 5); // answer — square up and hold
+
+    camera.position.set(
+      s.x + track * Math.sin(t * 22) * 0.35 + orbit * 2.4 * Math.sin(t * 15),
+      s.y + crane * Math.sin((t - 0.5833) * 26) + drift * 0.4,
+      z,
+    );
+    // Bank into the moves rather than staying gyro-level: a level horizon under
+    // a lateral move reads as a slide, a banked one reads as flight.
+    camera.up.set(
+      Math.sin(t * Math.PI * 2.2) * 0.05 - track * 0.05 - orbit * 0.08 * Math.sin(t * 15),
+      1,
+      0,
+    );
+    camera.lookAt(
+      ahead.x * 0.55 + orbit * 1.6 * Math.sin(t * 15 + 1.2),
+      ahead.y * 0.55 - crane * 0.35,
+      zAhead - 6 - settle * 4,
+    );
+    // A little lens breathing: wider through the open rooms, tighter as the
+    // flight arrives on the answer. Also returns to base at every seam.
+    const baseFov = portrait ? 62 : 50;
+    camera.fov = baseFov + swell * 5 - settle * 4;
     camera.updateProjectionMatrix();
 
     renderer.render(world.scene, camera);

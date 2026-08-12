@@ -167,6 +167,19 @@ const config = {
 
   <div class="world" data-world></div>
 
+  {/* The title plate. It is also the page's only <h1> once the engine has
+      removed the static fallback, so it is real markup rather than something
+      the client script paints — a heading that only exists after hydration is
+      no heading at all. It clears itself on the first flick of scroll. */}
+  <div class="world-plate" data-world-plate>
+    <p class="world-plate__kicker">Six rooms · one continuous take</p>
+    <h1 class="world-plate__title">One document<br />becomes an answer.</h1>
+    <p class="world-plate__meta">
+      Rendered locally, frame by frame — <a href={`${base}modules/00-foundations/`}>start the curriculum</a> or
+      fly the route below.
+    </p>
+  </div>
+
   <!-- Everything above is built by JavaScript. This is the page without it:
        the same six sections, the same copy, each clip's own first frame as the
        image. Search engines and no-JS visitors get the story; the flight is
@@ -235,6 +248,7 @@ const config = {
 
       const dots = [...host.querySelectorAll<HTMLButtonElement>(".sw-route__dot")];
       const copies = [...host.querySelectorAll<HTMLElement>(".sw-copy")];
+      const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
       // The engine's route dots carry their label in a tooltip span that the
       // phone breakpoint hides, which leaves the button with no accessible
@@ -287,11 +301,30 @@ const config = {
 
       // --- deep links: /world/#embed lands in that room, and the hash keeps up ---
       const slugs = rooms.map((r) => r.slug);
-      const initial = slugs.indexOf(decodeURIComponent(location.hash.replace(/^#/, "")));
+      const roomFromHash = () => slugs.indexOf(decodeURIComponent(location.hash.replace(/^#/, "")));
+      const initial = roomFromHash();
       if (initial >= 0) {
         // After layout, or the engine's own scroll targets are still zero.
         requestAnimationFrame(() => dots[initial]?.click());
       }
+
+      // A hash that changes without a document load — an in-page `#room` link,
+      // the back button between two rooms, a pasted hash onto the URL already
+      // open — has to fly there too. Reading the hash only at mount would make
+      // deep links work on a cold load and silently do nothing otherwise.
+      window.addEventListener("hashchange", () => {
+        const i = roomFromHash();
+        if (i >= 0) {
+          dots[i]?.click();
+          return;
+        }
+        // An empty hash can only arrive by history navigation — the flight
+        // itself only ever writes room slugs. Back out of a room, and you get
+        // the top of the flight (and the title plate) rather than being left
+        // wherever the camera happened to be, which would make the URL and the
+        // picture disagree.
+        window.scrollTo({ top: 0, behavior: reduced ? "auto" : "smooth" });
+      });
 
       // The engine already tracks the active room by toggling `is-active` on
       // the dots; observing that is cheaper (and always consistent with the
@@ -343,6 +376,43 @@ const config = {
         event.preventDefault();
         dots[next]?.click();
       });
+
+      // --- choreography: the plate, then the copy, one line at a time ---
+      // Both are driven from a single rAF that reads what the engine already
+      // wrote (the copy's inline opacity, the scroll position) rather than
+      // installing a second scroll listener or a second source of truth.
+      const root = document.documentElement;
+      const plate = document.querySelector<HTMLElement>("[data-world-plate]");
+      root.setAttribute("data-world-plate-visible", "");
+
+      let plateUp = true;
+      const live = new Array<boolean>(copies.length).fill(false);
+
+      const choreograph = () => {
+        // The plate holds the landing frame and clears on the first real flick
+        // of scroll, handing the left column to the room copy underneath.
+        const past = window.scrollY > window.innerHeight * 0.12;
+        if (past === plateUp) {
+          plateUp = !past;
+          root.toggleAttribute("data-world-plate-visible", !past);
+        }
+
+        // A room's copy animates in as a sequence once the engine has brought
+        // it up past half — the same threshold the engine uses to make it
+        // clickable, so nothing animates that you can't yet interact with.
+        for (let i = 0; i < copies.length; i++) {
+          const shown = Number(copies[i].style.opacity || 0) > 0.55;
+          if (shown !== live[i]) {
+            live[i] = shown;
+            copies[i].classList.toggle("is-live", shown);
+          }
+        }
+        requestAnimationFrame(choreograph);
+      };
+      if (!reduced) {
+        for (const copy of copies) copy.classList.add("is-choreographed");
+      }
+      if (plate) requestAnimationFrame(choreograph);
 
       // Only once the engine has actually built its DOM does the static
       // version get taken down — a thrown mount leaves the readable page up
@@ -433,6 +503,227 @@ const config = {
 
   [data-world-mounted] .world-fallback {
     display: none;
+  }
+
+  /* ---- cinematic chrome ------------------------------------------------- */
+
+  /* A vignette and a pair of hairline mattes. The film is drawn in ink on
+     paper, so "cinematic" here means the framing of a plate — a printed edge
+     and a fall-off at the corners — not a dark filter over everything. */
+  .sw-root .sw-stage::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 15;
+    pointer-events: none;
+    background:
+      radial-gradient(120% 90% at 50% 45%, transparent 55%, color-mix(in srgb, var(--color-text) 9%, transparent) 100%);
+  }
+
+  @media (min-width: 861px) {
+    .sw-root .sw-stage::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: 16;
+      pointer-events: none;
+      border-top: 1.6vh solid var(--color-bg);
+      border-bottom: 1.6vh solid var(--color-bg);
+      box-shadow:
+        inset 0 1.6vh 0 -1.5vh var(--color-divider),
+        inset 0 -1.6vh 0 -1.5vh var(--color-divider);
+    }
+  }
+
+  /* Chapter ticks on the progress rail: six rooms, so six divisions, rather
+     than one undifferentiated bar. */
+  .sw-root .sw-scrollbar {
+    background:
+      repeating-linear-gradient(
+          90deg,
+          var(--color-divider) 0 1px,
+          transparent 1px calc(100% / 6)
+        )
+        no-repeat,
+      color-mix(in srgb, var(--color-accent) 12%, transparent);
+  }
+
+  /* The title plate: the landing frame of the film. It occupies the same left
+     column the room copy will, and the copy layer is held at zero opacity
+     while it is up (see the rule below), so the two never stack. */
+  .world-plate {
+    position: fixed;
+    z-index: 22;
+    left: clamp(18px, 5vw, 64px);
+    top: 50%;
+    transform: translateY(-50%);
+    width: min(46vw, 34rem);
+    opacity: 0;
+    pointer-events: none;
+    transition:
+      opacity 600ms cubic-bezier(0.16, 1, 0.3, 1),
+      transform 600ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* Its own scrim. The engine's copy layer has one, but the plate sits above
+     that layer, and the landing frame is the busiest in the film. */
+  .world-plate::before {
+    content: "";
+    position: absolute;
+    inset: -12vh -30vw -12vh -8vw;
+    z-index: -1;
+    pointer-events: none;
+    background: linear-gradient(
+      100deg,
+      var(--color-bg) 0%,
+      color-mix(in srgb, var(--color-bg) 86%, transparent) 42%,
+      transparent 100%
+    );
+  }
+
+  [data-world-plate-visible] .world-plate {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  [data-world-mounted]:not([data-world-plate-visible]) .world-plate {
+    transform: translateY(calc(-50% - 1.5rem));
+  }
+
+  .world-plate__kicker {
+    margin: 0;
+    font-size: 0.74rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--color-accent);
+  }
+
+  .world-plate__title {
+    margin: 0.75rem 0 1rem;
+    font-size: clamp(2.4rem, 5.6vw, 4.4rem);
+    line-height: 0.98;
+    letter-spacing: -0.03em;
+  }
+
+  .world-plate__meta {
+    margin: 0;
+    max-width: 34ch;
+    color: var(--color-neutral-700);
+    font-size: clamp(0.95rem, 1.2vw, 1.05rem);
+  }
+
+  .world-plate__meta a {
+    color: var(--color-accent-700);
+    font-weight: 600;
+  }
+
+  @media (max-width: 860px) {
+    .world-plate {
+      top: auto;
+      bottom: calc(clamp(56px, 12dvh, 110px) + env(safe-area-inset-bottom));
+      transform: none;
+      right: clamp(18px, 5vw, 64px);
+      width: auto;
+    }
+
+    [data-world-mounted]:not([data-world-plate-visible]) .world-plate {
+      transform: translateY(-1rem);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .world-plate {
+      transition: none;
+    }
+  }
+
+  /* Hold the engine's copy while the title plate has the frame. Opacity on the
+     LAYER multiplies with the per-room opacity the engine writes inline on
+     each copy, so this composes instead of fighting it — no !important, and no
+     second owner of the same property. Global because the layer is the
+     engine's element, not this page's. */
+  .sw-copylayer {
+    transition: opacity 450ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  [data-world-plate-visible] .sw-copylayer {
+    opacity: 0;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .sw-copylayer {
+      transition: none;
+    }
+  }
+
+  /* ---- copy choreography ------------------------------------------------ */
+
+  /* The engine fades a room's copy as a block. Under `is-choreographed` the
+     block's children arrive in reading order instead, which is the difference
+     between a caption appearing and a title sequence playing. Transforms and
+     opacity only — no layout, so this costs nothing per frame. */
+  .sw-root .sw-copy.is-choreographed > * {
+    opacity: 0;
+    transform: translateY(0.9rem);
+    transition:
+      opacity 520ms var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)),
+      transform 520ms var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1));
+  }
+
+  .sw-root .sw-copy.is-choreographed.is-live > * {
+    opacity: 1;
+    transform: none;
+  }
+
+  .sw-root .sw-copy.is-choreographed > .sw-copy__num {
+    transition-delay: 0ms;
+  }
+  .sw-root .sw-copy.is-choreographed > .sw-copy__eyebrow {
+    transition-delay: 70ms;
+  }
+  .sw-root .sw-copy.is-choreographed > .sw-copy__title {
+    transition-delay: 140ms;
+  }
+  .sw-root .sw-copy.is-choreographed > .sw-copy__body {
+    transition-delay: 240ms;
+  }
+  .sw-root .sw-copy.is-choreographed > .sw-copy__tags {
+    transition-delay: 330ms;
+  }
+  .sw-root .sw-copy.is-choreographed > .world-taught,
+  .sw-root .sw-copy.is-choreographed > .sw-copy__cta {
+    transition-delay: 400ms;
+  }
+
+  /* The eyebrow's rule draws itself in, which is the one flourish that reads
+     as a camera arriving rather than a page loading. */
+  .sw-root .sw-copy__eyebrow {
+    position: relative;
+    padding-bottom: 0.4rem;
+  }
+
+  .sw-root .sw-copy__eyebrow::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    height: 2px;
+    width: 3.5rem;
+    background: var(--color-accent);
+    transform: scaleX(0);
+    transform-origin: 0 50%;
+    transition: transform 620ms 220ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .sw-root .sw-copy.is-live .sw-copy__eyebrow::after {
+    transform: scaleX(1);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .sw-root .sw-copy__eyebrow::after {
+      transition: none;
+      transform: scaleX(1);
+    }
   }
 
   /* Per-room curriculum links. Global, not scoped: these nodes are created by
