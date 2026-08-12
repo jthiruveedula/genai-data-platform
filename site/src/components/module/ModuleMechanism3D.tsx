@@ -52,7 +52,14 @@ function layoutFor(shape: MechanismShape, count: number, mergeAt?: number): Layo
   const spineX = (i: number) => -SPAN / 2 + (SPAN / Math.max(1, count - 1)) * i;
   const spine: Node[] = Array.from({ length: count }, (_, i) => ({
     step: i,
-    pos: [spineX(i), 0, 0] as [number, number, number],
+    // Alternating depth, strongest in the middle of the run: the mechanism
+    // reads as an object in space rather than a flat plate, and perspective
+    // does the work of showing which station is where.
+    pos: [spineX(i), 0, Math.sin((i / Math.max(1, count - 1)) * Math.PI) * (i % 2 ? -1.1 : 1.1)] as [
+      number,
+      number,
+      number,
+    ],
   }));
   const edges: [number, number][] = [];
   for (let i = 0; i < count - 1; i++) edges.push([i, i + 1]);
@@ -233,6 +240,7 @@ function Mechanism({
     [shape, steps.length, mergeAt],
   );
   const payload = useRef<THREE.Group>(null);
+  const rig = useRef<THREE.Group>(null);
   const [active, setActive] = useState(0);
   const { camera } = useThree();
 
@@ -241,7 +249,19 @@ function Mechanism({
     camera.lookAt(0, -0.15, 0);
   }, [camera]);
 
-  useFrame(({ clock }) => {
+  useFrame(({ clock, pointer }) => {
+    // The whole mechanism turns a few degrees toward the pointer, over a slow
+    // idle drift so it is never quite static. Rotation only — nothing moves in
+    // depth, so no station can swap places with another while you read it.
+    const stage = rig.current;
+    if (stage) {
+      const t = clock.getElapsedTime();
+      const targetY = pointer.x * 0.22 + Math.sin(t * 0.24) * 0.05;
+      const targetX = -pointer.y * 0.12 + Math.sin(t * 0.19) * 0.03;
+      stage.rotation.y += (targetY - stage.rotation.y) * 0.05;
+      stage.rotation.x += (targetX - stage.rotation.x) * 0.05;
+    }
+
     const group = payload.current;
     if (!group) return;
 
@@ -275,7 +295,7 @@ function Mechanism({
   });
 
   return (
-    <>
+    <group ref={rig}>
       {edges.map(([a, b], i) => (
         <Line
           key={`e${i}`}
@@ -328,7 +348,7 @@ function Mechanism({
           <meshBasicMaterial color={ink.accent} />
         </mesh>
       </group>
-    </>
+    </group>
   );
 }
 
