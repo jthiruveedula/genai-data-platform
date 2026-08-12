@@ -26,7 +26,7 @@ test('the curriculum track links to the twelve module pages', async ({ page }) =
     /\/modules\/85-agents\/$/,
   );
   // The footer hands off to the rest of the site.
-  await expect(page.locator('.pf-sitelinks a')).toHaveCount(9);
+  await expect(page.locator('.pf-sitelinks a')).toHaveCount(10);
 });
 
 test('the cloud switcher re-maps every service label from one selection', async ({ page }) => {

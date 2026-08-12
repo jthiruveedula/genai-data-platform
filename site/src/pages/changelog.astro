@@ -1,0 +1,259 @@
+---
+/**
+ * The release ledger.
+ *
+ * Fifteen releases of real work had shipped and a visitor could see none of it —
+ * the only evidence a site is maintained was the freshness page's claim count.
+ * This is the other half of that argument: what changed, when, and why it
+ * mattered, in the site's own voice rather than a wall of merged PR titles.
+ *
+ * Built from `data/releases.ts`, whose list is generated from the actual GitHub
+ * releases (tools/sync-releases.mjs) while the prose stays authored — a
+ * changelog assembled from commit subjects reads like one.
+ */
+import SiteLayout from "../layouts/SiteLayout.astro";
+import { RELEASES, LATEST } from "../data/releases";
+
+const base = import.meta.env.BASE_URL;
+const REPO = "https://github.com/jthiruveedula/genai-data-platform";
+
+const fmtDate = (iso: string) =>
+  new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+
+/** Group by month so the ledger reads as a run of work, not fifteen equal rows. */
+const groups: { key: string; label: string; items: typeof RELEASES }[] = [];
+for (const release of RELEASES) {
+  const key = release.date.slice(0, 7);
+  const label = new Date(`${key}-01T00:00:00Z`).toLocaleDateString("en-GB", {
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+  const group = groups.find((g) => g.key === key);
+  if (group) group.items.push(release);
+  else groups.push({ key, label, items: [release] });
+}
+
+const majorish = (tag: string) => tag.endsWith(".0");
+---
+
+<SiteLayout
+  title="Changelog"
+  description="Every release of the GenAI Data Platform site: what changed, when, and why it mattered."
+>
+  <article class="changelog">
+    <header class="cl-head">
+      <p class="cl-kicker mono">The ledger</p>
+      <h1>Everything that has shipped.</h1>
+      <p class="cl-lede">
+        {RELEASES.length} releases. Every one of them went out through the same gate: tests and
+        accessibility checks green on the pull request, then a published tag — nothing reaches the
+        site without one. The newest is <a href={`${REPO}/releases/tag/${LATEST.tag}`}>{LATEST.tag}</a>, published{" "}
+        {fmtDate(LATEST.date)}.
+      </p>
+    </header>
+
+    {
+      groups.map((group) => (
+        <section class="cl-group" aria-labelledby={`month-${group.key}`}>
+          <h2 id={`month-${group.key}`} class="cl-month mono">
+            {group.label}
+          </h2>
+          <ol class="cl-list">
+            {group.items.map((release) => (
+              <li class:list={["cl-item", { "is-major": majorish(release.tag) }]}>
+                <div class="cl-meta">
+                  <a class="cl-tag mono" href={`${REPO}/releases/tag/${release.tag}`}>
+                    {release.tag}
+                  </a>
+                  <time class="cl-date mono" datetime={release.date}>
+                    {fmtDate(release.date)}
+                  </time>
+                  {release.isLatest && <span class="chip chip--accent cl-live">LIVE</span>}
+                </div>
+                <div class="cl-body">
+                  <h3 class="cl-title">{release.title}</h3>
+                  <p class="cl-summary">{release.summary}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </section>
+      ))
+    }
+
+    <footer class="cl-foot">
+      <p>
+        Full commit-level notes live with each <a href={`${REPO}/releases`}>tag on GitHub</a>. What
+        the site currently claims, and when each claim was last verified, is on the{" "}
+        <a href={`${base}freshness/`}>freshness page</a>.
+      </p>
+    </footer>
+  </article>
+</SiteLayout>
+
+<style>
+  .changelog {
+    max-width: 60rem;
+  }
+
+  .cl-head {
+    padding-bottom: 1.75rem;
+    margin-bottom: 2.5rem;
+    border-bottom: 2px solid var(--text);
+  }
+
+  .cl-kicker {
+    margin: 0 0 0.6rem;
+    font-size: 0.7rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent-text, var(--accent));
+  }
+
+  .cl-head h1 {
+    margin: 0 0 1rem;
+    font-size: clamp(2rem, 5vw, 3.4rem);
+    line-height: 1;
+    letter-spacing: -0.03em;
+  }
+
+  .cl-lede {
+    margin: 0;
+    max-width: 44rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+  }
+
+  /* Links inside prose need more than colour to be links: axe flags the accent
+     against secondary text at 1.58:1, and it is right — an underline is the
+     distinction, not a decoration. */
+  .cl-lede a,
+  .cl-foot a {
+    color: var(--accent-text, var(--accent));
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .cl-group {
+    margin-bottom: 2.5rem;
+  }
+
+  /* The month is a rule with a label sitting on it — a ledger's ruling, not a
+     heading floating above a list. */
+  .cl-month {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    margin: 0 0 1.25rem;
+    font-size: 0.7rem;
+    font-weight: 400;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+  }
+
+  .cl-month::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .cl-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .cl-item {
+    display: grid;
+    grid-template-columns: minmax(9rem, 12rem) 1fr;
+    gap: 1.5rem;
+    padding-left: 1.25rem;
+    border-left: 2px solid var(--border);
+  }
+
+  /* A .0 release gets the accent rule: the ledger should show its own rhythm. */
+  .cl-item.is-major {
+    border-left-color: var(--accent);
+  }
+
+  .cl-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.35rem;
+    padding-top: 0.15rem;
+  }
+
+  .cl-tag {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text);
+    text-decoration: none;
+  }
+
+  .cl-tag:hover,
+  .cl-tag:focus-visible {
+    color: var(--accent-text, var(--accent));
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .cl-date {
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+  }
+
+  .cl-live {
+    font-size: 0.6rem;
+  }
+
+  .cl-title {
+    margin: 0 0 0.4rem;
+    font-size: 1.05rem;
+    line-height: 1.25;
+  }
+
+  .cl-summary {
+    margin: 0;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    max-width: 46rem;
+  }
+
+  .cl-foot {
+    margin-top: 3rem;
+    padding-top: 1.5rem;
+    border-top: 2px solid var(--border);
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+  }
+
+  .cl-foot p {
+    margin: 0;
+    max-width: 46rem;
+  }
+
+  @media (max-width: 640px) {
+    .cl-item {
+      grid-template-columns: 1fr;
+      gap: 0.5rem;
+    }
+
+    .cl-meta {
+      flex-direction: row;
+      align-items: baseline;
+      gap: 0.75rem;
+    }
+  }
+</style>

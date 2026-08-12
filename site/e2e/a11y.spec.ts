@@ -19,6 +19,7 @@ const KEY_PAGES = [
   'paths/beginner/',
   'calculator/',
   'world/',
+  'changelog/',
   'this-page-does-not-exist/',
 ];
 
