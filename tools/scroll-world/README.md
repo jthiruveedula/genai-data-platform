@@ -54,6 +54,21 @@ cut and encode — so it needs no API key, no credits, and no network.
 - `World.tsx` — the flight. Scene builders for the six stations plus the camera.
   `z(t)` is strictly linear in time so the camera never reverses; the expressive
   motion lives in the lateral sway and in what the stations do as you pass.
+
+  **Camera grammar.** Each room gets a move drawn from what happens in it — a
+  lateral track along the mill, a crane over the index, a swing around the model
+  ring, a lens that opens into the vector cloud and tightens onto the answer.
+  Every one of them rides a `bump()`: a gaussian centred on that room's arrival
+  which has decayed to zero by the time the flight reaches a clip boundary. So
+  the middle of a leg can be as expressive as it likes while both sides of every
+  seam are back on the same plain forward glide. Seam safety is a property of the
+  function rather than something to re-check after each change.
+
+  **Drawing language.** The world is drafted, not lit: dimension lines with tick
+  serifs, corner registration marks, a wall ruler whose marks are the flight's
+  speed cue, and a thin scatter of near-field rules for parallax. Nothing in the
+  scene is a filled primitive — a solid sphere passing the lens reads as a blob
+  of colour and breaks the register immediately.
 - `world-scenes.ts` — station layout, the Modernist palette, and a seeded PRNG.
   Nothing may call `Math.random()` or read the clock: a frame must be a pure
   function of its index or the "one take" guarantee is gone.
