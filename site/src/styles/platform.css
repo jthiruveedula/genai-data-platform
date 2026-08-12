@@ -1898,3 +1898,11 @@ a.pf-cur__card:hover {
     transition: none;
   }
 }
+
+/* Unit economics, one query at a time (#210). Sits directly above .pf-cost and
+   shares its rule-and-padding rhythm — the query anatomy is the ground floor of
+   the same cost argument the section below it then scales to a monthly bill. */
+.pf-qa {
+  border-bottom: 2px solid var(--color-text);
+  padding: 56px 24px;
+}

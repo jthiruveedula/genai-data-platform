@@ -26,6 +26,7 @@ import {
   TIERS,
 } from "../data/platformScroll";
 import { MODULES } from "../data/modules";
+import QueryAnatomy from "../components/home/QueryAnatomy.astro";
 
 const base = import.meta.env.BASE_URL;
 
@@ -453,6 +454,10 @@ const nn = (i: number) => String(i + 1).padStart(2, "0");
     </section>
 
     <!-- 10 — Cost -->
+    <section id="query-cost" class="pf-qa">
+      <QueryAnatomy />
+    </section>
+
     <section id="cost" class="pf-cost">
       <div class="pf-cost__grid">
         <div class="pf-cost__left">
