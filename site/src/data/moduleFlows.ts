@@ -11,14 +11,40 @@ export interface FlowStep {
   detail: string;
 }
 
+/**
+ * How this module's steps are arranged in space, for the 3D mechanism that
+ * ModuleFlowDiagram hydrates over its static strip. Not decoration: the shape
+ * is read off the module's own mechanism, so the diagram argues the same thing
+ * the prose does.
+ *
+ * - `line`     — a straight transformation chain.
+ * - `fan-in`   — several kinds of input converging on one path.
+ * - `split`    — one thing becoming many.
+ * - `fork`     — a path that branches at a decision.
+ * - `fuse`     — two paths running in parallel, then merged.
+ * - `stack`    — one spine with parallel layers recorded against it.
+ * - `loop`     — a path that returns to an earlier step.
+ */
+export type FlowShape = "line" | "fan-in" | "split" | "fork" | "fuse" | "stack" | "loop";
+
 export interface ModuleFlow {
   kicker: string;
+  shape: FlowShape;
+  /**
+   * `fuse` only: the index of the step that MERGES two upstream paths, so the
+   * mechanism draws the split before it and the join at it. Explicit rather
+   * than inferred — in Module 35 the merge is step 3 (RRF fusing dense and
+   * sparse), in Module 75 it is step 2 (the event log joined against billing),
+   * and no rule over the labels gets both right.
+   */
+  mergeAt?: number;
   steps: FlowStep[];
 }
 
 export const MODULE_FLOWS: Record<string, ModuleFlow> = {
   "00-foundations": {
     kicker: "TEXT TO VECTOR",
+    shape: "line",
     steps: [
       { label: "Text", detail: "A raw string — a sentence, a policy clause" },
       { label: "Tokenizer", detail: "Splits it into sub-word pieces" },
@@ -29,6 +55,7 @@ export const MODULE_FLOWS: Record<string, ModuleFlow> = {
   },
   "10-ingestion": {
     kicker: "SOURCE TO TABLE",
+    shape: "fan-in",
     steps: [
       { label: "Sources", detail: "Docs, tickets, chats, DBs, the web" },
       { label: "Parse / OCR", detail: "Extract text and layout from each format" },
@@ -38,6 +65,7 @@ export const MODULE_FLOWS: Record<string, ModuleFlow> = {
   },
   "15-chunking": {
     kicker: "DOCUMENT TO CHUNKS",
+    shape: "split",
     steps: [
       { label: "Parsed document", detail: "Text plus layout from Module 10" },
       { label: "Splitter", detail: "Fixed, recursive, semantic, or layout-aware" },
@@ -47,6 +75,7 @@ export const MODULE_FLOWS: Record<string, ModuleFlow> = {
   },
   "20-embeddings": {
     kicker: "CHUNK TO INDEX",
+    shape: "line",
     steps: [
       { label: "Chunk text", detail: "Output of Module 15's splitter" },
       { label: "Embedding model", detail: "Same model for index and query, always" },
@@ -56,6 +85,7 @@ export const MODULE_FLOWS: Record<string, ModuleFlow> = {
   },
   "25-serving": {
     kicker: "QUERY TO ANSWER",
+    shape: "fork",
     steps: [
       { label: "Query", detail: "The user's question, embedded" },
       { label: "Retrieve", detail: "Top-k nearest chunks from the index" },
@@ -66,6 +96,8 @@ export const MODULE_FLOWS: Record<string, ModuleFlow> = {
   },
   "35-retrieval": {
     kicker: "RECALL TO PRECISION",
+    shape: "fuse",
+    mergeAt: 2,
     steps: [
       { label: "Query", detail: "Rewritten or expanded if needed (HyDE)" },
       { label: "Dense + sparse search", detail: "Vector similarity and BM25 keyword, in parallel" },
@@ -76,6 +108,7 @@ export const MODULE_FLOWS: Record<string, ModuleFlow> = {
   },
   "38-multimodal": {
     kicker: "MANY FORMATS, ONE INDEX",
+    shape: "fan-in",
     steps: [
       { label: "Detect format", detail: "HTML, PDF, TXT, video — routed by type" },
       { label: "Extract per type", detail: "Strip boilerplate, layout-aware OCR, transcript + keyframes" },
@@ -85,6 +118,7 @@ export const MODULE_FLOWS: Record<string, ModuleFlow> = {
   },
   "45-evaluation": {
     kicker: "OPINION TO NUMBER",
+    shape: "fork",
     steps: [
       { label: "Golden set", detail: "Curated questions with expected answers" },
       { label: "Run the pipeline", detail: "The same RAG path production uses" },
@@ -94,6 +128,7 @@ export const MODULE_FLOWS: Record<string, ModuleFlow> = {
   },
   "55-observability": {
     kicker: "REQUEST TO TRACE",
+    shape: "stack",
     steps: [
       { label: "Request", detail: "Incoming query, tagged with a trace ID" },
       { label: "Retrieve span", detail: "Logged: query, chunks returned, latency" },
@@ -103,6 +138,7 @@ export const MODULE_FLOWS: Record<string, ModuleFlow> = {
   },
   "65-security": {
     kicker: "INPUT TO SAFE OUTPUT",
+    shape: "stack",
     steps: [
       { label: "Input", detail: "User or tool-provided text" },
       { label: "Screen", detail: "Catch prompt injection, strip PII" },
@@ -113,6 +149,8 @@ export const MODULE_FLOWS: Record<string, ModuleFlow> = {
   },
   "75-finops": {
     kicker: "EVENT LOG TO ACTION",
+    shape: "fuse",
+    mergeAt: 1,
     steps: [
       { label: "Event log", detail: "Every request, retrieval, and token" },
       { label: "Join billing", detail: "Match usage against the actual cloud bill" },
@@ -122,6 +160,7 @@ export const MODULE_FLOWS: Record<string, ModuleFlow> = {
   },
   "85-agents": {
     kicker: "GOAL TO ACTION",
+    shape: "loop",
     steps: [
       { label: "Goal", detail: "What the user actually wants done" },
       { label: "Plan", detail: "The model decides the next action" },

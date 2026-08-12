@@ -7,7 +7,13 @@
 // without a second animation system to maintain across 11 module pages.
 // The connector's traveling dot is a plain CSS keyframe, gated behind
 // `prefers-reduced-motion: no-preference` — no JS involved.
+// Since #205 the same steps also drive a 3D mechanism (ModuleMechanism3D),
+// hydrated over this strip on capable, motion-permitting clients. The strip
+// stays in the markup and remains the only thing no-JS, pre-hydration and
+// reduced-motion visitors ever see — and it is still the accessible copy of
+// the content, since the 3D view renders the same labels from the same data.
 import { MODULE_FLOWS, MODULE_CLOUD_SERVICE } from "../../data/moduleFlows";
+import ModuleMechanism3D from "./ModuleMechanism3D";
 
 interface Props {
   moduleId: string;
@@ -19,7 +25,7 @@ if (!flow) throw new Error(`ModuleFlowDiagram: no flow registered for module "${
 const cloudService = MODULE_CLOUD_SERVICE[moduleId];
 ---
 
-<figure class="module-flow" aria-label={`${flow.kicker}: step-by-step diagram`}>
+<figure class="module-flow" data-module-mechanism aria-label={`${flow.kicker}: step-by-step diagram`}>
   <figcaption class="flow-kicker">
     <span class="chip chip--accent">{flow.kicker}</span>
     {
@@ -58,6 +64,14 @@ const cloudService = MODULE_CLOUD_SERVICE[moduleId];
         </>
       ))
     }
+  </div>
+
+  {/* Never display:none before hydration — client:visible needs a layout box
+      to observe. The mount is stacked over the strip and only becomes visible
+      once the scene reports itself mounted (data-mode="3d"), which is also
+      what hides the strip. Same arrangement as CurriculumFlight3D. */}
+  <div class="flow-mech" data-flow-mech>
+    <ModuleMechanism3D client:visible steps={flow.steps} shape={flow.shape} mergeAt={flow.mergeAt} />
   </div>
 </figure>
 
@@ -138,6 +152,96 @@ const cloudService = MODULE_CLOUD_SERVICE[moduleId];
     background: var(--bg-raised);
     padding: 1.1rem 1rem;
     overflow-x: auto;
+  }
+
+  /* ---- the 3D mechanism, stacked over the strip until it mounts ---- */
+  .flow-mech {
+    position: absolute;
+    inset: 2.6rem 0 0;
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .module-flow[data-mode="3d"] .flow-track {
+    display: none;
+  }
+
+  .module-flow[data-mode="3d"] .flow-mech {
+    position: static;
+    inset: auto;
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .module-flow[data-mode="3d"] :global(.mech-root) {
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-raised);
+  }
+
+  :global(.mech-root) {
+    width: 100%;
+  }
+
+  .module-flow[data-mode="3d"] :global(.mech-root canvas) {
+    width: 100%;
+    height: 17rem;
+    display: block;
+  }
+
+  :global(.mech-detail) {
+    margin: 0;
+    padding: 0.75rem 1rem 0.9rem;
+    border-top: 1px solid var(--border);
+    font-size: 0.82rem;
+    line-height: 1.5;
+    color: var(--text-secondary);
+    /* Two lines' worth, always: the detail text swaps on hover and a box that
+       resizes with it would shift the diagram above it on every move. */
+    min-height: 3.4rem;
+  }
+
+  :global(.mech-detail strong) {
+    color: var(--text);
+  }
+
+  :global(.mech-detail__hint) {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+  }
+
+  /* Station labels live inside the canvas via drei's <Html>, so they are
+     global and unscoped by definition. */
+  :global(.mech-label) {
+    display: flex;
+    align-items: baseline;
+    gap: 0.35rem;
+    white-space: nowrap;
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+    background: color-mix(in srgb, var(--bg-raised) 88%, transparent);
+    padding: 0.15rem 0.4rem;
+    border-radius: 3px;
+  }
+
+  :global(.mech-label__index) {
+    font-family: var(--font-mono);
+    font-size: 0.66rem;
+    color: var(--accent-text, var(--accent));
+  }
+
+  :global(.mech-label.is-active) {
+    color: var(--text);
+    font-weight: 700;
+  }
+
+  @media (max-width: 640px) {
+    .module-flow[data-mode="3d"] :global(.mech-root canvas) {
+      height: 15rem;
+    }
   }
 
   .flow-node {
