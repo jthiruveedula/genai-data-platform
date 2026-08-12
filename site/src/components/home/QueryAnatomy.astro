@@ -1,0 +1,307 @@
+---
+/**
+ * "One query, priced" — the anatomy of a single RAG request.
+ *
+ * The homepage's lifecycle scenes show the pipeline's SHAPE with drawn
+ * illustrations. This shows its ECONOMICS with real numbers: token counts from
+ * one stated set of assumptions, priced from `data/pricing.json`, whose entries
+ * CI ties to `validation/sources.yaml` with a claimId and a verification date.
+ *
+ * The table below is the content. The 3D view hydrates over it and encodes two
+ * quantities at once (height = tokens, depth = $/Mtok, so volume = money),
+ * which is the part a flat chart cannot do — but no-JS, pre-hydration and
+ * reduced-motion visitors get every figure, sourced, in a real table.
+ */
+import QueryAnatomy3D from "./QueryAnatomy3D";
+import { ALL_CLOUDS, QUERY_SHAPE, outputConcentration, queryCost } from "../../lib/queryCost";
+
+const CLOUD_LABEL: Record<string, string> = {
+  gcp: "GCP",
+  aws: "AWS",
+  azure: "Azure",
+  oss: "OSS",
+};
+
+const costs = ALL_CLOUDS.map((c) => queryCost(c));
+/** The claim in the heading, computed rather than asserted (see queryCost.test.ts). */
+const headline = outputConcentration("gcp");
+const pct = (n: number) => `${Math.round(n * 100)}%`;
+const fmtUsd = (n: number) => (n >= 0.01 ? `$${n.toFixed(3)}` : `$${n.toFixed(5)}`);
+---
+
+<section class="query-anatomy" data-query-anatomy aria-labelledby="qa-title">
+  <header class="qa-head">
+    <p class="qa-kicker mono">One query, priced</p>
+    <h2 id="qa-title">
+      The answer is {pct(headline.tokenShare)} of the tokens and {pct(headline.costShare)} of the bill.
+    </h2>
+    <p class="qa-lede">
+      A retrieval-augmented question costs almost nothing to ask and almost nothing to search — the
+      money is in what the model writes back. These are list prices from the freshness page, applied
+      to one worked example: a {QUERY_SHAPE.questionTokens}-token question, {QUERY_SHAPE.retrievedChunks}
+      retrieved chunks of {QUERY_SHAPE.tokensPerChunk} tokens, and a {QUERY_SHAPE.answerTokens}-token
+      answer. The token counts are assumptions; the prices are verified.
+    </p>
+  </header>
+
+  <div class="qa-mount" data-qa-mount>
+    <QueryAnatomy3D client:visible />
+  </div>
+
+  <div class="qa-tables">
+    {
+      costs.map((cost) => (
+        <div class="qa-table-wrap cloud-swap-block" data-for={cost.cloud} data-cloud-block={cost.cloud}>
+          <table class="qa-table">
+            <caption>
+              {CLOUD_LABEL[cost.cloud]} · {cost.model} ·{" "}
+              {cost.metering === "per-token" ? (
+                <>list prices verified {cost.verifiedOn}</>
+              ) : (
+                <>${cost.gpuHourUsd}/GPU-hour, verified {cost.verifiedOn}</>
+              )}
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">Segment</th>
+                <th scope="col">Tokens</th>
+                <th scope="col">$ / Mtok</th>
+                <th scope="col">Cost</th>
+              </tr>
+            </thead>
+            <tbody>
+              {cost.segments.map((s) => (
+                <tr>
+                  <th scope="row">{s.label}</th>
+                  <td class="mono">{s.tokens.toLocaleString()}</td>
+                  <td class="mono">{cost.metering === "per-token" ? `$${s.usdPerMtok}` : "—"}</td>
+                  <td class="mono">{cost.metering === "per-token" ? fmtUsd(s.usd) : "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr>
+                <th scope="row">One query</th>
+                <td class="mono">{cost.totalTokens.toLocaleString()}</td>
+                <td class="mono">—</td>
+                <td class="mono">
+                  {cost.metering === "per-token" ? fmtUsd(cost.totalUsd) : "GPU-hour metered"}
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">
+                  If it escalates <span class="qa-foot-note">(×{cost.reasoningMultiplier} on output)</span>
+                </th>
+                <td class="mono">{cost.totalTokens.toLocaleString()}</td>
+                <td class="mono">—</td>
+                <td class="mono">
+                  {cost.metering === "per-token" ? fmtUsd(cost.escalatedUsd) : "same GPU, longer"}
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+          {cost.metering === "per-gpu-hour" && (
+            <p class="qa-note">
+              Self-hosting is not billed per token, so there is no per-query price to quote: the same
+              query costs whatever a share of ${cost.gpuHourUsd}/hour works out to at your
+              utilisation. Module 75 is where that break-even gets worked out.
+            </p>
+          )}
+        </div>
+      ))
+    }
+  </div>
+</section>
+
+<style>
+  .query-anatomy {
+    position: relative;
+    margin: clamp(3rem, 8vw, 6rem) 0;
+  }
+
+  .qa-head {
+    max-width: 46rem;
+    margin-bottom: 1.75rem;
+  }
+
+  .qa-kicker {
+    margin: 0 0 0.6rem;
+    font-size: 0.7rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--accent-text, var(--accent));
+  }
+
+  .qa-head h2 {
+    margin: 0 0 0.9rem;
+    font-size: clamp(1.6rem, 3.6vw, 2.6rem);
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+  }
+
+  .qa-lede {
+    margin: 0;
+    color: var(--text-secondary);
+    line-height: 1.6;
+  }
+
+  /* NEVER display:none before hydration — client:visible watches this element
+     with an IntersectionObserver, and an element with no layout box never
+     intersects anything, so the scene would simply never mount. Stack it
+     invisibly over the table instead and let it take its own space only once
+     it reports itself mounted. */
+  .qa-mount {
+    position: absolute;
+    inset: 0;
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .query-anatomy[data-mode="3d"] .qa-mount {
+    position: static;
+    inset: auto;
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+    margin-bottom: 1.5rem;
+  }
+
+  .query-anatomy[data-mode="3d"] :global(.qa-canvas) {
+    height: clamp(19rem, 42vh, 28rem);
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-raised);
+  }
+
+  .query-anatomy[data-mode="3d"] :global(.qa-canvas canvas) {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  :global(.qa-readout) {
+    margin-top: 0.75rem;
+    min-height: 3.2rem;
+  }
+
+  :global(.qa-readout__line) {
+    margin: 0;
+    font-size: 0.88rem;
+    line-height: 1.5;
+    color: var(--text-secondary);
+    max-width: 52rem;
+  }
+
+  :global(.qa-readout__line--idle) {
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+  }
+
+  :global(.qa-tick) {
+    font-family: var(--font-mono);
+    font-size: 0.66rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+  }
+
+  :global(.qa-tick.is-focus) {
+    color: var(--text);
+    font-weight: 700;
+  }
+
+  :global(.qa-tick__unit) {
+    margin-left: 0.2rem;
+    opacity: 0.7;
+  }
+
+  :global(.qa-tick--cost) {
+    color: var(--accent-text, var(--accent));
+    font-weight: 600;
+  }
+
+  /* Row labels: which skyline is which. */
+  :global(.qa-axis) {
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    white-space: nowrap;
+  }
+
+  :global(.qa-axis--cost) {
+    color: var(--accent-text, var(--accent));
+  }
+
+  /* One table per cloud, only the selected one shown — same mechanism as the
+     site's other cloud-swapped copy, but on a block rather than a span. */
+  .cloud-swap-block {
+    display: none;
+  }
+
+  :global(:root:not([data-cloud])) .cloud-swap-block[data-for="gcp"],
+  :global(:root[data-cloud="gcp"]) .cloud-swap-block[data-for="gcp"],
+  :global(:root[data-cloud="aws"]) .cloud-swap-block[data-for="aws"],
+  :global(:root[data-cloud="azure"]) .cloud-swap-block[data-for="azure"],
+  :global(:root[data-cloud="oss"]) .cloud-swap-block[data-for="oss"] {
+    display: block;
+  }
+
+  .qa-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.86rem;
+  }
+
+  .qa-table caption {
+    caption-side: top;
+    text-align: left;
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.04em;
+    color: var(--text-secondary);
+    padding-bottom: 0.6rem;
+  }
+
+  .qa-table th,
+  .qa-table td {
+    text-align: left;
+    padding: 0.5rem 0.75rem 0.5rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .qa-table thead th {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+  }
+
+  .qa-table td.mono {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .qa-table tfoot th,
+  .qa-table tfoot td {
+    border-bottom: none;
+    border-top: 2px solid var(--text);
+    font-weight: 700;
+  }
+
+  .qa-foot-note {
+    font-weight: 400;
+    color: var(--text-secondary);
+    font-size: 0.78rem;
+  }
+
+  .qa-note {
+    margin: 0.9rem 0 0;
+    font-size: 0.84rem;
+    line-height: 1.55;
+    color: var(--text-secondary);
+    max-width: 46rem;
+  }
+</style>
