@@ -290,37 +290,6 @@ a:hover {
   overflow: hidden;
 }
 
-/* The pre-rendered room, under the live canvas. It stays: the live renderer is
-   alpha:true, so its ten interactive nodes draw straight onto this. The film
-   carries the depth (dense floor, fog, motes) that a browser should not
-   rasterise every frame; the canvas carries everything that has to react. */
-.pf-hero__backdrop {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-  transition: opacity 420ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.pf-hero__poster,
-.pf-hero__loop {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-/* The loop fades in over its own first frame, so the handover is invisible. */
-.pf-hero__loop {
-  opacity: 0;
-  transition: opacity 600ms ease;
-}
-
-.pf-hero__loop.is-playing {
-  opacity: 1;
-}
-
 .pf-hero__canvas {
   position: absolute;
   inset: 0;
