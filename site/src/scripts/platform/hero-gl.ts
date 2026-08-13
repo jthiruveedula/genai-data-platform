@@ -238,11 +238,10 @@ export function createHeroScene(host: HTMLElement, colors: HeroColors, reduce: b
   const group = new THREE.Group();
   scene.add(group);
 
-  const grid = new THREE.GridHelper(120, 40, ink, ink);
-  (grid.material as THREE.Material).opacity = 0.13;
-  (grid.material as THREE.Material).transparent = true;
-  grid.position.y = -7;
-  group.add(grid);
+  // No grid here any more: the pre-rendered backdrop behind this canvas
+  // (tools/hero-film/) draws the floor, denser and fogged, and two grids at
+  // slightly different angles read as interference rather than as depth. This
+  // renderer is alpha:true, so the film simply shows through.
 
   /** Every material carrying the accent, re-tinted by `setAccent`. */
   const accentMats: { color: THREE.Color }[] = [];
