@@ -24,6 +24,13 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    tag: "v1.10.0",
+    date: "2026-08-13",
+    title: "the homepage follows the cloud you picked",
+    summary: "Picking a cloud used to leave parts of the page in generic ink — the selected stack card, and the badges on every card in the moving curriculum track. Both now carry the chosen cloud's colour, the two grids that were leaving holes at wide widths were fixed, and the closing poster stopped running its headline across 1,600 pixels. Module 25 also gained a diagram of the curriculum graph around it, drawn from the wiring data and revealed one step at a time.",
+    isLatest: true,
+  },
+  {
     tag: "v1.9.0",
     date: "2026-08-12",
     title: "a film of the money, and a ledger of the work",
@@ -70,13 +77,6 @@ export const RELEASES: Release[] = [
     date: "2026-08-02",
     title: "Enterprise agent engineering redesign (homepage + site-wide)",
     summary: "The site repositioned around enterprise agent engineering: an agent-loop chapter, a 3D multi-agent constellation, an integration map, and a homepage narrative rewritten to lead with the runtime.",
-  },
-  {
-    tag: "v1.10.0",
-    date: "2026-08-13",
-    title: "the homepage follows the cloud you picked",
-    summary: "Picking a cloud used to leave parts of the page in generic ink — the selected stack card, and the badges on every card in the moving curriculum track. Both now carry the chosen cloud's colour, the two grids that were leaving holes at wide widths were fixed, and the closing poster stopped running its headline across 1,600 pixels. Module 25 also gained a diagram of the curriculum graph around it, drawn from the wiring data and revealed one step at a time.",
-    isLatest: true,
   },
   {
     tag: "v1.1.6",

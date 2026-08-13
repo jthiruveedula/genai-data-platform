@@ -37,7 +37,15 @@ const releases = JSON.parse(raw)
     title: String(r.name || "").replace(/^v[\d.]+\s*[—-]\s*/, "").trim() || r.tagName,
     isLatest: Boolean(r.isLatest),
   }))
-  .sort((a, b) => (a.tag < b.tag ? 1 : -1));
+  // Semantic sort, not lexicographic. String comparison put "v1.10.0" BELOW
+  // "v1.9.0" — '1' sorts before '9' — which buried a release mid-list the
+  // first time the minor version reached double digits.
+  .sort((a, b) => {
+    const parts = (t) => t.replace(/^v/, "").split(".").map(Number);
+    const [aMaj, aMin, aPatch] = parts(a.tag);
+    const [bMaj, bMin, bPatch] = parts(b.tag);
+    return bMaj - aMaj || bMin - aMin || bPatch - aPatch;
+  });
 
 // Preserve any authored prose already in the file, keyed by tag.
 let existing = {};
