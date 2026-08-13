@@ -4,6 +4,7 @@ import FlavorTabs from "../../../components/FlavorTabs.astro";
 import ModuleHero from "../../../components/module/ModuleHero.astro";
 import ModuleScenario from "../../../components/module/ModuleScenario.astro";
 import ModuleFlowDiagram from "../../../components/module/ModuleFlowDiagram.astro";
+import ServingHubDiagram from "../../../components/module/ServingHubDiagram.astro";
 import CitationTraceDemo from "../../../components/module/demos/CitationTraceDemo.astro";
 import ModuleFooterNav from "../../../components/module/ModuleFooterNav.astro";
 import ModuleRecap from "../../../components/module/ModuleRecap.astro";
@@ -35,6 +36,8 @@ const moduleData = MODULES.find((m) => m.id === moduleId)!;
     <ModuleScenario moduleId={moduleId} />
 
     <ModuleFlowDiagram moduleId={moduleId} />
+
+    <ServingHubDiagram />
 
     <h2>The request path</h2>
     <div class="concept-flow" role="list" aria-label="RAG request path">

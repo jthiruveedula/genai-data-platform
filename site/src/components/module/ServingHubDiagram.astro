@@ -1,0 +1,396 @@
+---
+/**
+ * "Everything lands here" — Module 25 as the hub of the curriculum graph.
+ *
+ * Drawn with the diagram-design skill's architecture grammar: orthogonal elbow
+ * connectors, fanned attach points, one focal accent, a legend strip at the
+ * bottom, and the accessible-SVG contract (role="img", prefixed title/desc ids).
+ *
+ * WHY THIS AND NOT THE WHOLE GRAPH: the full map is 12 modules and 19 edges,
+ * which is past the skill's budget (9 nodes, 12 arrows) and past the point of
+ * being readable. The curriculum's left-to-right order already tells you the
+ * sequence — drawing it again adds nothing. What the wiring data reveals, and
+ * no page shows, is the shape around serving: four modules feed it, three read
+ * from it. That is the diagram worth having.
+ *
+ * The nodes are read from `data/moduleEdges.ts`, so a new edge to or from
+ * Module 25 appears here without anyone redrawing anything — and the layout
+ * asserts its own budget (see the throw below) rather than silently crowding.
+ */
+import { feedsFrom, readsInto, moduleTitle } from "../../data/moduleEdges";
+import { MODULES } from "../../data/modules";
+
+const HUB = "25-serving";
+const base = import.meta.env.BASE_URL;
+
+const upstream = feedsFrom(HUB);
+const downstream = readsInto(HUB);
+
+// The skill's complexity budget, enforced rather than trusted: if the graph
+// grows past what this layout can draw legibly, fail the build instead of
+// producing a hairball.
+if (upstream.length > 4 || downstream.length > 4) {
+  throw new Error(
+    `ServingHubDiagram: ${upstream.length} in / ${downstream.length} out exceeds the ` +
+      `4-per-side layout. Redesign the diagram rather than crowding it.`,
+  );
+}
+
+const orderOf = (id: string) => String(MODULES.find((m) => m.id === id)?.order ?? 0).padStart(2, "0");
+
+/** 4px grid throughout — the skill is strict about this and it does keep it tidy. */
+const W = 960;
+const NODE_W = 184;
+const NODE_H = 56;
+const LEFT_X = 32;
+const RIGHT_X = W - 32 - NODE_W;
+const HUB_X = 388;
+const HUB_W = 184;
+const HUB_H = 72;
+
+const column = (count: number, top: number, gap: number) =>
+  Array.from({ length: count }, (_, i) => top + i * (NODE_H + gap));
+
+const inTops = column(upstream.length, 72, 32);
+const outTops = column(downstream.length, 104, 48);
+const lastIn = inTops[inTops.length - 1] ?? 72;
+const lastOut = outTops[outTops.length - 1] ?? 104;
+const DIAGRAM_H = Math.max(lastIn, lastOut) + NODE_H + 48;
+const HUB_Y = Math.round((DIAGRAM_H - HUB_H) / 2 / 4) * 4;
+const LEGEND_Y = DIAGRAM_H + 28;
+const H = DIAGRAM_H + 76;
+
+/** Attach points fanned along an edge: L*k/(N+1), snapped to the 4px grid. */
+const fan = (top: number, height: number, n: number) =>
+  Array.from({ length: n }, (_, i) => Math.round((top + (height * (i + 1)) / (n + 1)) / 4) * 4);
+
+const inPorts = fan(HUB_Y, HUB_H, upstream.length);
+const outPorts = fan(HUB_Y, HUB_H, downstream.length);
+
+/**
+ * Two-bend elbow, r=8. Straight line when the endpoints already share a y —
+ * a "bend" of zero radius is just a kink.
+ *
+ * `lane` staggers where the vertical run happens. Without it every connector
+ * on a side turns at the same x and their vertical segments stack into one
+ * stroke — which is the skill's "no two connectors may share a path" failure,
+ * and in practice means you cannot tell four arrows apart.
+ */
+function elbow(x1: number, y1: number, x2: number, y2: number, lane = 0): string {
+  if (y1 === y2) return `M ${x1},${y1} H ${x2}`;
+  const mid = Math.round((x1 + x2) / 2 / 4) * 4 + lane * 16;
+  const down = y2 > y1;
+  const v1 = down ? y1 + 8 : y1 - 8;
+  const v2 = down ? y2 - 8 : y2 + 8;
+  return `M ${x1},${y1} H ${mid - 8} Q ${mid},${y1} ${mid},${v1} V ${v2} Q ${mid},${y2} ${mid + 8},${y2} H ${x2}`;
+}
+
+const inEdges = upstream.map((edge, i) => ({
+  ...edge,
+  id: edge.from,
+  y: inTops[i] + NODE_H / 2,
+  // Outermost node turns furthest out, so the lanes nest instead of crossing.
+  d: elbow(LEFT_X + NODE_W, inTops[i] + NODE_H / 2, HUB_X, inPorts[i], -Math.abs(i - (upstream.length - 1) / 2) * 1.4),
+  top: inTops[i],
+}));
+
+const outEdges = downstream.map((edge, i) => ({
+  ...edge,
+  id: edge.to,
+  y: outTops[i] + NODE_H / 2,
+  d: elbow(HUB_X + HUB_W, outPorts[i], RIGHT_X, outTops[i] + NODE_H / 2, Math.abs(i - (downstream.length - 1) / 2) * 1.4),
+  top: outTops[i],
+}));
+
+const titleId = "serving-hub-title";
+const descId = "serving-hub-desc";
+---
+
+<figure
+  class="hub-figure"
+  data-motion-root
+  data-motion-mode="reveal"
+  data-step-count="5"
+  data-frame="static"
+>
+  <figcaption class="hub-caption">
+    <span class="chip chip--accent">THE SHAPE AROUND SERVING</span>
+    <span class="hub-meta mono">{upstream.length} feed it · {downstream.length} read from it</span>
+  </figcaption>
+
+  <svg
+    class="hub-svg"
+    viewBox={`0 0 ${W} ${H}`}
+    role="img"
+    aria-labelledby={`${titleId} ${descId}`}
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <title id={titleId}>Module 25, Serving, as the hub of the curriculum</title>
+    <desc id={descId}>
+      Four modules feed the serving path — embeddings, retrieval quality, security and FinOps — and
+      three read from it: evaluation, observability and agents. Serving is where retrieval, guardrails
+      and cost decisions are all enforced, and where the modules that measure the platform get their
+      data.
+    </desc>
+
+    <defs>
+      <marker id="hub-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+        <polygon points="0 0, 8 3, 0 6" class="hub-arrowhead" />
+      </marker>
+      <marker id="hub-arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+        <polygon points="0 0, 8 3, 0 6" class="hub-arrowhead hub-arrowhead--accent" />
+      </marker>
+    </defs>
+
+    {/* Zones first, then arrows, then boxes — z-order per the grammar. */}
+    <g class="hub-zone">
+      <rect x="16" y="40" width={NODE_W + 32} height={DIAGRAM_H - 56} rx="8" />
+      <rect x={RIGHT_X - 16} y="40" width={NODE_W + 32} height={DIAGRAM_H - 56} rx="8" />
+    </g>
+    <text x={LEFT_X + NODE_W / 2} y="56" class="hub-eyebrow" text-anchor="middle">FEEDS SERVING</text>
+    <text x={RIGHT_X + NODE_W / 2} y="56" class="hub-eyebrow" text-anchor="middle">READS FROM IT</text>
+
+    {
+      inEdges.map((e, i) => (
+        <g class="hub-node" data-motion-item data-step={2 + Math.floor(i / 2)}>
+          <path d={e.d} class="hub-link" marker-end="url(#hub-arrow)" />
+          <rect x={LEFT_X} y={e.top} width={NODE_W} height={NODE_H} rx="6" class="hub-node__mask" />
+          <rect x={LEFT_X} y={e.top} width={NODE_W} height={NODE_H} rx="6" class="hub-node__box" />
+          <text x={LEFT_X + 16} y={e.top + 24} class="hub-node__index">{orderOf(e.id)}</text>
+          <text x={LEFT_X + 16} y={e.top + 42} class="hub-node__name">{moduleTitle(e.id)}</text>
+        </g>
+      ))
+    }
+
+    {
+      outEdges.map((e, i) => (
+        <g class="hub-node" data-motion-item data-step={4 + Math.floor(i / 2)}>
+          <path d={e.d} class="hub-link hub-link--out" marker-end="url(#hub-arrow-accent)" />
+          <rect x={RIGHT_X} y={e.top} width={NODE_W} height={NODE_H} rx="6" class="hub-node__mask" />
+          <rect x={RIGHT_X} y={e.top} width={NODE_W} height={NODE_H} rx="6" class="hub-node__box" />
+          <text x={RIGHT_X + 16} y={e.top + 24} class="hub-node__index">{orderOf(e.id)}</text>
+          <text x={RIGHT_X + 16} y={e.top + 42} class="hub-node__name">{moduleTitle(e.id)}</text>
+        </g>
+      ))
+    }
+
+    {/* The one focal element. */}
+    <g class="hub-node hub-node--focal" data-motion-item data-step="1">
+      <rect x={HUB_X} y={HUB_Y} width={HUB_W} height={HUB_H} rx="6" class="hub-node__mask" />
+      <rect x={HUB_X} y={HUB_Y} width={HUB_W} height={HUB_H} rx="6" class="hub-node__box" />
+      <text x={HUB_X + HUB_W / 2} y={HUB_Y + 28} class="hub-node__index" text-anchor="middle">25</text>
+      <text x={HUB_X + HUB_W / 2} y={HUB_Y + 48} class="hub-node__name" text-anchor="middle">
+        Serving a RAG API
+      </text>
+    </g>
+
+    <line x1="32" y1={LEGEND_Y - 16} x2={W - 32} y2={LEGEND_Y - 16} class="hub-rule" />
+    <text x="32" y={LEGEND_Y} class="hub-eyebrow">LEGEND</text>
+    <text x="128" y={LEGEND_Y} class="hub-legend">→ depends on serving's behaviour</text>
+    <text x="424" y={LEGEND_Y} class="hub-legend hub-legend--accent">→ reads what serving produces</text>
+  </svg>
+
+  <p class="hub-note">
+    Every arrow here is an edge in <a href={`${base}modules/${HUB}/`}>the wiring data</a>, not a
+    drawing decision — add one and it appears. The full graph is twelve modules and nineteen edges;
+    this is the part of it you cannot get from reading the curriculum in order.
+  </p>
+</figure>
+
+<script>
+  // Static-first: the complete diagram is in the HTML. `.motion-ready` is the
+  // ONLY thing that hides anything, and it is added after the figure exists —
+  // so a script error, no-JS, or ?motion=static all leave the finished diagram
+  // on screen rather than an empty frame.
+  function armHubReveal() {
+    const root = document.querySelector<HTMLElement>('[data-motion-root]');
+    if (!root) return;
+    const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const wantsStatic = new URLSearchParams(location.search).get('motion') === 'static';
+    if (reduced || wantsStatic) {
+      root.setAttribute('data-motion-state', reduced ? 'reduced' : 'static');
+      return;
+    }
+    // Reveal runs once, when it is first seen — and never again. It explains a
+    // complete figure; replaying it on every scroll-by would be decoration.
+    const observer = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+        observer.disconnect();
+        root.classList.add('motion-ready');
+        // Two frames: one to apply the hidden start state, the next to start
+        // the transitions. Adding both classes in the same frame means the
+        // browser never sees the "from" state and nothing animates at all.
+        requestAnimationFrame(() => requestAnimationFrame(() => root.classList.add('is-running')));
+        const steps = Number(root.getAttribute('data-step-count') ?? 5);
+        const hold = 720;
+        window.setTimeout(() => root.setAttribute('data-frame', 'end'), steps * hold + 240);
+      }
+    }, { rootMargin: '0px 0px -20% 0px' });
+    observer.observe(root);
+  }
+
+  armHubReveal();
+  document.addEventListener('astro:page-load', armHubReveal);
+</script>
+
+<style>
+  .hub-figure {
+    margin: 2rem 0 2.5rem;
+    /* One clock, per the motion contract. */
+    --motion-step: 480ms;
+    --motion-hold: 720ms;
+    --motion-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  /* Nothing is hidden until the script says the figure is ready to animate. */
+  .hub-figure.motion-ready [data-motion-item] {
+    opacity: 0.08;
+    transform: translateY(8px);
+    transition:
+      opacity var(--motion-step) var(--motion-ease),
+      transform var(--motion-step) var(--motion-ease);
+  }
+
+  .hub-figure.motion-ready [data-motion-item][data-step="1"] { transition-delay: 0ms; }
+  .hub-figure.motion-ready [data-motion-item][data-step="2"] { transition-delay: 720ms; }
+  .hub-figure.motion-ready [data-motion-item][data-step="3"] { transition-delay: 1440ms; }
+  .hub-figure.motion-ready [data-motion-item][data-step="4"] { transition-delay: 2160ms; }
+  .hub-figure.motion-ready [data-motion-item][data-step="5"] { transition-delay: 2880ms; }
+
+  .hub-figure.motion-ready.is-running [data-motion-item],
+  .hub-figure[data-frame="end"] [data-motion-item] {
+    opacity: 1;
+    transform: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hub-figure [data-motion-item] {
+      opacity: 1 !important;
+      transform: none !important;
+      transition: none !important;
+    }
+  }
+
+  @media print {
+    .hub-figure [data-motion-item] {
+      opacity: 1 !important;
+      transform: none !important;
+    }
+  }
+
+  .hub-caption {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.6rem;
+    margin: 0 0 1rem;
+  }
+
+  .hub-caption .chip {
+    font-size: 0.68rem;
+  }
+
+  .hub-meta {
+    font-size: 0.68rem;
+    letter-spacing: 0.04em;
+    color: var(--text-secondary);
+  }
+
+  .hub-svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-raised);
+  }
+
+  /* Tokens come from the page, so the diagram re-tints with the cloud switch
+     like everything else — a hardcoded accent would be the one element on the
+     page that ignores the visitor's choice. */
+  .hub-zone rect {
+    fill: color-mix(in srgb, var(--text) 2%, transparent);
+    stroke: color-mix(in srgb, var(--text) 10%, transparent);
+    stroke-width: 0.8;
+  }
+
+  .hub-eyebrow {
+    fill: var(--text-secondary);
+    font-family: var(--font-mono);
+    font-size: 8px;
+    letter-spacing: 0.14em;
+  }
+
+  .hub-legend {
+    fill: var(--text-secondary);
+    font-family: var(--font-mono);
+    font-size: 8px;
+    letter-spacing: 0.06em;
+  }
+
+  .hub-legend--accent {
+    fill: var(--accent-text, var(--accent));
+  }
+
+  .hub-rule {
+    stroke: var(--border);
+    stroke-width: 0.8;
+  }
+
+  .hub-link {
+    fill: none;
+    stroke: var(--text-secondary);
+    stroke-width: 1.2;
+  }
+
+  .hub-link--out {
+    stroke: var(--accent);
+  }
+
+  .hub-arrowhead {
+    fill: var(--text-secondary);
+  }
+
+  .hub-arrowhead--accent {
+    fill: var(--accent);
+  }
+
+  .hub-node__mask {
+    fill: var(--bg-raised);
+  }
+
+  .hub-node__box {
+    fill: var(--bg-card);
+    stroke: var(--text);
+    stroke-width: 1;
+  }
+
+  .hub-node--focal .hub-node__box {
+    fill: color-mix(in srgb, var(--accent) 8%, transparent);
+    stroke: var(--accent);
+    stroke-width: 1.5;
+  }
+
+  .hub-node__index {
+    fill: var(--accent-text, var(--accent));
+    font-family: var(--font-mono);
+    font-size: 8px;
+    letter-spacing: 0.08em;
+  }
+
+  .hub-node__name {
+    fill: var(--text);
+    font-family: var(--font-heading);
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .hub-note {
+    margin: 0.9rem 0 0;
+    font-size: 0.84rem;
+    line-height: 1.55;
+    color: var(--text-secondary);
+    max-width: 46rem;
+  }
+</style>
