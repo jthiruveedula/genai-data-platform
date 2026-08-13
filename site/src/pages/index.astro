@@ -63,6 +63,10 @@ const nn = (i: number) => String(i + 1).padStart(2, "0");
   title="Home"
   description="Design, build, integrate, and operate enterprise GenAI agent systems — a ten-stage RAG lifecycle, an agent runtime, and unit economics, mapped across GCP, AWS, Azure, and OSS."
 >
+  {/* The hero poster is the largest contentful paint. Preloading it takes that
+      paint off the parser's discovery order. */}
+  <link slot="head" rel="preload" as="image" href={`${base}hero/hero-poster.jpg`} fetchpriority="high" />
+
   <div class="pf-root" data-pf-root data-pagefind-body>
     <!-- 1 — Nav -->
     <nav class="pf-nav">
@@ -92,6 +96,15 @@ const nn = (i: number) => String(i + 1).padStart(2, "0");
     <!-- 2 — Hero -->
     <section id="top" class="pf-hero">
       <div class="pf-hero__sticky">
+        {/* The hero's first paint. The live WebGL scene below is what a
+            visitor ends up interacting with — it re-tints on the cloud switch
+            and the pipeline labels track its nodes — but it paints nothing
+            until it mounts, and this is what filled that gap before: nothing.
+            Rendered offline (tools/hero-film/) at a fidelity the live canvas
+            cannot afford on load, and handed over the moment it is ready. */}
+        <div class="pf-hero__backdrop" data-pf-hero-backdrop aria-hidden="true">
+          <img class="pf-hero__poster" src={`${base}hero/hero-poster.jpg`} alt="" width="960" height="540" fetchpriority="high" decoding="async" />
+        </div>
         <div class="pf-hero__canvas" aria-hidden="true"></div>
         <div class="pf-hero__labels" aria-hidden="true">
           {
