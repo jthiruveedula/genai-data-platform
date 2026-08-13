@@ -1703,8 +1703,10 @@ a.pf-cur__card:hover {
   padding: 46px 20px;
 }
 
+/* 92px numerals over an 11px label read as a mismatch rather than a hierarchy,
+   and "<$10" is four glyphs wide — at 92px it filled its cell edge to edge. */
 .pf-stats__val {
-  font-size: clamp(46px, 6vw, 92px);
+  font-size: clamp(42px, 4.6vw, 68px);
   font-weight: 800;
   letter-spacing: -0.05em;
   line-height: 0.85;
@@ -1733,16 +1735,19 @@ a.pf-cur__card:hover {
   opacity: 0.85;
 }
 
-/* The handoff caps this at 132px. Trimmed to 92px so the statement, its
-   supporting line and both CTAs land in one viewport at desktop widths —
-   still poster-scale, still the page's largest type. */
+/* The handoff capped this at 132px, then 92px. 72px with a 15em measure is
+   where it stops spanning the window: at 92px/18em the line ran ~1650px on a
+   wide display and broke mid-phrase ("Leave running / production agents"),
+   which reads as a layout accident rather than a poster. `text-wrap: balance`
+   evens the lines it does take. Still the largest type on the page. */
 .pf-poster__h2 {
   margin: 20px 0 0;
-  font-size: clamp(38px, 6vw, 92px);
-  line-height: 0.86;
-  letter-spacing: -0.045em;
+  font-size: clamp(36px, 5vw, 72px);
+  line-height: 0.9;
+  letter-spacing: -0.04em;
   font-weight: 800;
-  max-width: 18em;
+  max-width: 15em;
+  text-wrap: balance;
 }
 
 .pf-poster__body {
