@@ -1433,6 +1433,14 @@ a.pf-cur__card:hover {
   color: var(--color-text);
 }
 
+/* The card currently at the centre of the track. Border and tint are set here
+   rather than inline so the colour follows the cloud tokens, and so the RAF
+   loop writes one class instead of a colour string per card per frame. */
+.pf-cur__card.is-focus {
+  border-color: var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) 7%, var(--color-bg));
+}
+
 .pf-cur__cardtop {
   display: flex;
   justify-content: space-between;
@@ -1452,19 +1460,26 @@ a.pf-cur__card:hover {
   padding: 5px 8px;
 }
 
+/* The three lanes are three depths of one progression, so they are three
+   weights of the SELECTED cloud rather than accent / ink / nothing. Solid,
+   tinted, outlined — the hierarchy survives, and every badge on every moving
+   card now belongs to the cloud the visitor picked instead of staying black
+   while the chrome around it turns blue. */
 .pf-cur__lane--core {
   background: var(--color-accent);
   color: var(--color-bg);
 }
 
 .pf-cur__lane--deepen {
-  background: var(--color-text);
-  color: var(--color-bg);
+  background: color-mix(in srgb, var(--color-accent) 16%, var(--color-bg));
+  color: var(--color-accent-700, var(--color-accent));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-accent) 45%, transparent);
 }
 
 .pf-cur__lane--scale {
   background: transparent;
-  color: var(--color-text);
+  color: var(--color-accent-700, var(--color-accent));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-accent) 55%, transparent);
 }
 
 .pf-cur__cardtitle {
