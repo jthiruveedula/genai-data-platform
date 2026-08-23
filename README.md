@@ -1,5 +1,17 @@
 # GenAI Data Platform — Multi-Cloud & OSS Learning Suite
 
+[![CI](https://github.com/jthiruveedula/genai-data-platform/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/jthiruveedula/genai-data-platform/actions/workflows/ci.yml)
+[![Deploy](https://github.com/jthiruveedula/genai-data-platform/actions/workflows/deploy-site.yml/badge.svg)](https://github.com/jthiruveedula/genai-data-platform/actions/workflows/deploy-site.yml)
+[![Release](https://img.shields.io/github/v/release/jthiruveedula/genai-data-platform?label=release)](https://github.com/jthiruveedula/genai-data-platform/releases)
+[![Claims verified](https://img.shields.io/badge/claims-52%2F52%20sourced-brightgreen)](https://jthiruveedula.github.io/genai-data-platform/freshness/)
+
+One CI run gates everything below and every deploy: unit tests, the site
+build, a [lychee](https://github.com/lycheeverse/lychee) link check over the
+built HTML, Playwright end-to-end plus `axe-core` accessibility tests, the
+claim-registry coverage check, and Lighthouse CI budgets. Deploys
+(`deploy-site.yml`) run only on a tagged release and only after that build
+job has succeeded.
+
 A single reference architecture, implementation guide, and interactive
 learning site for building GenAI data platforms on **AWS**, **Azure**,
 **GCP**, or **pure open-source (OSS)**. Pick a platform and the whole site —
@@ -13,11 +25,12 @@ verification plan this repo implements.
 
 ## Status
 
-This repo is in **P0/P1** of the plan: the Astro site skeleton, the
-cloud-adaptive theming system (4 flavors × light/dark), the cloud selector,
-and two sample modules (`00-foundations`, `10-ingestion`) are live. The full
-curriculum (modules 00–90, quizzes, cost calculator, Firecrawl freshness
-pipeline) ships incrementally — see the Phases table in `PLAN.md` §8.
+All twelve curriculum modules (`00-foundations` → `85-agents`) are live, each
+with four flavor tabs, a worked scenario, pitfalls, a recap, and a
+builds-on / used-by wiring graph. Alongside them: the service matrix,
+the cost console, case studies, the glossary, three learning paths, and the
+freshness registry — 52 of 52 factual claims traced to a dated primary
+source. See the Phases table in `PLAN.md` §8 for what remains.
 
 ## Repo layout
 

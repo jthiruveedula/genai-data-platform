@@ -7,9 +7,17 @@ on:
       - "site/**"
       - "validation/**"
       - "labs/**"
+      - ".github/scripts/**"
       - ".github/workflows/ci.yml"
 
 jobs:
+  scripts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Dependabot merge-decision self-check
+        run: .github/scripts/dependabot-merge-decision.test.sh
+
   labs:
     runs-on: ubuntu-latest
     strategy:
@@ -17,7 +25,7 @@ jobs:
         lab: ["85-agents-mcp-oauth", "85-agents-langgraph-loop"]
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
           cache: pip
@@ -103,7 +111,7 @@ jobs:
         run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
       - name: Cache Playwright browser binaries
         id: playwright-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.cache/ms-playwright
           key: playwright-browsers-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}
