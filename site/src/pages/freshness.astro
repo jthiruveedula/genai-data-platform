@@ -1,6 +1,6 @@
 ---
 import SiteLayout from "../layouts/SiteLayout.astro";
-import { loadClaims, claimStatus, moduleHref, type Claim, type ClaimStatus } from "../lib/claims";
+import { loadClaims, claimStatus, moduleHref, staleAfterDays, type Claim, type ClaimStatus } from "../lib/claims";
 
 const base = import.meta.env.BASE_URL;
 
@@ -42,6 +42,18 @@ function statusLabel(status: ClaimStatus, verifiedOn: string | null): string {
       registry (<code class="mono">validation/sources.yaml</code>), tagged with a volatility rating, and is meant to
       be re-checked against its sources on a schedule by an automated scrape pipeline. This page reads that registry
       directly at build time, so what's below is the actual, current verification state — not a claim about it.
+    </p>
+    <p>
+      The schedule follows the volatility rating rather than one flat interval, because GenAI pricing and model names
+      churn far faster than the rest of it: <strong>high</strong> claims — pricing tables, model catalogs, GA status —
+      are due again every <strong>{staleAfterDays("high")} days</strong>, <strong>medium</strong> claims every {staleAfterDays("medium")}, <strong>low</strong> every {staleAfterDays("low")}.
+      A claim past its own window is marked stale here the day it lapses instead of quietly staying green.
+    </p>
+    <p>
+      One thing this page will not pretend about: the scheduled workflow
+      (<code class="mono">.github/workflows/crawl4ai.yml</code>) currently only picks <em>which</em> claims are due —
+      its scrape, extract and diff steps are still stubs, and continuous webhook monitoring (PLAN.md §9.3) is not
+      wired at all. Every date below therefore comes from a hand-run verification pass, not from a robot.
     </p>
     <p class="governance-framing">
       This is the same discipline the curriculum's <a href={`${base}#operate`}>Operate in Production</a> chapter
@@ -111,7 +123,9 @@ function statusLabel(status: ClaimStatus, verifiedOn: string | null): string {
                   </td>
                   <td>{c.claim}</td>
                   <td>
-                    <span class="chip mono">{c.volatility.toUpperCase()}</span>
+                    <span class="chip mono" title={`re-checked every ${staleAfterDays(c.volatility)} days`}>
+                      {c.volatility.toUpperCase()}
+                    </span>
                   </td>
                   <td>
                     <span class={statusChipClass(status)}>{statusLabel(status, c.verifiedOn)}</span>

@@ -1,6 +1,6 @@
 ---
 import { CLOUDS } from "../data/modules";
-import { loadClaims, findClaim, claimStatus, type ClaimStatus } from "../lib/claims";
+import { loadClaims, findClaim, claimStatus, staleAfterDays, type ClaimStatus } from "../lib/claims";
 
 interface Props {
   moduleId: string;
@@ -59,8 +59,8 @@ function claimLabel(status: ClaimStatus, verifiedOn: string | null): string {
     const claimTitle =
       status === "verified"
         ? "Checked by the validation pipeline — see the content freshness page"
-        : status === "stale"
-          ? "Last checked over 90 days ago and due for re-verification — see the content freshness page"
+        : status === "stale" && claim
+          ? `Last checked over ${staleAfterDays(claim.volatility)} days ago (the window for a ${claim.volatility}-volatility claim) and due for re-verification — see the content freshness page`
           : "No validation pipeline has checked this claim yet — see the content freshness page";
     return (
       <div role="tabpanel" id={`panel-${moduleId}-${c.id}`} aria-labelledby={`tab-${moduleId}-${c.id}`} data-panel-cloud={c.id} hidden>

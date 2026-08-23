@@ -76,7 +76,14 @@ export function findClaim(claims: Claim[], id: string): Claim | undefined {
 }
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
-const STALE_AFTER_DAYS = 90;
+
+// How long a claim stays fresh, per volatility band. Keep in sync with
+// RECHECK_DAYS in validation/due-claims.mjs — that one picks a claim up for
+// re-checking, this one turns it amber here once its window has passed.
+// `high` is bi-weekly because GenAI pricing and model names churn (tier
+// renames, price cuts, deprecations) far faster than the rest of the
+// registry; .github/workflows/crawl4ai.yml carries the matching schedule.
+const STALE_AFTER_DAYS: Record<Volatility, number> = { high: 14, medium: 90, low: 180 };
 
 function stripQuotes(value: string): string {
   const trimmed = value.trim();
@@ -193,15 +200,21 @@ export function parseClaims(yamlText: string): Claim[] {
 /**
  * A claim is:
  * - "unverified" when it has never been checked (verified_on is null)
- * - "stale" when it was checked, but more than 90 days before `now`
- * - "verified" when it was checked within the last 90 days
+ * - "stale" when it was checked, but longer ago than its volatility's
+ *   re-check window (STALE_AFTER_DAYS)
+ * - "verified" when it was checked inside that window
  */
 export function claimStatus(claim: Claim, now: Date = new Date()): ClaimStatus {
   if (!claim.verifiedOn) return "unverified";
   const verifiedDate = new Date(claim.verifiedOn);
   if (Number.isNaN(verifiedDate.getTime())) return "unverified";
   const ageDays = (now.getTime() - verifiedDate.getTime()) / MS_PER_DAY;
-  return ageDays > STALE_AFTER_DAYS ? "stale" : "verified";
+  return ageDays > staleAfterDays(claim.volatility) ? "stale" : "verified";
+}
+
+/** The re-check window for a volatility band, in days. */
+export function staleAfterDays(volatility: Volatility): number {
+  return STALE_AFTER_DAYS[volatility] ?? STALE_AFTER_DAYS.low;
 }
 
 /**
