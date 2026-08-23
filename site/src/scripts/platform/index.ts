@@ -353,7 +353,10 @@ export function mountPlatform(root: HTMLElement) {
           // clear AA at rest. Depth reads from translateZ/rotateY/translateY
           // instead; the fade only takes the edge off the furthest cards.
           el.style.opacity = String(Math.max(0.9, 1 - ad * 0.26));
-          el.style.borderColor = ad < 0.5 ? ACCENT_VAR : INK_VAR;
+          // A class, not an inline colour: CSS owns the palette (so it tracks
+          // the cloud tokens) and this writes one attribute per card per frame
+          // instead of a colour string.
+          el.classList.toggle("is-focus", ad < 0.5);
         });
         if (curProgress) curProgress.style.width = p * 100 + "%";
         if (curCount)

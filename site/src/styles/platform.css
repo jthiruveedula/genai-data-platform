@@ -1086,10 +1086,25 @@ a:hover {
   font-weight: 800;
 }
 
+/* Four cards, so the column count must divide four: 1, 2, or 4 — never 3.
+   `auto-fit` produced three columns between roughly 1300 and 1700px, which
+   left one card alone on a second row beside a half-screen of nothing. */
 .pf-flavors {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
+  grid-template-columns: 1fr;
   border-top: 2px solid var(--color-text);
+}
+
+@media (min-width: 861px) {
+  .pf-flavors {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1720px) {
+  .pf-flavors {
+    grid-template-columns: repeat(4, 1fr);
+  }
 }
 
 .pf-flavor {
@@ -1112,10 +1127,37 @@ a:hover {
     background 160ms ease;
 }
 
+/* The selected card takes the SELECTED CLOUD's colour. This section exists to
+   answer "which stack am I on" — answering it in generic ink, with the accent
+   only in a hairline outline, made the one element that should shout the
+   choice the quietest thing on screen. `--color-accent` is already per-cloud
+   (see modernist.css), so the card re-tints with the switch. */
 .pf-flavor.is-active {
-  background: var(--color-text);
+  background: var(--color-accent);
   color: var(--color-bg);
   transform: translateY(-8px);
+}
+
+/* Chip text inherits the card's paper colour; the border override already
+   existed further down this file. */
+.pf-flavor.is-active .pf-chip {
+  color: var(--color-bg);
+}
+
+/* Full paper, not a diluted one: at 88% the 10px bold "ACTIVE" label measured
+   3.76:1 against the GCP accent. Softening secondary text is a habit from
+   ink-on-paper, and it does not survive being inverted onto a saturated
+   ground. */
+.pf-flavor.is-active .pf-flavor__desc,
+.pf-flavor.is-active .pf-flavor__best,
+.pf-flavor.is-active .pf-flavor__top,
+.pf-flavor.is-active .pf-flavor__state {
+  color: var(--color-bg);
+  /* And full opacity. These spans carry opacity 0.72–0.82, which is a
+     perfectly good way to soften ink on paper and a broken one on a saturated
+     accent: axe measured the 10px bold ACTIVE label at 4.39:1 against the GCP
+     blue. Opacity beats any colour override, so it has to be reset here. */
+  opacity: 1;
 }
 
 .pf-flavor__top {
@@ -1172,9 +1214,18 @@ a:hover {
   padding-top: 6px;
 }
 
+/* Three cells, so three columns once there is room — `auto-fit` was fitting
+   four tracks at wide widths and leaving the fourth empty, which read as a
+   missing card rather than as spare space. */
 .pf-map {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 861px) {
+  .pf-map {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 
 .pf-map__cell {
@@ -1413,6 +1464,14 @@ a.pf-cur__card:hover {
   color: var(--color-text);
 }
 
+/* The card currently at the centre of the track. Border and tint are set here
+   rather than inline so the colour follows the cloud tokens, and so the RAF
+   loop writes one class instead of a colour string per card per frame. */
+.pf-cur__card.is-focus {
+  border-color: var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) 7%, var(--color-bg));
+}
+
 .pf-cur__cardtop {
   display: flex;
   justify-content: space-between;
@@ -1432,19 +1491,26 @@ a.pf-cur__card:hover {
   padding: 5px 8px;
 }
 
+/* The three lanes are three depths of one progression, so they are three
+   weights of the SELECTED cloud rather than accent / ink / nothing. Solid,
+   tinted, outlined — the hierarchy survives, and every badge on every moving
+   card now belongs to the cloud the visitor picked instead of staying black
+   while the chrome around it turns blue. */
 .pf-cur__lane--core {
   background: var(--color-accent);
   color: var(--color-bg);
 }
 
 .pf-cur__lane--deepen {
-  background: var(--color-text);
-  color: var(--color-bg);
+  background: color-mix(in srgb, var(--color-accent) 16%, var(--color-bg));
+  color: var(--color-accent-700, var(--color-accent));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-accent) 45%, transparent);
 }
 
 .pf-cur__lane--scale {
   background: transparent;
-  color: var(--color-text);
+  color: var(--color-accent-700, var(--color-accent));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-accent) 55%, transparent);
 }
 
 .pf-cur__cardtitle {
@@ -1668,8 +1734,10 @@ a.pf-cur__card:hover {
   padding: 46px 20px;
 }
 
+/* 92px numerals over an 11px label read as a mismatch rather than a hierarchy,
+   and "<$10" is four glyphs wide — at 92px it filled its cell edge to edge. */
 .pf-stats__val {
-  font-size: clamp(46px, 6vw, 92px);
+  font-size: clamp(42px, 4.6vw, 68px);
   font-weight: 800;
   letter-spacing: -0.05em;
   line-height: 0.85;
@@ -1698,16 +1766,19 @@ a.pf-cur__card:hover {
   opacity: 0.85;
 }
 
-/* The handoff caps this at 132px. Trimmed to 92px so the statement, its
-   supporting line and both CTAs land in one viewport at desktop widths —
-   still poster-scale, still the page's largest type. */
+/* The handoff capped this at 132px, then 92px. 72px with a 15em measure is
+   where it stops spanning the window: at 92px/18em the line ran ~1650px on a
+   wide display and broke mid-phrase ("Leave running / production agents"),
+   which reads as a layout accident rather than a poster. `text-wrap: balance`
+   evens the lines it does take. Still the largest type on the page. */
 .pf-poster__h2 {
   margin: 20px 0 0;
-  font-size: clamp(38px, 6vw, 92px);
-  line-height: 0.86;
-  letter-spacing: -0.045em;
+  font-size: clamp(36px, 5vw, 72px);
+  line-height: 0.9;
+  letter-spacing: -0.04em;
   font-weight: 800;
-  max-width: 18em;
+  max-width: 15em;
+  text-wrap: balance;
 }
 
 .pf-poster__body {

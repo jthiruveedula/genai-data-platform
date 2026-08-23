@@ -24,11 +24,17 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    tag: "v1.10.0",
+    date: "2026-08-13",
+    title: "the homepage follows the cloud you picked",
+    summary: "Picking a cloud used to leave parts of the page in generic ink — the selected stack card, and the badges on every card in the moving curriculum track. Both now carry the chosen cloud's colour, the two grids that were leaving holes at wide widths were fixed, and the closing poster stopped running its headline across 1,600 pixels. Module 25 also gained a diagram of the curriculum graph around it, drawn from the wiring data and revealed one step at a time.",
+    isLatest: true,
+  },
+  {
     tag: "v1.9.0",
     date: "2026-08-12",
     title: "a film of the money, and a ledger of the work",
     summary: "Module 75 gained a 24-second film of where a query's money goes, rendered locally from the site's own cost model so it cannot quote a figure the pages don't. And the release history became a page: fifteen releases, each with what it changed and why, instead of a claim count being the only sign anyone still maintains this.",
-    isLatest: true,
   },
   {
     tag: "v1.8.0",
