@@ -1465,9 +1465,16 @@ a.pf-cur__card:hover {
    tinted, outlined — the hierarchy survives, and every badge on every moving
    card now belongs to the cloud the visitor picked instead of staying black
    while the chrome around it turns blue. */
+/* White, not --color-bg. The cards behind the front one are dimmed to
+   opacity 0.9 to sit back in the 3D stack, and axe-core composites that
+   opacity into its contrast maths (4.13 does; 4.12 did not, which is why
+   this only surfaced on an axe bump). --color-bg text on accent measures
+   4.26:1 once blended — just under the 4.5:1 gate. White measures 5.30:1
+   blended, and against the front card at full opacity the difference from
+   #f3f2f2 is imperceptible. */
 .pf-cur__lane--core {
   background: var(--color-accent);
-  color: var(--color-bg);
+  color: #fff;
 }
 
 .pf-cur__lane--deepen {
