@@ -187,6 +187,32 @@ export function mountPlatform(root: HTMLElement) {
     window.addEventListener("resize", () => gl?.resize());
   }
 
+  // — hero backdrop: the offline render, shown until the live scene is up ——
+  // Poster paints immediately (it is in the markup). The loop is an upgrade,
+  // and an upgrade has to earn its bytes: not on a phone, not when the visitor
+  // asked for less motion, and never before the page has finished loading.
+  const backdropHost = document.querySelector<HTMLElement>("[data-pf-hero-backdrop]");
+  if (backdropHost && !reduce && window.matchMedia("(min-width: 861px)").matches) {
+    const start = () => {
+      const video = document.createElement("video");
+      video.className = "pf-hero__loop";
+      video.muted = true;
+      video.loop = true;
+      video.playsInline = true;
+      video.preload = "auto";
+      video.setAttribute("muted", "");
+      video.setAttribute("playsinline", "");
+      video.src = `${import.meta.env.BASE_URL}hero/hero-loop.mp4`;
+      // Only reveal once it is actually playing: a black or half-decoded frame
+      // over the poster would be worse than the poster alone.
+      video.addEventListener("playing", () => video.classList.add("is-playing"), { once: true });
+      backdropHost.appendChild(video);
+      video.play().catch(() => video.remove());
+    };
+    if (document.readyState === "complete") window.setTimeout(start, 200);
+    else window.addEventListener("load", () => window.setTimeout(start, 200), { once: true });
+  }
+
   // — the one RAF loop ————————————————————————————————————————————————
   let raf = 0;
   function tick(now: number) {
