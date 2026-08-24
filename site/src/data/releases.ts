@@ -20,15 +20,24 @@ export interface Release {
   /** One or two sentences on what it changed and why. Authored, not generated. */
   summary: string;
   isLatest?: boolean;
+  /** True for a tag not yet cut — the entry exists so the changelog can be written before the release, but links to the releases list instead of a tag page until it does. */
+  pending?: boolean;
 }
 
 export const RELEASES: Release[] = [
+  {
+    tag: "v1.11.0",
+    date: "2026-08-24",
+    title: "checkpoint quizzes return, and the Dependabot backlog closes out",
+    summary: "Every module's closing recap gets its five-question checkpoint quiz back, scored instantly and remembered on-device — the same completion signal the recap already tracked, so passing one still counts toward progress. Alongside it, the whole outstanding Dependabot backlog was swept and CI gained a decision script so the backlog stops re-forming.",
+    isLatest: true,
+    pending: true,
+  },
   {
     tag: "v1.10.0",
     date: "2026-08-13",
     title: "the homepage follows the cloud you picked",
     summary: "Picking a cloud used to leave parts of the page in generic ink — the selected stack card, and the badges on every card in the moving curriculum track. Both now carry the chosen cloud's colour, the two grids that were leaving holes at wide widths were fixed, and the closing poster stopped running its headline across 1,600 pixels. Module 25 also gained a diagram of the curriculum graph around it, drawn from the wiring data and revealed one step at a time.",
-    isLatest: true,
   },
   {
     tag: "v1.9.0",
