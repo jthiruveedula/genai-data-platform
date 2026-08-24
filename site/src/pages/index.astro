@@ -27,6 +27,7 @@ import {
 } from "../data/platformScroll";
 import { MODULES } from "../data/modules";
 import QueryAnatomy from "../components/home/QueryAnatomy.astro";
+import GenAINews from "../components/home/GenAINews.astro";
 
 const base = import.meta.env.BASE_URL;
 
@@ -540,7 +541,10 @@ const nn = (i: number) => String(i + 1).padStart(2, "0");
       }
     </section>
 
-    <!-- 12 — Poster close -->
+    <!-- 12 — Live GenAI news -->
+    <GenAINews />
+
+    <!-- 13 — Poster close -->
     <section class="pf-poster">
       <div class="pf-poster__kicker">SYSTEM READY</div>
       <h2 class="pf-poster__h2">Start with RAG. Leave running production agents.</h2>
@@ -557,7 +561,7 @@ const nn = (i: number) => String(i + 1).padStart(2, "0");
       </div>
     </section>
 
-    <!-- 13 — Footer -->
+    <!-- 14 — Footer -->
     <footer>
       <nav class="pf-sitelinks" aria-label="Site">
         {SITE_LINKS.map((l) => <a href={l.href}>{l.label}</a>)}
