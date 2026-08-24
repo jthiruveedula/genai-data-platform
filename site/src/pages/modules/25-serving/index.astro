@@ -8,6 +8,7 @@ import ServingHubDiagram from "../../../components/module/ServingHubDiagram.astr
 import CitationTraceDemo from "../../../components/module/demos/CitationTraceDemo.astro";
 import ModuleFooterNav from "../../../components/module/ModuleFooterNav.astro";
 import ModuleRecap from "../../../components/module/ModuleRecap.astro";
+import ModuleQuiz from "../../../components/module/ModuleQuiz.astro";
 import { flavor as gcp } from "../../../data/flavors/gcp";
 import { flavor as aws } from "../../../data/flavors/aws";
 import { flavor as azure } from "../../../data/flavors/azure";
@@ -99,6 +100,7 @@ const moduleData = MODULES.find((m) => m.id === moduleId)!;
       <li>Building a blocking, non-streamed API because it's simpler, then wondering why the UI feels slow even though total latency looks fine on a dashboard.</li>
     </ul>
   </article>
+  <ModuleQuiz moduleId={moduleId} />
   <ModuleRecap moduleId={moduleId} />
   <ModuleFooterNav moduleId={moduleId} />
 </SiteLayout>

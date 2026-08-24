@@ -7,6 +7,7 @@ import ModuleFlowDiagram from "../../../components/module/ModuleFlowDiagram.astr
 import FaithfulnessCheckDemo from "../../../components/module/demos/FaithfulnessCheckDemo.astro";
 import ModuleFooterNav from "../../../components/module/ModuleFooterNav.astro";
 import ModuleRecap from "../../../components/module/ModuleRecap.astro";
+import ModuleQuiz from "../../../components/module/ModuleQuiz.astro";
 import { flavor as gcp } from "../../../data/flavors/gcp";
 import { flavor as aws } from "../../../data/flavors/aws";
 import { flavor as azure } from "../../../data/flavors/azure";
@@ -110,6 +111,7 @@ const moduleData = MODULES.find((m) => m.id === moduleId)!;
       <li>Adding an eval gate to CI but never lowering the threshold as the pipeline improves, so it stops catching anything.</li>
     </ul>
   </article>
+  <ModuleQuiz moduleId={moduleId} />
   <ModuleRecap moduleId={moduleId} />
   <ModuleFooterNav moduleId={moduleId} />
 </SiteLayout>

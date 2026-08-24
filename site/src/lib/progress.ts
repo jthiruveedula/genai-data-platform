@@ -1,9 +1,12 @@
 /**
  * Reads module completion out of localStorage. A module counts as complete
  * once its closing recap has been seen (written by ModuleRecap.astro under
- * the `gdp.recap.<moduleId>` key). Scores recorded by the retired checkpoint
- * quizzes (`gdp.quiz.<moduleId>`) still count, so learners who passed quizzes
- * before the recap redesign keep their progress.
+ * the `gdp.recap.<moduleId>` key) — the recap is the one section every
+ * module page renders unconditionally, so it's the reliable completion
+ * signal. A passing checkpoint-quiz score (`gdp.quiz.<moduleId>`, written by
+ * ModuleQuiz.astro) also counts: the quiz sits alongside the recap as an
+ * optional self-check, not a gate, so a learner who skips it still completes
+ * the module by reaching its recap.
  *
  * Pure functions only — no DOM access — so this is unit-testable and safe to
  * import from a server-rendered Astro component's frontmatter without
@@ -15,13 +18,16 @@ export interface RecapView {
   viewedAt: number;
 }
 
-/** Legacy quiz scores at or above this fraction still count as complete. */
+/** A quiz score at or above this fraction counts as a pass. */
 export const PASS_THRESHOLD = 0.7;
 
 function recapKey(moduleId: string): string {
   return `gdp.recap.${moduleId}`;
 }
 
+// The `legacy` in this name is historical, from before the recap redesign —
+// ModuleQuiz.astro writes this same key today, so it stays under its
+// original name for compatibility with scores already saved under it.
 function legacyQuizKey(moduleId: string): string {
   return `gdp.quiz.${moduleId}`;
 }
@@ -48,7 +54,7 @@ export function markRecapViewed(moduleId: string): void {
   }
 }
 
-/** Whether a legacy checkpoint-quiz score meets the old pass threshold. */
+/** Whether a saved checkpoint-quiz score meets the pass threshold. */
 function legacyQuizPassed(moduleId: string): boolean {
   try {
     const raw = localStorage.getItem(legacyQuizKey(moduleId));
@@ -61,7 +67,7 @@ function legacyQuizPassed(moduleId: string): boolean {
   }
 }
 
-/** Whether a module counts as complete (recap seen, or legacy quiz passed). */
+/** Whether a module counts as complete (recap seen, or quiz passed). */
 export function isModuleComplete(moduleId: string): boolean {
   return readRecapView(moduleId) !== null || legacyQuizPassed(moduleId);
 }

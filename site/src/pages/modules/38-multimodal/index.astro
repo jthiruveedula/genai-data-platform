@@ -7,6 +7,7 @@ import ModuleFlowDiagram from "../../../components/module/ModuleFlowDiagram.astr
 import MultiModalConvergeDemo from "../../../components/module/demos/MultiModalConvergeDemo.astro";
 import ModuleFooterNav from "../../../components/module/ModuleFooterNav.astro";
 import ModuleRecap from "../../../components/module/ModuleRecap.astro";
+import ModuleQuiz from "../../../components/module/ModuleQuiz.astro";
 import { flavor as gcp } from "../../../data/flavors/gcp";
 import { flavor as aws } from "../../../data/flavors/aws";
 import { flavor as azure } from "../../../data/flavors/azure";
@@ -80,6 +81,7 @@ const moduleData = MODULES.find((m) => m.id === moduleId)!;
       <li>Assuming layout-aware PDF parsing (Module 15) is enough for scanned diagrams — a diagram needs an image embedding, not better OCR.</li>
     </ul>
   </article>
+  <ModuleQuiz moduleId={moduleId} />
   <ModuleRecap moduleId={moduleId} />
   <ModuleFooterNav moduleId={moduleId} />
 </SiteLayout>
