@@ -20,8 +20,6 @@ export interface Release {
   /** One or two sentences on what it changed and why. Authored, not generated. */
   summary: string;
   isLatest?: boolean;
-  /** True for a tag not yet cut — the entry exists so the changelog can be written before the release, but links to the releases list instead of a tag page until it does. */
-  pending?: boolean;
 }
 
 export const RELEASES: Release[] = [
@@ -31,7 +29,6 @@ export const RELEASES: Release[] = [
     title: "checkpoint quizzes return, and the Dependabot backlog closes out",
     summary: "Every module's closing recap gets its five-question checkpoint quiz back, scored instantly and remembered on-device — the same completion signal the recap already tracked, so passing one still counts toward progress. Alongside it, the whole outstanding Dependabot backlog was swept and CI gained a decision script so the backlog stops re-forming.",
     isLatest: true,
-    pending: true,
   },
   {
     tag: "v1.10.0",
