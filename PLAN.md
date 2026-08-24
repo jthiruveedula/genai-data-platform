@@ -334,7 +334,7 @@ claims:
     check: "Is S3 Vectors GA, preview, or deprecated? Current name?"
     sources:
       - https://aws.amazon.com/s3/features/vectors/
-    volatility: high          # high = check monthly; medium = quarterly; low = biannually
+    volatility: high          # high = check every 14 days; medium = quarterly; low = biannually
   - id: azure-foundry-name
     doc: docs/azure/40-serving-rag-agents.md
     claim: "Azure AI Foundry is the agent/eval platform (formerly AI Studio)"
@@ -352,7 +352,7 @@ Authoring rule: any content entry (in `data/modules.ts` / `data/flavors/*.ts`) n
 
 ### 9.2 Validation pipeline
 
-Scheduled GitHub Actions workflow (`validate-content.yml`, monthly + manual dispatch) plus pre‑release run:
+Scheduled GitHub Actions workflow (today the skeleton in `.github/workflows/crawl4ai.yml`; month‑start full sweep + mid‑month `high`‑volatility pass + manual dispatch) plus pre‑release run. Which claims a run covers comes from `validation/due-claims.mjs`, which selects only claims past their volatility's re‑check window — pricing and model‑name churn needs the bi‑weekly lane, the rest does not and shouldn't burn crawl budget:
 
 1. **Scrape:** Firecrawl `/scrape` each claim's source URLs → markdown.
 2. **Extract:** Firecrawl structured extraction (`extract_schema` where defined — e.g., pricing numbers) or LLM check of the scraped markdown against the `check` question.
@@ -367,6 +367,8 @@ Scheduled GitHub Actions workflow (`validate-content.yml`, monthly + manual disp
 ### 9.3 Continuous monitors (between scheduled runs)
 
 Use Firecrawl change‑monitoring on the highest‑volatility pages (model catalogs, pricing pages, deprecation notices) with webhook → GitHub `repository_dispatch` → auto‑runs the validation workflow for just the affected claims. The AI judge filters formatting‑only diffs so issues open only on real content changes.
+
+**Status: spec‑only, nothing is wired.** There is no Firecrawl account, no `FIRECRAWL_API_KEY` secret, no monitor registration, and no `repository_dispatch` trigger anywhere in `.github/workflows/`. Wiring it needs, in order: (1) a funded Firecrawl account with change‑tracking enabled; (2) a repo secret holding a fine‑grained GitHub PAT with `contents: write` so the webhook can dispatch; (3) a public webhook receiver, since Firecrawl cannot call GitHub's `repository_dispatch` endpoint directly with the payload shape the workflow needs — a small serverless function or GitHub App; (4) a `repository_dispatch` trigger on the workflow taking a claim‑id list as `client_payload`. Until all four exist, the mid‑month `high`‑volatility cron in §9.2 is the fastest re‑check this repo actually has.
 
 ### 9.4 Link & lab validation
 

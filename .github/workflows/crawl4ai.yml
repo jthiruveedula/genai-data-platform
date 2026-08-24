@@ -2,27 +2,65 @@ name: Crawl4AI pricing/docs watch
 
 # Phase 0 skeleton only (per redesign spec section 5.2: scrape -> extract ->
 # diff -> PR). No scraping logic is implemented yet — this just proves the
-# schedule + job shape exist for Phase 4 to fill in. Steps below are stubs.
+# schedule + job shape exist for Phase 4 to fill in. The scrape/extract/diff/PR
+# steps below are still stubs.
+#
+# The schedule and the claim selection are real, though. GenAI pricing and
+# model names churn — tier renames, price cuts, deprecations — faster than one
+# monthly sweep can catch, so `high`-volatility claims get a mid-month fast
+# lane on top of the month-start full sweep, which works out to a bi-weekly
+# re-check for them while `medium`/`low` keep their slower windows. Which
+# claims a run actually covers comes from validation/due-claims.mjs, so Phase 4
+# spends crawl budget on claims whose cadence has elapsed, not on all 52.
 
 on:
   schedule:
-    - cron: "0 2 * * *" # daily 02:00 UTC
-  workflow_dispatch: {} # allow manual runs while iterating in Phase 4
+    - cron: "0 2 1 * *" # 1st, 02:00 UTC — full sweep: every claim that's due
+    - cron: "0 2 15 * *" # 15th, 02:00 UTC — high-volatility claims only
+  workflow_dispatch:
+    inputs:
+      volatility:
+        description: "Which claims to check (all = every claim past its cadence)"
+        type: choice
+        options: [all, high, medium, low]
+        default: all
 
 jobs:
   crawl-and-diff:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: Select claims due for re-verification
+        id: due
+        # The mid-month cron is the high-volatility fast lane; the month-start
+        # cron and manual runs sweep every band, still filtered by cadence.
+        run: |
+          scope="${{ inputs.volatility || 'all' }}"
+          if [ "${{ github.event.schedule }}" = "0 2 15 * *" ]; then scope=high; fi
+          ids="$(node validation/due-claims.mjs --volatility "$scope")"
+          count="$(printf '%s' "$ids" | grep -c . || true)"
+          echo "scope=$scope" >> "$GITHUB_OUTPUT"
+          echo "count=$count" >> "$GITHUB_OUTPUT"
+          {
+            echo "ids<<CLAIM_IDS"
+            echo "$ids"
+            echo "CLAIM_IDS"
+          } >> "$GITHUB_OUTPUT"
+          echo "$count claim(s) due (scope: $scope)" >> "$GITHUB_STEP_SUMMARY"
+          echo "$ids" >> "$GITHUB_STEP_SUMMARY"
 
       # - name: Set up Python + Crawl4AI
       #   TODO(Phase 4): actions/setup-python@v5, pip install crawl4ai,
       #   crawl4ai-setup / playwright install for its browser deps.
 
       # - name: Scrape source pages
-      #   TODO(Phase 4): run Crawl4AI against the cloud pricing/docs pages
-      #   tracked in the claim registry (validation/) and write raw output
-      #   to a scratch directory (e.g. .crawl4ai/raw/).
+      #   TODO(Phase 4): run Crawl4AI against the source URLs of the claims in
+      #   steps.due.outputs.ids (and nothing else) and write raw output to a
+      #   scratch directory (e.g. .crawl4ai/raw/).
 
       # - name: Extract structured claims
       #   TODO(Phase 4): parse scraped output into the claim-registry shape
@@ -39,4 +77,7 @@ jobs:
       #   human review — this workflow should never push to main directly.
 
       - name: Placeholder (no-op)
-        run: echo "Crawl4AI workflow skeleton — scrape/extract/diff/PR steps land in Phase 4."
+        run: |
+          echo "Crawl4AI workflow skeleton — scrape/extract/diff/PR steps land in Phase 4."
+          echo "Would re-verify ${{ steps.due.outputs.count }} claim(s) in scope '${{ steps.due.outputs.scope }}':"
+          echo "${{ steps.due.outputs.ids }}"

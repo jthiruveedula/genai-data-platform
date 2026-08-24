@@ -139,6 +139,10 @@ jobs:
           retention-days: 14
       - name: Check claim registry coverage
         run: node validation/check-registry.mjs
+      - name: Claim re-check selector tests
+        # Guards the per-volatility cadence the crawl4ai workflow schedules
+        # against — a broken selector would silently re-check nothing.
+        run: node --test validation/due-claims.test.mjs
       - name: Lighthouse CI
         working-directory: site
         # .lighthouserc.json existed for a long time but was never wired into

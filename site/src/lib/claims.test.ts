@@ -84,18 +84,29 @@ describe("claimStatus", () => {
     expect(claimStatus(baseClaim, new Date("2026-07-17"))).toBe("unverified");
   });
 
-  it("is verified at 89 days old (within the 90-day window)", () => {
-    const now = new Date("2026-07-17T00:00:00Z");
-    const verifiedOn = new Date(now.getTime() - 89 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-    const claim: Claim = { ...baseClaim, verifiedOn };
-    expect(claimStatus(claim, now)).toBe("verified");
+  // The window is per-volatility (see STALE_AFTER_DAYS): high claims —
+  // pricing, model catalogs — are re-checked bi-weekly, so they go amber at
+  // 14 days while a low-volatility claim of the same age is still fine.
+  const now = new Date("2026-07-17T00:00:00Z");
+  const agedBy = (days: number) =>
+    new Date(now.getTime() - days * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
+  it("holds a medium claim verified at 89 days and stales it at 91", () => {
+    const claim: Claim = { ...baseClaim, volatility: "medium" };
+    expect(claimStatus({ ...claim, verifiedOn: agedBy(89) }, now)).toBe("verified");
+    expect(claimStatus({ ...claim, verifiedOn: agedBy(91) }, now)).toBe("stale");
   });
 
-  it("is stale at 91 days old (past the 90-day window)", () => {
-    const now = new Date("2026-07-17T00:00:00Z");
-    const verifiedOn = new Date(now.getTime() - 91 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-    const claim: Claim = { ...baseClaim, verifiedOn };
-    expect(claimStatus(claim, now)).toBe("stale");
+  it("stales a high-volatility claim at 15 days, not 91", () => {
+    const claim: Claim = { ...baseClaim, volatility: "high" };
+    expect(claimStatus({ ...claim, verifiedOn: agedBy(13) }, now)).toBe("verified");
+    expect(claimStatus({ ...claim, verifiedOn: agedBy(15) }, now)).toBe("stale");
+  });
+
+  it("still counts a low-volatility claim verified at 91 days as fresh", () => {
+    const claim: Claim = { ...baseClaim, volatility: "low", verifiedOn: agedBy(91) };
+    expect(claimStatus(claim, now)).toBe("verified");
+    expect(claimStatus({ ...claim, verifiedOn: agedBy(181) }, now)).toBe("stale");
   });
 
   it("treats an unparseable verified_on as unverified", () => {

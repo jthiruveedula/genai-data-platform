@@ -8,6 +8,12 @@
 # the claim text itself had drifted from reality (renamed products, retired
 # models, stale pricing), the text was corrected here and in the
 # corresponding flavors/*.ts entry, not just re-dated.
+#
+# `volatility` sets how often an entry is due again: high every 14 days,
+# medium every 90, low every 180 (validation/due-claims.mjs picks the due
+# ones, .github/workflows/crawl4ai.yml runs on that cadence). Never edit a
+# verified_on date without actually re-checking the claim against its
+# sources — the freshness page renders these dates as evidence.
 
 claims:
   - id: gcp-vertex-model-garden
