@@ -154,6 +154,14 @@ a:hover {
   border-radius: var(--radius-md);
   cursor: pointer;
   text-decoration: none;
+  transition:
+    transform 220ms cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 220ms,
+    box-shadow 220ms;
+}
+
+.pf-btn:active {
+  transform: translateY(0);
 }
 
 .pf-btn__arrow {
@@ -169,6 +177,8 @@ a:hover {
 .pf-btn--primary:hover {
   background: var(--color-accent-600);
   color: var(--color-bg);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 26px -10px color-mix(in srgb, var(--color-accent) 55%, transparent);
 }
 
 .pf-btn--secondary {
@@ -180,6 +190,8 @@ a:hover {
 .pf-btn--secondary:hover {
   background: color-mix(in srgb, var(--color-accent) 8%, transparent);
   color: var(--color-text);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 26px -12px color-mix(in srgb, var(--color-text) 35%, transparent);
 }
 
 /* 1 — Nav --------------------------------------------------------------- */
@@ -389,11 +401,66 @@ a:hover {
 }
 
 .pf-hero__copy {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  width: min(560px, 46%);
+  width: min(640px, 50%);
   will-change: transform, opacity;
+}
+
+/* A soft accent bloom behind the copy — depth without touching the WebGL
+   scene. Sandboxed to z-index: -1 inside .pf-hero__copy's own stacking
+   context (set above), so it can never drift on top of the hero text or
+   escape to sit above sibling sections. */
+.pf-hero__copy::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: -60px -80px auto -40px;
+  height: 480px;
+  background: radial-gradient(
+    ellipse at 25% 25%,
+    color-mix(in srgb, var(--color-accent) 18%, transparent),
+    transparent 70%
+  );
+  filter: blur(20px);
+  pointer-events: none;
+}
+
+/* One-time entrance choreography — the four copy blocks rise in staggered,
+   not the scroll-driven parallax the RAF loop already owns on the parent.
+   Reduced-motion turns this off below, same as the ticker/orbit loops. */
+@keyframes pf-hero-rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.pf-hero__status,
+.pf-hero__h1,
+.pf-hero__body,
+.pf-hero__ctas {
+  animation: pf-hero-rise 700ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.pf-hero__status {
+  animation-delay: 80ms;
+}
+.pf-hero__h1 {
+  animation-delay: 170ms;
+}
+.pf-hero__body {
+  animation-delay: 300ms;
+}
+.pf-hero__ctas {
+  animation-delay: 420ms;
 }
 
 .pf-hero__status {
@@ -401,6 +468,9 @@ a:hover {
   align-items: center;
   gap: 12px;
   margin-bottom: 22px;
+  width: fit-content;
+  padding: 7px 14px 7px 10px;
+  border: 2px solid var(--color-text);
 }
 
 .pf-blink-9 {
@@ -427,9 +497,9 @@ a:hover {
 
 .pf-hero__h1 {
   margin: 0;
-  font-size: clamp(32px, 3.6vw, 62px);
-  line-height: 0.94;
-  letter-spacing: -0.035em;
+  font-size: clamp(38px, 4.6vw, 78px);
+  line-height: 0.92;
+  letter-spacing: -0.04em;
   font-weight: 800;
   text-wrap: balance;
 }
@@ -2068,12 +2138,21 @@ a.pf-cur__card:hover {
   .pf-loop__orbit,
   .pf-blink-9,
   .pf-blink-7,
-  .pf-ops__bar {
+  .pf-ops__bar,
+  .pf-hero__status,
+  .pf-hero__h1,
+  .pf-hero__body,
+  .pf-hero__ctas {
     animation: none;
   }
 
   .pf-flavor {
     transition: none;
+  }
+
+  .pf-btn--primary:hover,
+  .pf-btn--secondary:hover {
+    transform: none;
   }
 }
 
