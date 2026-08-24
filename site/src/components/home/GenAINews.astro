@@ -27,7 +27,8 @@
     title: string | null;
     url: string | null;
     points: number | null;
-    created_at: number;
+    /** Unix seconds. HN Algolia also returns `created_at` as an ISO string — this is the numeric one. */
+    created_at_i: number;
   }
 
   const CACHE_KEY = "gdp.news.cache.v1";
@@ -65,7 +66,7 @@
           <div class="pf-news__meta">
             <span>${domainOf(h.url)}</span>
             <span>${h.points ?? 0} pts</span>
-            <span>${timeAgo(h.created_at)}</span>
+            <span>${timeAgo(h.created_at_i)}</span>
           </div>
         </li>`;
       })
@@ -88,7 +89,7 @@
       if (r.status !== "fulfilled") continue;
       for (const h of r.value.hits as Hit[]) hits.set(h.objectID, h);
     }
-    return [...hits.values()].sort((a, b) => b.created_at - a.created_at).slice(0, 6);
+    return [...hits.values()].sort((a, b) => b.created_at_i - a.created_at_i).slice(0, 6);
   }
 
   async function init() {
