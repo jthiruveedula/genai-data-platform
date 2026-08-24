@@ -7,6 +7,7 @@ import ModuleFlowDiagram from "../../../components/module/ModuleFlowDiagram.astr
 import AgentLoopDemo from "../../../components/module/demos/AgentLoopDemo.astro";
 import ModuleFooterNav from "../../../components/module/ModuleFooterNav.astro";
 import ModuleRecap from "../../../components/module/ModuleRecap.astro";
+import ModuleQuiz from "../../../components/module/ModuleQuiz.astro";
 import { flavor as gcp } from "../../../data/flavors/gcp";
 import { flavor as aws } from "../../../data/flavors/aws";
 import { flavor as azure } from "../../../data/flavors/azure";
@@ -143,6 +144,7 @@ const moduleData = MODULES.find((m) => m.id === moduleId)!;
       <li>Baking a long-lived API key into an agent's config instead of a scoped, short-lived OAuth token an MCP server can validate per call.</li>
     </ul>
   </article>
+  <ModuleQuiz moduleId={moduleId} />
   <ModuleRecap moduleId={moduleId} />
   <ModuleFooterNav moduleId={moduleId} />
 </SiteLayout>

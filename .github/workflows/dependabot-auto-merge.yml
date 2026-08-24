@@ -1,0 +1,60 @@
+name: Dependabot auto-merge
+
+# Gated on CI, by construction: this runs only after the CI workflow has
+# already finished, and only merges when its conclusion was `success`. That is
+# deliberate over the usual `pull_request` + `gh pr merge --auto` recipe —
+# auto-merge with no *required* status checks configured on main merges
+# immediately, before CI has said anything.
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  merge:
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.actor.login == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve the pull request this run belongs to
+        id: pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          REPO: ${{ github.repository }}
+        run: |
+          # workflow_run.pull_requests is populated for same-repo branches
+          # (which every Dependabot branch is), but read it back off the API
+          # by head SHA anyway so a stale payload can't merge the wrong PR.
+          number=$(gh api "repos/$REPO/commits/$HEAD_SHA/pulls" \
+            --jq '[.[] | select(.state == "open" and .base.ref == "main")][0].number // empty')
+          echo "number=$number" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v7
+        if: steps.pr.outputs.number != ''
+        with:
+          sparse-checkout: .github/scripts
+
+      - name: Merge patch and minor bumps
+        if: steps.pr.outputs.number != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          PR: ${{ steps.pr.outputs.number }}
+        run: |
+          set -euo pipefail
+          metadata=$(gh pr view "$PR" --json author,title)
+          decision=$(.github/scripts/dependabot-merge-decision.sh \
+            "$(jq -r '.author.login' <<<"$metadata")" \
+            "$(jq -r '.title' <<<"$metadata")")
+          if [ "$decision" != "merge" ]; then
+            echo "Leaving #$PR for a human — $decision"
+            exit 0
+          fi
+          gh pr merge "$PR" --squash --delete-branch

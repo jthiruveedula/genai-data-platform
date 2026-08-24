@@ -7,6 +7,7 @@ import ModuleFlowDiagram from "../../../components/module/ModuleFlowDiagram.astr
 import IdempotentIngestDemo from "../../../components/module/demos/IdempotentIngestDemo.astro";
 import ModuleFooterNav from "../../../components/module/ModuleFooterNav.astro";
 import ModuleRecap from "../../../components/module/ModuleRecap.astro";
+import ModuleQuiz from "../../../components/module/ModuleQuiz.astro";
 import { flavor as gcp } from "../../../data/flavors/gcp";
 import { flavor as aws } from "../../../data/flavors/aws";
 import { flavor as azure } from "../../../data/flavors/azure";
@@ -95,6 +96,7 @@ const moduleData = MODULES.find((m) => m.id === moduleId)!;
       <li>Skipping PII redaction at ingestion because "we'll clean it up later" — later means re-embedding and re-indexing every document, not editing one table.</li>
     </ul>
   </article>
+  <ModuleQuiz moduleId={moduleId} />
   <ModuleRecap moduleId={moduleId} />
   <ModuleFooterNav moduleId={moduleId} />
 </SiteLayout>

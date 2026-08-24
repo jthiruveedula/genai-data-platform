@@ -8,6 +8,7 @@ import ModuleFlowDiagram from "../../../components/module/ModuleFlowDiagram.astr
 import ModelMismatchDemo from "../../../components/module/demos/ModelMismatchDemo.astro";
 import ModuleFooterNav from "../../../components/module/ModuleFooterNav.astro";
 import ModuleRecap from "../../../components/module/ModuleRecap.astro";
+import ModuleQuiz from "../../../components/module/ModuleQuiz.astro";
 import { flavor as gcp } from "../../../data/flavors/gcp";
 import { flavor as aws } from "../../../data/flavors/aws";
 import { flavor as azure } from "../../../data/flavors/azure";
@@ -87,6 +88,7 @@ const moduleData = MODULES.find((m) => m.id === moduleId)!;
       <li>Storing full-precision, full-dimension vectors by default at real scale — truncation and quantization cut storage and search cost sharply, with quality loss that's measurable and usually well worth it.</li>
     </ul>
   </article>
+  <ModuleQuiz moduleId={moduleId} />
   <ModuleRecap moduleId={moduleId} />
   <ModuleFooterNav moduleId={moduleId} />
 </SiteLayout>
