@@ -19,6 +19,56 @@
   <ol class="rail-list" data-rail-list></ol>
 </nav>
 
+<style is:global>
+  /* The permalink mark beside every module heading. Hidden until the heading
+     is hovered or the mark is focused, so it never competes with the title. */
+  .head-anchor {
+    display: inline-block;
+    margin-left: 0.4rem;
+    text-decoration: none;
+    color: var(--accent);
+    opacity: 0;
+    font-weight: 400;
+    transition: opacity var(--duration-micro, 120ms) var(--ease-out, ease);
+  }
+
+  .head-anchor::after {
+    content: "#";
+  }
+
+  .head-anchor[data-copied]::after {
+    content: "copied";
+    font-family: var(--font-mono);
+    font-size: 0.6em;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  h2:hover > .head-anchor,
+  .head-anchor:focus-visible,
+  .head-anchor[data-copied] {
+    opacity: 1;
+  }
+
+  /* Coarse pointers have no hover to reveal it with. */
+  @media (pointer: coarse) {
+    .head-anchor {
+      opacity: 0.45;
+    }
+  }
+
+  /* A hash landing must not tuck the heading under the sticky nav. */
+  article h2[id] {
+    scroll-margin-top: 5rem;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .head-anchor {
+      transition: none;
+    }
+  }
+</style>
+
 <style>
   /* A tick rail, not a panel: the reading column on this site runs nearly the
      full width at large sizes, so a box of section titles would sit on top of
@@ -127,6 +177,71 @@
 </style>
 
 <script>
+  /** Heading text to a URL fragment: lowercase words joined by hyphens. */
+  function slugify(text: string): string {
+    return text
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, "")
+      .trim()
+      .replace(/\s+/g, "-")
+      .slice(0, 60);
+  }
+
+  /**
+   * A permalink mark beside the heading. Its label lives in `aria-label` and
+   * its glyph in CSS `::after`, so the heading's own text is unchanged — the
+   * rail reads that text for its tick names, and so does the site search.
+   */
+  function addAnchor(heading: HTMLElement, title: string) {
+    if (heading.querySelector(".head-anchor")) return;
+    const anchor = document.createElement("a");
+    anchor.className = "head-anchor";
+    anchor.href = `#${heading.id}`;
+    anchor.setAttribute("aria-label", `Copy link to section: ${title}`);
+    anchor.addEventListener("click", (event) => {
+      // Let the hash navigation happen; copying the resulting URL is the part
+      // a reader actually wants, and the address bar is a poor place to do it.
+      const url = `${location.origin}${location.pathname}#${heading.id}`;
+      navigator.clipboard?.writeText(url).then(
+        () => {
+          anchor.dataset.copied = "true";
+          window.setTimeout(() => delete anchor.dataset.copied, 1400);
+        },
+        () => {
+          /* Clipboard denied (permissions, insecure origin) — the link still
+             navigated, which is the fallback. */
+        },
+      );
+      void event;
+    });
+    heading.appendChild(anchor);
+  }
+
+  /**
+   * Jump to a section and stay there. The second half matters on these pages:
+   * the 3D mechanism and the demos hydrate lazily, and an island above the
+   * target growing mid-scroll leaves the reader a few hundred pixels short of
+   * the heading they clicked. Once the scroll settles, re-aim if the heading
+   * did not end up where `scroll-margin-top` says it should.
+   */
+  function jumpTo(heading: HTMLElement) {
+    const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    heading.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+    // Give the heading focus as well as the scroll, so keyboard and
+    // screen-reader users land where the page just moved to.
+    heading.tabIndex = -1;
+    heading.focus({ preventScroll: true });
+
+    const settle = () => {
+      const want = parseFloat(getComputedStyle(heading).scrollMarginTop) || 0;
+      if (Math.abs(heading.getBoundingClientRect().top - want) > 4) {
+        heading.scrollIntoView({ behavior: "auto", block: "start" });
+      }
+    };
+    if ("onscrollend" in window) window.addEventListener("scrollend", settle, { once: true });
+    else window.setTimeout(settle, 600);
+  }
+
   function buildRail() {
     const rail = document.querySelector<HTMLElement>("[data-section-rail]");
     const list = rail?.querySelector<HTMLElement>("[data-rail-list]");
@@ -136,6 +251,27 @@
     const headings = [...article.querySelectorAll<HTMLElement>("h2")].filter(
       (h) => (h.textContent ?? "").trim().length > 0,
     );
+    // Read every title before anything is appended into the headings below, so
+    // a rail tick is never named after its own anchor mark.
+    const titles = headings.map((h) => (h.textContent ?? "").trim());
+
+    // Stable, shareable ids come first and unconditionally: a two-section page
+    // gets no rail but still deserves a link you can send someone.
+    const taken = new Set<string>();
+    headings.forEach((heading, i) => {
+      if (!heading.id) {
+        const base = slugify(titles[i]) || `section-${i + 1}`;
+        // Two sections can legitimately share a title across a long page; the
+        // fragment cannot, or the second one is unreachable.
+        let id = base;
+        let n = 2;
+        while (taken.has(id) || document.getElementById(id)) id = `${base}-${n++}`;
+        heading.id = id;
+      }
+      taken.add(heading.id);
+      addAnchor(heading, titles[i]);
+    });
+
     // Two sections do not need a rail; they need a scroll.
     if (headings.length < 3) return;
 
@@ -143,9 +279,8 @@
     const buttons: HTMLButtonElement[] = [];
 
     headings.forEach((heading, i) => {
-      if (!heading.id) heading.id = `section-${i + 1}`;
       const li = document.createElement("li");
-      const title = (heading.textContent ?? "").trim();
+      const title = titles[i];
       const button = document.createElement("button");
       button.type = "button";
       // The tick is the control; the title is its accessible name and its
@@ -156,16 +291,7 @@
       label.setAttribute("aria-hidden", "true");
       label.textContent = title;
       button.appendChild(label);
-      button.addEventListener("click", () => {
-        heading.scrollIntoView({
-          behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
-          block: "start",
-        });
-        // Give the heading focus as well as the scroll, so keyboard and
-        // screen-reader users land where the page just moved to.
-        heading.tabIndex = -1;
-        heading.focus({ preventScroll: true });
-      });
+      button.addEventListener("click", () => jumpTo(heading));
       li.appendChild(button);
       list.appendChild(li);
       buttons.push(button);

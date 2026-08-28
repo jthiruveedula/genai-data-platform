@@ -1,0 +1,422 @@
+---
+/**
+ * Inline glossary tooltips over already-shipped module prose.
+ *
+ * PLAN.md §3.3 asked for "site-wide hover tooltips" and the glossary page
+ * (data/glossary.ts) shipped instead, deliberately: rewriting tested prose
+ * across twelve pages to hand-tag every term was the risk nobody wanted.
+ * This is the same feature without that risk — the prose is never edited.
+ * The terms are matched in the rendered DOM at runtime, first occurrence
+ * only, and the definition is the one the glossary page already publishes,
+ * so the two can never disagree.
+ *
+ * Deliberately conservative about what it will touch: body text nodes only
+ * (paragraphs and list items), never a heading, link, chip, button, or code
+ * span — a term inside a link would swallow the link, and a term inside a
+ * heading would change the text the section rail reads for its labels.
+ */
+import { GLOSSARY } from "../../data/glossary";
+import { MODULES } from "../../data/modules";
+
+const base = import.meta.env.BASE_URL;
+const moduleTitleById = new Map(MODULES.map((m) => [m.id, m.title]));
+
+/**
+ * The glossary's headword is written for a reference page ("Chunk / Chunking",
+ * "RAG (Retrieval-Augmented Generation)") — prose says one of its parts. Split
+ * the headword into the surface forms a sentence actually uses: the slash
+ * alternatives, and the short form in front of a parenthetical gloss.
+ */
+function surfaceForms(term: string): string[] {
+  const forms = new Set<string>();
+  for (const part of term.split("/")) {
+    const trimmed = part.trim();
+    if (!trimmed) continue;
+    forms.add(trimmed);
+    // "RAG (Retrieval-Augmented Generation)" is written as "RAG" in prose;
+    // the expansion inside the parentheses is worth matching on its own too.
+    const open = trimmed.indexOf("(");
+    if (open > 0) {
+      forms.add(trimmed.slice(0, open).trim());
+      forms.add(trimmed.slice(open + 1).replace(")", "").trim());
+    }
+  }
+  // Two-letter fragments match half the page; a headword is never that short.
+  return [...forms].filter((f) => f.length >= 3);
+}
+
+const entries = GLOSSARY.map((t) => ({
+  term: t.term,
+  forms: surfaceForms(t.term),
+  definition: t.definition,
+  href: t.moduleId && moduleTitleById.has(t.moduleId) ? `${base}modules/${t.moduleId}/` : null,
+  moduleTitle: t.moduleId ? (moduleTitleById.get(t.moduleId) ?? null) : null,
+}));
+---
+
+<script type="application/json" data-glossary-data set:html={JSON.stringify(entries)} />
+
+<div class="glossary-tip" data-glossary-tip role="tooltip" id="glossary-tip" hidden>
+  <p class="gt-term" data-gt-term></p>
+  <p class="gt-def" data-gt-def></p>
+  <a class="gt-link" data-gt-link href="#">See the module →</a>
+</div>
+
+<style is:global>
+  /* The mark in the prose. A dotted rule rather than a solid one: this is an
+     aside you may open, not a link you are being sent to — the page already
+     uses a solid underline for "this navigates". */
+  .gterm {
+    /* Inline, not inline-block: a marked term has to break across lines like
+       the words around it. */
+    display: inline;
+    font: inherit;
+    color: inherit;
+    background: none;
+    border: 0;
+    padding: 0;
+    margin: 0;
+    cursor: help;
+    text-decoration: underline dotted
+      color-mix(in srgb, var(--accent) 70%, transparent);
+    text-underline-offset: 0.22em;
+    text-decoration-thickness: 1.5px;
+    border-radius: 2px;
+    transition: color var(--duration-micro, 120ms) var(--ease-out, ease);
+  }
+
+  .gterm:hover,
+  .gterm[aria-expanded="true"] {
+    color: var(--accent-text, var(--accent));
+    text-decoration-color: var(--accent);
+  }
+
+  .gterm:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+</style>
+
+<style>
+  .glossary-tip {
+    position: fixed;
+    z-index: 80;
+    max-width: min(24rem, calc(100vw - 2rem));
+    padding: 0.7rem 0.85rem;
+    background: var(--bg-card, #fff);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: var(--radius, 4px);
+    box-shadow: 0 12px 28px -12px rgb(0 0 0 / 0.28);
+    opacity: 0;
+    transform: translateY(4px);
+    transition:
+      opacity var(--duration-micro, 120ms) var(--ease-out, ease),
+      transform var(--duration-micro, 120ms) var(--ease-out, ease);
+  }
+
+  .glossary-tip[data-open="true"] {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .glossary-tip[hidden] {
+    display: none;
+  }
+
+  .gt-term {
+    margin: 0 0 0.3rem;
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--accent-text, var(--accent));
+  }
+
+  .gt-def {
+    margin: 0;
+    font-size: 0.88rem;
+    line-height: 1.5;
+    color: var(--text);
+  }
+
+  .gt-link {
+    display: inline-block;
+    margin-top: 0.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+  }
+
+  .gt-link[hidden] {
+    display: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .glossary-tip {
+      transition: none;
+    }
+  }
+</style>
+
+<script>
+  interface TipEntry {
+    term: string;
+    forms: string[];
+    definition: string;
+    href: string | null;
+    moduleTitle: string | null;
+  }
+
+  /** Nothing inside these is prose we may rewrite. */
+  const SKIP =
+    "a, code, pre, kbd, h1, h2, h3, h4, h5, h6, button, .chip, .gterm, [hidden], [aria-hidden='true'], [data-no-glossary]";
+
+  function escapeRe(s: string) {
+    return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  }
+
+  let globalsWired = false;
+
+  function setupGlossary() {
+    const article = document.querySelector<HTMLElement>("article");
+    const tip = document.querySelector<HTMLElement>("[data-glossary-tip]");
+    const raw = document.querySelector<HTMLElement>("[data-glossary-data]");
+    if (!article || !tip || !raw?.textContent) return;
+    if (article.dataset.glossaryDone === "true") return;
+    article.dataset.glossaryDone = "true";
+
+    let entries: TipEntry[];
+    try {
+      entries = JSON.parse(raw.textContent);
+    } catch {
+      return;
+    }
+
+    // One pass, not one per headword. Every surface form goes into a single
+    // alternation, longest first so "vector database" wins over "vector", and
+    // the article is walked once — this runs on a reading page while several
+    // islands are hydrating, and thirty-six separate tree walks is work the
+    // reader can feel.
+    const byForm = new Map<string, TipEntry>();
+    for (const entry of entries) {
+      for (const form of entry.forms) {
+        const key = form.toLowerCase();
+        if (!byForm.has(key)) byForm.set(key, entry);
+      }
+    }
+    const pattern = [...byForm.keys()].sort((a, b) => b.length - a.length).map(escapeRe).join("|");
+    if (!pattern) return;
+    // The optional plural is what lets a page that says "agents" mark "Agent".
+    const re = new RegExp(`\\b(${pattern})(s|es)?\\b`, "gi");
+
+    const used = new Set<string>();
+
+    function wrap(text: Text, index: number, length: number, entry: TipEntry) {
+      const target = text.splitText(index);
+      target.splitText(length);
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "gterm";
+      button.textContent = target.data;
+      button.setAttribute("aria-expanded", "false");
+      button.setAttribute("aria-describedby", "glossary-tip");
+      button.dataset.term = entry.term;
+      button.dataset.definition = entry.definition;
+      if (entry.href) button.dataset.href = entry.href;
+      if (entry.moduleTitle) button.dataset.moduleTitle = entry.moduleTitle;
+      target.replaceWith(button);
+    }
+
+    function markUp() {
+      for (const block of article!.querySelectorAll<HTMLElement>("p, li, dd")) {
+        if (block.closest(SKIP)) continue;
+        // Inactive tab panels and pre-hydration fallbacks are in the DOM but
+        // off-screen; a mark planted there is a mark nobody can ever open.
+        if (block.offsetParent === null) continue;
+
+        // Snapshot the text nodes before touching any of them: wrapping a
+        // match splits the node a live walker would be standing on.
+        const walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT);
+        const texts: Text[] = [];
+        let node: Node | null;
+        while ((node = walker.nextNode())) texts.push(node as Text);
+
+        for (const text of texts) {
+          const parent = text.parentElement;
+          if (!parent || parent.closest(SKIP)) continue;
+          // A visible paragraph can still hold a hidden span — the per-cloud
+          // swaps do exactly that — and a mark in there is unreachable.
+          if (parent.offsetParent === null) continue;
+
+          re.lastIndex = 0;
+          let match: RegExpExecArray | null;
+          while ((match = re.exec(text.data))) {
+            const entry = byForm.get(match[1].toLowerCase());
+            if (!entry || used.has(entry.term)) continue;
+            used.add(entry.term);
+            wrap(text, match.index, match[0].length, entry);
+            // `text` has been split by the wrap; anything after the mark is a
+            // new node this loop no longer holds.
+            break;
+          }
+        }
+      }
+      article!.dataset.glossaryMarked = "true";
+    }
+
+    // Deferred to idle: none of this is needed for first paint, and the page
+    // it runs on is hydrating a 3D scene and several demos at the same time.
+    const idle = (window as Window & {
+      requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => void;
+    }).requestIdleCallback;
+    if (idle) idle(markUp, { timeout: 1500 });
+    else window.setTimeout(markUp, 0);
+
+    // ---- the shared tooltip ------------------------------------------------
+    // A fixed panel is safest as a direct child of <body>: nothing above it in
+    // the article can turn into a containing block and re-anchor it.
+    if (tip.parentElement !== document.body) document.body.appendChild(tip);
+
+    const termEl = tip.querySelector<HTMLElement>("[data-gt-term]")!;
+    const defEl = tip.querySelector<HTMLElement>("[data-gt-def]")!;
+    const linkEl = tip.querySelector<HTMLAnchorElement>("[data-gt-link]")!;
+    let open: HTMLElement | null = null;
+    let hoverTimer: number | undefined;
+    /** A hovered panel follows the pointer away; a clicked one is deliberate
+        and stays until it is dismissed. */
+    let sticky = false;
+
+    function show(button: HTMLElement, deliberate = false) {
+      window.clearTimeout(hoverTimer);
+      if (open && open !== button) open.setAttribute("aria-expanded", "false");
+      open = button;
+      sticky = deliberate;
+      button.setAttribute("aria-expanded", "true");
+      termEl.textContent = button.dataset.term ?? "";
+      defEl.textContent = button.dataset.definition ?? "";
+      if (button.dataset.href) {
+        linkEl.href = button.dataset.href;
+        linkEl.textContent = `See ${button.dataset.moduleTitle ?? "the module"} →`;
+        linkEl.hidden = false;
+      } else {
+        linkEl.hidden = true;
+      }
+      tip.hidden = false;
+      place(button);
+      requestAnimationFrame(() => tip.setAttribute("data-open", "true"));
+    }
+
+    function place(button: HTMLElement) {
+      const r = button.getBoundingClientRect();
+      // Measure after the content is in, so the flip decision uses the real
+      // height rather than the previous term's.
+      const t = tip.getBoundingClientRect();
+      const gap = 8;
+      const above = r.top - t.height - gap;
+      const top = above > 8 ? above : r.bottom + gap;
+      const left = Math.min(
+        Math.max(8, r.left + r.width / 2 - t.width / 2),
+        window.innerWidth - t.width - 8,
+      );
+      tip.style.top = `${Math.round(top)}px`;
+      tip.style.left = `${Math.round(left)}px`;
+    }
+
+    function hide() {
+      window.clearTimeout(hoverTimer);
+      open = null;
+      closePanel(tip);
+    }
+
+    // The document-level listeners below outlive any one page, so they close
+    // the panel through here — which is this page's `hide`, pending hover
+    // timer and all. Without it an Escape can be undone 120ms later by a
+    // hover that was already in flight.
+    (tip as HTMLElement & { closeTip?: () => void }).closeTip = hide;
+
+    article.addEventListener("pointerover", (e) => {
+      const button = (e.target as HTMLElement).closest<HTMLElement>(".gterm");
+      if (!button) return;
+      window.clearTimeout(hoverTimer);
+      hoverTimer = window.setTimeout(() => show(button), 120);
+    });
+    article.addEventListener("pointerout", (e) => {
+      const button = (e.target as HTMLElement).closest<HTMLElement>(".gterm");
+      if (!button) return;
+      window.clearTimeout(hoverTimer);
+      // Leaving the word closes it, unless the pointer is on its way into the
+      // panel — where the "see the module" link lives.
+      if (sticky) return;
+      hoverTimer = window.setTimeout(() => {
+        if (!tip.matches(":hover")) hide();
+      }, 220);
+    });
+    tip.addEventListener("pointerleave", () => {
+      if (!sticky) hide();
+    });
+    // Touch and keyboard both need a real toggle; hover is a mouse affordance.
+    article.addEventListener("click", (e) => {
+      const button = (e.target as HTMLElement).closest<HTMLElement>(".gterm");
+      if (!button) return;
+      // `open` alone is not enough: a scroll may have closed the panel without
+      // this closure hearing about it, and then a click must re-open, not toggle.
+      if (open === button && tip.hasAttribute("data-open")) hide();
+      else show(button, true);
+    });
+    article.addEventListener("focusin", (e) => {
+      const button = (e.target as HTMLElement).closest<HTMLElement>(".gterm");
+      // Only keyboard focus opens it. A mouse click also focuses the button,
+      // and opening here would leave the click that follows to toggle it shut.
+      if (button && button.matches(":focus-visible")) show(button, true);
+    });
+    article.addEventListener("focusout", (e) => {
+      const button = (e.target as HTMLElement).closest<HTMLElement>(".gterm");
+      if (button && button === open) hide();
+    });
+    // A deliberate panel needs a deliberate dismissal; anywhere off it will do.
+    document.addEventListener("pointerdown", (e) => {
+      // This one is document-level, so a previous page's copy can still be
+      // listening after a client-side navigation; it has no page to close.
+      if (!article.isConnected || !sticky || !open) return;
+      const target = e.target as HTMLElement;
+      if (target.closest("[data-glossary-tip]") || target.closest(".gterm")) return;
+      hide();
+    });
+    // Document- and window-level listeners survive a client-side navigation,
+    // so they are wired once and read whatever tooltip is current.
+    if (!globalsWired) {
+      globalsWired = true;
+      document.addEventListener("keydown", (e) => {
+        const target = document.querySelector<HTMLElement>('.gterm[aria-expanded="true"]');
+        if (e.key !== "Escape" || !target) return;
+        hideCurrent();
+        target.focus();
+      });
+      // A fixed panel pinned to a scrolling word drifts; close instead of
+      // chasing it every frame.
+      window.addEventListener("scroll", hideCurrent, { passive: true });
+      window.addEventListener("resize", hideCurrent);
+    }
+  }
+
+  /** Close whatever tooltip is open, whichever page instance owns it. */
+  function hideCurrent() {
+    const panel = document.querySelector<HTMLElement>("[data-glossary-tip]");
+    if (!panel) return;
+    const owner = (panel as HTMLElement & { closeTip?: () => void }).closeTip;
+    if (owner) owner();
+    else closePanel(panel);
+  }
+
+  function closePanel(panel: HTMLElement) {
+    document
+      .querySelectorAll<HTMLElement>('.gterm[aria-expanded="true"]')
+      .forEach((b) => b.setAttribute("aria-expanded", "false"));
+    panel.removeAttribute("data-open");
+    panel.hidden = true;
+  }
+
+  setupGlossary();
+  document.addEventListener("astro:page-load", setupGlossary);
+</script>
