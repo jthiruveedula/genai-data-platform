@@ -12,6 +12,7 @@
  * Rendered by ModuleFooterNav (which every module page already includes), so
  * "where next" stays in one place instead of being pasted into twelve pages.
  */
+import ModuleWiringMap from "./ModuleWiringMap.astro";
 import { feedsFrom, readsInto, moduleOrder, moduleTitle } from "../../data/moduleEdges";
 import { MODULES } from "../../data/modules";
 
@@ -40,6 +41,7 @@ const orderOf = (id: string) => String(MODULES.find((m) => m.id === id)?.order ?
       <h2 id={`wiring-${moduleId}`} class="wiring-title">
         How this module is wired
       </h2>
+      <ModuleWiringMap moduleId={moduleId} />
       <div class="wiring-cols">
         {upstream.length > 0 && (
           <div class="wiring-col">
