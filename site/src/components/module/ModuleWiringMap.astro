@@ -1,0 +1,285 @@
+---
+/**
+ * The module graph as a picture, focused on the module you are reading.
+ *
+ * `data/moduleEdges.ts` already stores how the curriculum wires together, and
+ * ModuleWiring already renders the two lists a reader needs to *navigate* it
+ * ("builds on", "feeds"). What neither shows is the shape: how far back this
+ * module reaches, how much of the rest of the platform reads it, and whether
+ * it sits near the start of the pipeline or in the operating half.
+ *
+ * An arc diagram answers that in one glance and costs no new data. The twelve
+ * modules sit on a spine in curriculum order; forward edges arc above it,
+ * back-references arc below. This module's own edges are drawn in the accent,
+ * everything else in the rule colour, so the reader's eye lands on their own
+ * neighbourhood without losing the whole.
+ *
+ * Deliberately decorative (`aria-hidden`): every claim it makes is already
+ * present, in words and as links, in the lists directly beneath it. A picture
+ * that duplicates navigable text should not also be a second tab stop.
+ */
+import { MODULE_EDGES } from "../../data/moduleEdges";
+import { MODULES } from "../../data/modules";
+
+interface Props {
+  moduleId: string;
+}
+
+const { moduleId } = Astro.props;
+
+const ordered = [...MODULES].sort((a, b) => a.order - b.order);
+const indexOf = new Map(ordered.map((m, i) => [m.id, i]));
+
+const W = 1200;
+const H = 290;
+const SPINE = 150;
+const PAD = 55;
+const step = ordered.length > 1 ? (W - PAD * 2) / (ordered.length - 1) : 0;
+const xOf = (i: number) => PAD + i * step;
+
+const nodes = ordered.map((m, i) => ({
+  id: m.id,
+  order: String(m.order).padStart(2, "0"),
+  title: m.title,
+  x: xOf(i),
+  current: m.id === moduleId,
+}));
+
+/**
+ * Forward edges (in curriculum order) bow upward, back-references downward, so
+ * "this is built on something later in the book" reads as a different shape
+ * rather than a different colour alone. Height grows with span but is capped,
+ * or the eleven-module edges would leave the frame.
+ */
+const edges = MODULE_EDGES.map((e) => {
+  const a = indexOf.get(e.from)!;
+  const b = indexOf.get(e.to)!;
+  const span = Math.abs(b - a);
+  const forward = b > a;
+  const lift = Math.min(forward ? 125 : 85, 24 + span * 15);
+  const x1 = xOf(a);
+  const x2 = xOf(b);
+  return {
+    d: `M ${x1} ${SPINE} Q ${(x1 + x2) / 2} ${forward ? SPINE - lift * 2 : SPINE + lift * 2} ${x2} ${SPINE}`,
+    span,
+    forward,
+    // "mine" is what gets the accent: an edge with this module at either end.
+    mine: e.from === moduleId || e.to === moduleId,
+    upstream: e.to === moduleId,
+  };
+}).sort((a, b) => a.span - b.span);
+
+const current = nodes.find((n) => n.current)!;
+const labelX = Math.min(Math.max(current.x, 120), W - 120);
+---
+
+<figure class="wiring-map" data-wiring-map aria-hidden="true">
+  <div class="wm-scroll">
+    <svg viewBox={`0 0 ${W} ${H}`} class="wm-svg" role="presentation" focusable="false">
+      <line class="wm-spine" x1={PAD} y1={SPINE} x2={W - PAD} y2={SPINE}></line>
+
+      {
+        edges.map((edge) => (
+          <path
+            class:list={["wm-edge", { "is-mine": edge.mine, "is-upstream": edge.upstream }]}
+            d={edge.d}
+            data-wm-edge
+          />
+        ))
+      }
+
+      {
+        nodes.map((node) => (
+          <g class:list={["wm-node", { "is-current": node.current }]} data-wm-node>
+            <circle cx={node.x} cy={SPINE} r={node.current ? 15 : 11} />
+            <text x={node.x} y={SPINE + 3.5} class="wm-num">
+              {node.order}
+            </text>
+            <text x={node.x} y={SPINE - 26} class="wm-name">
+              {node.title}
+            </text>
+          </g>
+        ))
+      }
+
+      <text x={labelX} y={H - 14} class="wm-current-name">{current.title}</text>
+    </svg>
+  </div>
+  <figcaption class="wm-caption mono">
+    THE TWELVE MODULES IN ORDER · ABOVE THE LINE, WHAT FLOWS FORWARD · BELOW, WHAT REACHES BACK
+  </figcaption>
+</figure>
+
+<style>
+  .wiring-map {
+    margin: 0 0 2rem;
+  }
+
+  /* Twelve nodes need roughly 700px before the numbers start colliding; below
+     that the map scrolls rather than shrinking into illegibility — the same
+     answer the module flow strip already gives. */
+  .wm-scroll {
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+  }
+
+  .wm-svg {
+    display: block;
+    width: 100%;
+    min-width: 44rem;
+    height: auto;
+  }
+
+  .wm-spine {
+    stroke: var(--border);
+    stroke-width: 2;
+  }
+
+  .wm-edge {
+    fill: none;
+    stroke: var(--border);
+    stroke-width: 1.5;
+    /* Faint enough that the accent edges read first, present enough that the
+       shape of the whole graph is still there behind them. */
+    opacity: 0.38;
+  }
+
+  .wm-edge.is-mine {
+    stroke: var(--accent);
+    stroke-width: 2.5;
+    opacity: 1;
+  }
+
+  /* What this module is built on, versus what reads it: a dashed upstream
+     keeps the two directions apart without a second colour. */
+  .wm-edge.is-mine.is-upstream {
+    stroke-dasharray: 6 4;
+  }
+
+  .wm-node circle {
+    fill: var(--bg-card);
+    stroke: var(--border);
+    stroke-width: 2;
+  }
+
+  .wm-node.is-current circle {
+    fill: var(--accent);
+    stroke: var(--accent);
+  }
+
+  .wm-num {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    text-anchor: middle;
+    fill: var(--text-secondary);
+  }
+
+  .wm-node.is-current .wm-num {
+    fill: var(--bg-card);
+    font-weight: 700;
+  }
+
+  /* Every node can name itself on hover; only the current one is named
+     without being asked. */
+  .wm-name {
+    font-size: 12px;
+    text-anchor: middle;
+    fill: var(--text);
+    opacity: 0;
+    transition: opacity var(--duration-micro, 120ms) var(--ease-out, ease);
+  }
+
+  .wm-node:hover .wm-name {
+    opacity: 1;
+  }
+
+  .wm-current-name {
+    font-size: 14px;
+    font-weight: 700;
+    text-anchor: middle;
+    fill: var(--accent-text, var(--accent));
+  }
+
+  .wm-caption {
+    margin-top: 0.5rem;
+    font-size: 0.62rem;
+    letter-spacing: 0.08em;
+    color: var(--text-secondary);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .wm-name {
+      transition: none;
+    }
+  }
+</style>
+
+<script>
+  import { gsap } from "gsap";
+
+  function drawMap() {
+    const map = document.querySelector<HTMLElement>("[data-wiring-map]");
+    if (!map || map.dataset.drawn) return;
+
+    // Narrow viewports scroll the map instead of shrinking it, and the module
+    // you are reading is rarely at the left end — start the view on it.
+    const scroller = map.querySelector<HTMLElement>(".wm-scroll");
+    const currentNode = map.querySelector<SVGGElement>(".wm-node.is-current circle");
+    if (scroller && currentNode && scroller.scrollWidth > scroller.clientWidth) {
+      const box = currentNode.getBoundingClientRect();
+      const frame = scroller.getBoundingClientRect();
+      scroller.scrollLeft += box.left - frame.left - frame.width / 2 + box.width / 2;
+    }
+
+    const edges = [...map.querySelectorAll<SVGPathElement>("[data-wm-edge]")];
+    const nodes = [...map.querySelectorAll<SVGGElement>("[data-wm-node]")];
+    if (!edges.length) return;
+
+    // Under reduced motion the map is already correct as rendered — there is
+    // no from-state to undo, because nothing is set until the draw begins.
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      map.dataset.drawn = "true";
+      return;
+    }
+
+    const start = () => {
+      if (map.dataset.drawn) return;
+      map.dataset.drawn = "true";
+
+      const tl = gsap.timeline();
+      // Arcs are sorted shortest-span first, so the map assembles outward from
+      // the spine rather than flickering on in source order.
+      edges.forEach((edge, i) => {
+        const length = edge.getTotalLength();
+        gsap.set(edge, { strokeDasharray: length, strokeDashoffset: length });
+        tl.to(
+          edge,
+          {
+            strokeDashoffset: 0,
+            duration: 0.55,
+            ease: "power2.out",
+            // The dashed upstream edges keep their pattern once drawn.
+            onComplete: () => edge.style.removeProperty("stroke-dasharray"),
+          },
+          i * 0.045,
+        );
+      });
+      tl.from(nodes, { scale: 0, transformOrigin: "center", duration: 0.35, ease: "back.out(2)", stagger: 0.03 }, 0.1);
+    };
+
+    // Only when it is actually on screen: this sits at the foot of a long page
+    // and would otherwise have finished long before anyone scrolled to it.
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((e) => e.isIntersecting)) return;
+        io.disconnect();
+        start();
+      },
+      { threshold: 0.25 },
+    );
+    io.observe(map);
+  }
+
+  drawMap();
+  document.addEventListener("astro:page-load", drawMap);
+</script>
