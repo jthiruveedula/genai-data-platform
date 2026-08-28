@@ -163,7 +163,11 @@
 
   .rail-list :global(button:hover .rail-label),
   .rail-list :global(button:focus-visible .rail-label),
-  .rail-list :global(button[aria-current="true"] .rail-label) {
+  /* While the page is moving, the current section names itself — that is when
+     "where am I" is the live question. It used to be painted permanently,
+     which parked a label on top of the full-width demos and quiz panels that
+     run under the rail. */
+  .section-rail[data-scrolling="true"] .rail-list :global(button[aria-current="true"] .rail-label) {
     opacity: 1;
     transform: translateY(-50%) translateX(0);
   }
@@ -315,9 +319,13 @@
         else button.removeAttribute("aria-current");
       });
     };
+    let idleTimer: number | undefined;
     window.addEventListener(
       "scroll",
       () => {
+        rail.setAttribute("data-scrolling", "true");
+        window.clearTimeout(idleTimer);
+        idleTimer = window.setTimeout(() => rail.removeAttribute("data-scrolling"), 900);
         if (ticking) return;
         ticking = true;
         requestAnimationFrame(mark);

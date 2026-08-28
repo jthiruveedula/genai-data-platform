@@ -19,6 +19,18 @@ if (!questions) throw new Error(`ModuleQuiz: no quiz registered for module "${mo
       device.
     </p>
     <p class="chip mono quiz-last-score" data-quiz-last-score hidden></p>
+
+    {/* How far through the quiz you are, before you commit to an answer. Five
+        questions is enough to lose count of, and the submit button gives no
+        hint about which one is still blank. */}
+    <div class="quiz-progress" data-quiz-progress>
+      <p class="quiz-progress-label mono" data-quiz-progress-label>
+        0 / {questions.length} ANSWERED
+      </p>
+      <div class="quiz-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax={questions.length} aria-valuenow="0" aria-label="Questions answered" data-quiz-progress-bar>
+        <span class="quiz-progress-fill" data-quiz-progress-fill></span>
+      </div>
+    </div>
   </header>
 
   <form class="quiz-form" data-quiz-form novalidate>
@@ -55,7 +67,10 @@ if (!questions) throw new Error(`ModuleQuiz: no quiz registered for module "${mo
 </section>
 
 <script>
+  import { gsap } from "gsap";
   import { QUIZZES } from "../../data/quizzes";
+
+  const reduceMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   function storageKey(moduleId: string) {
     return `gdp.quiz.${moduleId}`;
@@ -101,6 +116,23 @@ if (!questions) throw new Error(`ModuleQuiz: no quiz registered for module "${mo
         lastScoreEl.hidden = false;
       }
 
+      const progress = root.querySelector<HTMLElement>("[data-quiz-progress]");
+      const progressLabel = root.querySelector<HTMLElement>("[data-quiz-progress-label]");
+      const progressBar = root.querySelector<HTMLElement>("[data-quiz-progress-bar]");
+      const progressFill = root.querySelector<HTMLElement>("[data-quiz-progress-fill]");
+
+      function paintProgress() {
+        const answered = questions.filter((_, qi) => form!.querySelector(`input[name="q${qi}"]:checked`)).length;
+        const total = questions.length;
+        if (progressLabel) progressLabel.textContent = `${answered} / ${total} ANSWERED`;
+        if (progressFill) progressFill.style.transform = `scaleX(${answered / total})`;
+        progressBar?.setAttribute("aria-valuenow", String(answered));
+        progress?.setAttribute("data-complete", String(answered === total));
+      }
+
+      form.addEventListener("change", paintProgress);
+      paintProgress();
+
       function fieldsetFor(qi: number) {
         return root.querySelector<HTMLFieldSetElement>(`[data-quiz-question="${qi}"]`);
       }
@@ -124,6 +156,7 @@ if (!questions) throw new Error(`ModuleQuiz: no quiz registered for module "${mo
         }
         submitBtn!.hidden = false;
         retakeBtn!.hidden = true;
+        paintProgress();
       }
 
       form.addEventListener("submit", (e) => {
@@ -165,17 +198,74 @@ if (!questions) throw new Error(`ModuleQuiz: no quiz registered for module "${mo
 
         saveScore(moduleId, score, questions.length);
 
+        const verdict = score >= questions.length * 0.7 ? "PASS" : "SCORE";
         if (resultEl) {
           resultEl.hidden = false;
-          resultEl.textContent = `[ ${score >= questions.length * 0.7 ? "PASS" : "SCORE"} ${score}/${questions.length} ]`;
+          resultEl.textContent = `[ ${verdict} ${score}/${questions.length} ]`;
         }
         submitBtn!.hidden = true;
         retakeBtn!.hidden = false;
         retakeBtn!.focus();
+
+        revealMarking(root, resultEl, verdict, score, questions.length);
+        goToFirstMiss(root);
       });
 
       retakeBtn?.addEventListener("click", resetQuiz);
     });
+  }
+
+  /**
+   * Five questions score at once, so the marking lands as one undifferentiated
+   * wall of red and green. Walking it down the page in order gives the eye
+   * somewhere to start, and counts the score up to the number it landed on
+   * instead of just stamping it there.
+   */
+  function revealMarking(
+    root: HTMLElement,
+    resultEl: HTMLElement | null,
+    verdict: string,
+    score: number,
+    total: number,
+  ) {
+    const marks = [...root.querySelectorAll<HTMLElement>("[data-quiz-feedback]")].filter((el) => !el.hidden);
+    // Under reduced motion the marking is already in its final state: the
+    // classes and the explanation text are set before this runs.
+    if (reduceMotion()) return;
+
+    const tl = gsap.timeline();
+    tl.from(marks, { autoAlpha: 0, y: -6, duration: 0.3, ease: "power2.out", stagger: 0.07 });
+
+    if (resultEl) {
+      const counter = { v: 0 };
+      tl.to(
+        counter,
+        {
+          v: score,
+          duration: 0.5,
+          ease: "power1.out",
+          onUpdate: () => {
+            resultEl.textContent = `[ ${verdict} ${Math.round(counter.v)}/${total} ]`;
+          },
+          onComplete: () => {
+            resultEl.textContent = `[ ${verdict} ${score}/${total} ]`;
+          },
+        },
+        0.15,
+      );
+    }
+  }
+
+  /**
+   * The quiz is taller than a viewport, so after scoring the learner is often
+   * looking at the submit button with every explanation off-screen above.
+   * Take them to the first thing they got wrong — or leave them be if there
+   * isn't one.
+   */
+  function goToFirstMiss(root: HTMLElement) {
+    const miss = root.querySelector<HTMLElement>(".quiz-question.is-incorrect");
+    if (!miss) return;
+    miss.scrollIntoView({ behavior: reduceMotion() ? "auto" : "smooth", block: "center" });
   }
 
   setup();
@@ -186,6 +276,52 @@ if (!questions) throw new Error(`ModuleQuiz: no quiz registered for module "${mo
   .module-quiz {
     margin-top: 3rem;
     padding: 1.75rem 2rem 2rem;
+    /* A quiz is a form, not a diagram: the site's full-width rule is for
+       things you scan, and an answer you have to read across 1400px of
+       screen is neither scannable nor comfortably clickable. */
+    max-width: 62rem;
+  }
+
+  .quiz-progress {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 0.9rem;
+  }
+
+  .quiz-progress-label {
+    margin: 0;
+    flex: 0 0 auto;
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    color: var(--text-secondary);
+  }
+
+  .quiz-progress-track {
+    flex: 1 1 auto;
+    max-width: 18rem;
+    height: 2px;
+    background: var(--border);
+  }
+
+  .quiz-progress-fill {
+    display: block;
+    height: 100%;
+    width: 100%;
+    background: var(--accent);
+    transform: scaleX(0);
+    transform-origin: 0 50%;
+    transition: transform var(--duration-base, 300ms) var(--ease-out, ease);
+  }
+
+  .quiz-progress[data-complete="true"] .quiz-progress-label {
+    color: var(--accent-text, var(--accent));
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .quiz-progress-fill {
+      transition: none;
+    }
   }
 
   .quiz-head {
