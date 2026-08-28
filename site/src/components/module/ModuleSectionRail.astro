@@ -19,6 +19,26 @@
   <ol class="rail-list" data-rail-list></ol>
 </nav>
 
+<!-- The same headings, for the widths the tick rail refuses: below 1024px
+     there is no page edge to put ticks in, and until now that meant a phone
+     got no section navigation at all on a page that scrolls for six or seven
+     screens. A thumb-height pill instead, naming where you are, opening into
+     the list. -->
+<nav class="section-sheet" data-section-sheet aria-label="Sections in this module" hidden>
+  <button
+    type="button"
+    class="sheet-toggle"
+    data-sheet-toggle
+    aria-expanded="false"
+    aria-controls="section-sheet-list"
+  >
+    <span class="sheet-caret" aria-hidden="true">^</span>
+    <span class="sheet-current" data-sheet-current></span>
+    <span class="sheet-count mono" data-sheet-count></span>
+  </button>
+  <ol class="sheet-list" id="section-sheet-list" data-sheet-list hidden></ol>
+</nav>
+
 <style is:global>
   /* The permalink mark beside every module heading. Hidden until the heading
      is hovered or the mark is focused, so it never competes with the title. */
@@ -50,10 +70,21 @@
     opacity: 1;
   }
 
-  /* Coarse pointers have no hover to reveal it with. */
+  /* Coarse pointers have no hover to reveal it with, so it is always there —
+     quietly, since it sits beside every heading on the page. */
   @media (pointer: coarse) {
     .head-anchor {
-      opacity: 0.45;
+      opacity: 0.3;
+    }
+  }
+
+  /* Room for the section pill, which is fixed over the foot of the page on
+     the widths that get it. Global rather than scoped because the element it
+     has to clear is the document, and this component only renders on the
+     module pages that carry the pill. */
+  @media (max-width: 1023px) {
+    body {
+      padding-bottom: 4.5rem;
     }
   }
 
@@ -178,6 +209,135 @@
       transition: none;
     }
   }
+
+  /* ---- the small-viewport sheet ---------------------------------------- */
+
+  .section-sheet {
+    position: fixed;
+    left: 50%;
+    bottom: max(0.75rem, env(safe-area-inset-bottom));
+    z-index: 40;
+    transform: translateX(-50%);
+    width: min(28rem, calc(100vw - 1.5rem));
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  /* Above this the tick rail owns the job, and two navigators for one set of
+     headings is one too many. */
+  @media (min-width: 1024px) {
+    .section-sheet {
+      display: none;
+    }
+  }
+
+  .sheet-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    width: 100%;
+    min-height: 44px;
+    padding: 0.55rem 0.9rem;
+    font: inherit;
+    font-size: 0.85rem;
+    text-align: left;
+    color: var(--text);
+    background: var(--bg-card);
+    border: 2px solid var(--border);
+    border-radius: 999px;
+    box-shadow: 0 10px 24px -14px rgb(0 0 0 / 0.4);
+    cursor: pointer;
+  }
+
+  .sheet-toggle:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  .sheet-caret {
+    flex: 0 0 auto;
+    font-family: var(--font-mono);
+    color: var(--accent-text, var(--accent));
+    transition: transform var(--duration-micro, 120ms) var(--ease-out, ease);
+  }
+
+  .section-sheet[data-open="true"] .sheet-caret {
+    transform: rotate(180deg);
+  }
+
+  .sheet-current {
+    flex: 1 1 auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .sheet-count {
+    flex: 0 0 auto;
+    font-size: 0.7rem;
+    letter-spacing: 0.06em;
+    color: var(--text-secondary);
+  }
+
+  /* Opens upward: the control is at the bottom of the screen, so the list has
+     to grow away from the thumb rather than under it. */
+  .sheet-list {
+    order: -1;
+    list-style: none;
+    margin: 0 0 0.5rem;
+    padding: 0.4rem;
+    max-height: min(60vh, 22rem);
+    overflow-y: auto;
+    background: var(--bg-card);
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: 0 16px 32px -18px rgb(0 0 0 / 0.45);
+  }
+
+  .sheet-list[hidden] {
+    display: none;
+  }
+
+  .sheet-list :global(button) {
+    display: flex;
+    align-items: baseline;
+    gap: 0.55rem;
+    width: 100%;
+    min-height: 44px;
+    padding: 0.45rem 0.6rem;
+    font: inherit;
+    font-size: 0.85rem;
+    text-align: left;
+    color: var(--text);
+    background: none;
+    border: 0;
+    border-radius: calc(var(--radius) * 0.75);
+    cursor: pointer;
+  }
+
+  .sheet-list :global(button[aria-current="true"]) {
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
+    color: var(--accent-text, var(--accent));
+    font-weight: 700;
+  }
+
+  .sheet-list :global(.sheet-index) {
+    flex: 0 0 auto;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+  }
+
+  .sheet-list :global(button[aria-current="true"] .sheet-index) {
+    color: var(--accent-text, var(--accent));
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .sheet-caret {
+      transition: none;
+    }
+  }
 </style>
 
 <script>
@@ -246,6 +406,94 @@
     else window.setTimeout(settle, 600);
   }
 
+  /**
+   * The same headings as a bottom-anchored sheet, for the widths where the
+   * tick rail hides itself. Returns null when there is no sheet in the page.
+   */
+  function buildSheet(headings: HTMLElement[], titles: string[]) {
+    const sheet = document.querySelector<HTMLElement>("[data-section-sheet]");
+    const toggle = sheet?.querySelector<HTMLButtonElement>("[data-sheet-toggle]");
+    const list = sheet?.querySelector<HTMLElement>("[data-sheet-list]");
+    const currentEl = sheet?.querySelector<HTMLElement>("[data-sheet-current]");
+    const countEl = sheet?.querySelector<HTMLElement>("[data-sheet-count]");
+    if (!sheet || !toggle || !list || !currentEl || !countEl) return null;
+
+    list.textContent = "";
+    const items: HTMLButtonElement[] = [];
+    headings.forEach((heading, i) => {
+      const li = document.createElement("li");
+      const button = document.createElement("button");
+      button.type = "button";
+      const index = document.createElement("span");
+      index.className = "sheet-index";
+      index.textContent = String(i + 1).padStart(2, "0");
+      const label = document.createElement("span");
+      label.textContent = titles[i];
+      button.append(index, label);
+      button.addEventListener("click", () => {
+        close();
+        jumpTo(heading);
+      });
+      li.appendChild(button);
+      list.appendChild(li);
+      items.push(button);
+    });
+
+    function open() {
+      list!.hidden = false;
+      sheet!.setAttribute("data-open", "true");
+      toggle!.setAttribute("aria-expanded", "true");
+      // Open on the section you are in, not at the top of a list you have
+      // already scrolled past.
+      list!.querySelector<HTMLElement>('button[aria-current="true"]')?.scrollIntoView({ block: "nearest" });
+    }
+
+    function close() {
+      list!.hidden = true;
+      sheet!.removeAttribute("data-open");
+      toggle!.setAttribute("aria-expanded", "false");
+    }
+
+    // buildRail runs at module eval and again on astro:page-load — which fires
+    // for the first load too. The list is rebuilt each time, but the toggle is
+    // static markup, so binding it twice made one tap open and close again.
+    if (!sheet.dataset.sheetBound) {
+      sheet.dataset.sheetBound = "true";
+
+      toggle.addEventListener("click", () => {
+        if (toggle.getAttribute("aria-expanded") === "true") close();
+        else open();
+      });
+
+      document.addEventListener("keydown", (e) => {
+        if (e.key !== "Escape" || toggle.getAttribute("aria-expanded") !== "true") return;
+        close();
+        toggle.focus();
+      });
+
+      document.addEventListener("pointerdown", (e) => {
+        if (!sheet.isConnected || toggle.getAttribute("aria-expanded") !== "true") return;
+        if ((e.target as HTMLElement).closest("[data-section-sheet]")) return;
+        close();
+      });
+    }
+
+    countEl.textContent = `1/${headings.length}`;
+    currentEl.textContent = titles[0];
+    sheet.hidden = false;
+
+    return {
+      setCurrent(i: number) {
+        currentEl.textContent = titles[i];
+        countEl.textContent = `${i + 1}/${headings.length}`;
+        items.forEach((button, n) => {
+          if (n === i) button.setAttribute("aria-current", "true");
+          else button.removeAttribute("aria-current");
+        });
+      },
+    };
+  }
+
   function buildRail() {
     const rail = document.querySelector<HTMLElement>("[data-section-rail]");
     const list = rail?.querySelector<HTMLElement>("[data-rail-list]");
@@ -302,6 +550,7 @@
     });
 
     rail.hidden = false;
+    const sheet = buildSheet(headings, titles);
 
     // Track the heading nearest the top of the viewport rather than whatever is
     // merely intersecting: with several short sections on screen at once,
@@ -318,6 +567,7 @@
         if (i === current) button.setAttribute("aria-current", "true");
         else button.removeAttribute("aria-current");
       });
+      sheet?.setCurrent(current);
     };
     let idleTimer: number | undefined;
     window.addEventListener(
