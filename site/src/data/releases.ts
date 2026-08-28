@@ -24,11 +24,17 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    tag: "v1.12.0",
+    date: "2026-08-28",
+    title: "the module pages learn to be read",
+    summary: "A term in the prose now explains itself where it stands, out of the same glossary the glossary page renders, so nobody has to leave a paragraph to find out what a reranker is. Every heading gained a shareable link, the checkpoint quiz shrank to a width you can actually scan and now marks itself in order and takes you to what you got wrong, phones finally get section navigation on pages that run seven screens deep, and the module graph is drawn rather than only listed — twelve modules on a spine, with the one you are reading and its dependencies picked out.",
+    isLatest: true,
+  },
+  {
     tag: "v1.11.0",
     date: "2026-08-24",
     title: "checkpoint quizzes return, and the Dependabot backlog closes out",
     summary: "Every module's closing recap gets its five-question checkpoint quiz back, scored instantly and remembered on-device — the same completion signal the recap already tracked, so passing one still counts toward progress. Alongside it, the whole outstanding Dependabot backlog was swept and CI gained a decision script so the backlog stops re-forming.",
-    isLatest: true,
   },
   {
     tag: "v1.10.0",
