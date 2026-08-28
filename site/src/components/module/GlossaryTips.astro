@@ -193,66 +193,85 @@ const entries = GLOSSARY.map((t) => ({
       return;
     }
 
-    // Longest surface form first, so "vector database" is not eaten by
-    // "vector index"'s shorter sibling landing on the same sentence first.
-    const forms = entries
-      .flatMap((entry) => entry.forms.map((form) => ({ form, entry })))
-      .sort((a, b) => b.form.length - a.form.length);
+    // One pass, not one per headword. Every surface form goes into a single
+    // alternation, longest first so "vector database" wins over "vector", and
+    // the article is walked once — this runs on a reading page while several
+    // islands are hydrating, and thirty-six separate tree walks is work the
+    // reader can feel.
+    const byForm = new Map<string, TipEntry>();
+    for (const entry of entries) {
+      for (const form of entry.forms) {
+        const key = form.toLowerCase();
+        if (!byForm.has(key)) byForm.set(key, entry);
+      }
+    }
+    const pattern = [...byForm.keys()].sort((a, b) => b.length - a.length).map(escapeRe).join("|");
+    if (!pattern) return;
+    // The optional plural is what lets a page that says "agents" mark "Agent".
+    const re = new RegExp(`\\b(${pattern})(s|es)?\\b`, "gi");
 
     const used = new Set<string>();
-    const blocks = article.querySelectorAll<HTMLElement>("p, li, dd");
 
-    for (const { form, entry } of forms) {
-      if (used.has(entry.term)) continue;
-      // Optional plural, so a page that says "agents" still gets "Agent".
-      const re = new RegExp(`\\b${escapeRe(form)}(s|es)?\\b`, "i");
-
-      for (const block of blocks) {
-        if (block.closest(SKIP)) continue;
-        // Inactive tab panels and pre-hydration fallbacks are in the DOM but
-        // off-screen; a mark planted there is a mark nobody can ever open.
-        if (block.offsetParent === null) continue;
-        const node = findTextNode(block, re);
-        if (!node) continue;
-        wrap(node, re, entry);
-        used.add(entry.term);
-        break;
-      }
-    }
-
-    function findTextNode(root: HTMLElement, re: RegExp): Text | null {
-      const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-      let node: Node | null;
-      while ((node = walker.nextNode())) {
-        const text = node as Text;
-        if (!re.test(text.data)) continue;
-        const parent = text.parentElement as HTMLElement | null;
-        if (!parent || parent.closest(SKIP)) continue;
-        // A visible paragraph can still hold a hidden span — the per-cloud
-        // swaps do exactly that — and a mark in there is unreachable.
-        if (parent.offsetParent === null) continue;
-        return text;
-      }
-      return null;
-    }
-
-    function wrap(text: Text, re: RegExp, entry: TipEntry) {
-      const match = re.exec(text.data);
-      if (!match) return;
-      const after = text.splitText(match.index);
-      after.splitText(match[0].length);
+    function wrap(text: Text, index: number, length: number, entry: TipEntry) {
+      const target = text.splitText(index);
+      target.splitText(length);
       const button = document.createElement("button");
       button.type = "button";
       button.className = "gterm";
-      button.textContent = after.data;
+      button.textContent = target.data;
       button.setAttribute("aria-expanded", "false");
       button.setAttribute("aria-describedby", "glossary-tip");
       button.dataset.term = entry.term;
       button.dataset.definition = entry.definition;
       if (entry.href) button.dataset.href = entry.href;
       if (entry.moduleTitle) button.dataset.moduleTitle = entry.moduleTitle;
-      after.replaceWith(button);
+      target.replaceWith(button);
     }
+
+    function markUp() {
+      for (const block of article!.querySelectorAll<HTMLElement>("p, li, dd")) {
+        if (block.closest(SKIP)) continue;
+        // Inactive tab panels and pre-hydration fallbacks are in the DOM but
+        // off-screen; a mark planted there is a mark nobody can ever open.
+        if (block.offsetParent === null) continue;
+
+        // Snapshot the text nodes before touching any of them: wrapping a
+        // match splits the node a live walker would be standing on.
+        const walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT);
+        const texts: Text[] = [];
+        let node: Node | null;
+        while ((node = walker.nextNode())) texts.push(node as Text);
+
+        for (const text of texts) {
+          const parent = text.parentElement;
+          if (!parent || parent.closest(SKIP)) continue;
+          // A visible paragraph can still hold a hidden span — the per-cloud
+          // swaps do exactly that — and a mark in there is unreachable.
+          if (parent.offsetParent === null) continue;
+
+          re.lastIndex = 0;
+          let match: RegExpExecArray | null;
+          while ((match = re.exec(text.data))) {
+            const entry = byForm.get(match[1].toLowerCase());
+            if (!entry || used.has(entry.term)) continue;
+            used.add(entry.term);
+            wrap(text, match.index, match[0].length, entry);
+            // `text` has been split by the wrap; anything after the mark is a
+            // new node this loop no longer holds.
+            break;
+          }
+        }
+      }
+      article!.dataset.glossaryMarked = "true";
+    }
+
+    // Deferred to idle: none of this is needed for first paint, and the page
+    // it runs on is hydrating a 3D scene and several demos at the same time.
+    const idle = (window as Window & {
+      requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => void;
+    }).requestIdleCallback;
+    if (idle) idle(markUp, { timeout: 1500 });
+    else window.setTimeout(markUp, 0);
 
     // ---- the shared tooltip ------------------------------------------------
     // A fixed panel is safest as a direct child of <body>: nothing above it in

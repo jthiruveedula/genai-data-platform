@@ -22,6 +22,8 @@ test('terms in the prose become tooltip triggers, once each', async ({ page }) =
 
 test('no term is planted inside a heading, link, or code span', async ({ page }) => {
   await page.goto(MODULE);
+  // The marking pass runs at idle, not at parse time.
+  await page.locator('article .gterm').first().waitFor();
   const trespassing = await page
     .locator('article .gterm')
     .evaluateAll((els) => els.filter((el) => el.closest('a, code, pre, h1, h2, h3, .chip')).length);
@@ -32,6 +34,7 @@ test('clicking a term opens its definition, Escape closes it', async ({ page }) 
   await page.goto(MODULE);
 
   const term = page.locator('article .gterm').first();
+  await term.waitFor();
   const name = await term.evaluate((el) => (el as HTMLElement).dataset.term);
   await term.click();
 
@@ -48,6 +51,7 @@ test('clicking a term opens its definition, Escape closes it', async ({ page }) 
 test('a term is reachable and openable from the keyboard', async ({ page }) => {
   await page.goto(MODULE);
   const term = page.locator('article .gterm').first();
+  await term.waitFor();
   await term.focus();
   await expect(page.locator('[data-glossary-tip]')).toBeVisible();
 });
