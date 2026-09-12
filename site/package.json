@@ -47,6 +47,6 @@
     "pagefind": "^1.5.2",
     "storybook": "^10.5.2",
     "tailwindcss": "^4.3.3",
-    "vitest": "^4.1.10"
+    "vitest": "^5.0.0"
   }
 }
